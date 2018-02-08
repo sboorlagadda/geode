@@ -20,7 +20,6 @@ import static org.apache.geode.distributed.ConfigurationProperties.REMOTE_LOCATO
 
 import java.util.Properties;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -56,12 +55,13 @@ public class DestroyGatewaySenderCommandDUnitTest {
     props.setProperty(DISTRIBUTED_SYSTEM_ID, "" + 1);
     locatorSite1 = clusterStartupRule.startLocatorVM(0, props);
 
+    props.setProperty(NAME, "happyserver1");
+    server1 = clusterStartupRule.startServerVM(1, props, locatorSite1.getPort());
+
     props.setProperty(DISTRIBUTED_SYSTEM_ID, "" + 2);
+    props.setProperty(NAME, "happyremotelocator");
     props.setProperty(REMOTE_LOCATORS, "localhost[" + locatorSite1.getPort() + "]");
     clusterStartupRule.startLocatorVM(2, props);
-
-    props.setProperty(NAME, "happyserver1");
-    server1 = clusterStartupRule.startServerVM(3, props, locatorSite1.getPort());
   }
 
   @Before
@@ -69,25 +69,38 @@ public class DestroyGatewaySenderCommandDUnitTest {
     gfsh.connectAndVerify(locatorSite1);
   }
 
-  @After
-  public void after() {
-    // gfsh.executeAndAssertThat(DESTROY + " --if-exists").statusIsSuccess();
-  }
-
-  /**
-   * GatewaySender with all default attributes
-   */
   @Test
-  public void testCreateDestroyGatewaySenderWithDefault() throws Exception {
+  public void testCreateDestroySerialGatewaySenderWithDefault() throws Exception {
     gfsh.executeAndAssertThat(CREATE).statusIsSuccess().tableHasColumnWithExactValuesInAnyOrder(
         "Status", "GatewaySender \"sender\" created on \"happyserver1\"");
 
-    gfsh.execute("list gateways");
+    locatorSite1.waitTilGatewaySendersAreReady(1);
 
     // destroy gateway sender and verify AEQs cleaned up
     gfsh.executeAndAssertThat(DESTROY).statusIsSuccess().tableHasColumnWithExactValuesInAnyOrder(
         "Status", "GatewaySender \"sender\" destroyed on \"happyserver1\"");
 
-    gfsh.execute("list gateways");
+    locatorSite1.waitTilGatewaySendersAreReady(0);
+
+    gfsh.executeAndAssertThat("list gateways").statusIsError()
+        .containsOutput("GatewaySenders or GatewayReceivers are not available in cluster");
+  }
+
+  @Test
+  public void testCreateDestroyParallellGatewaySenderWithDefault() throws Exception {
+    gfsh.executeAndAssertThat(CREATE + " --parallel").statusIsSuccess()
+        .tableHasColumnWithExactValuesInAnyOrder("Status",
+            "GatewaySender \"sender\" created on \"happyserver1\"");
+
+    locatorSite1.waitTilGatewaySendersAreReady(1);
+
+    // destroy gateway sender and verify AEQs cleaned up
+    gfsh.executeAndAssertThat(DESTROY).statusIsSuccess().tableHasColumnWithExactValuesInAnyOrder(
+        "Status", "GatewaySender \"sender\" destroyed on \"happyserver1\"");
+
+    locatorSite1.waitTilGatewaySendersAreReady(0);
+
+    gfsh.executeAndAssertThat("list gateways").statusIsError()
+        .containsOutput("GatewaySenders or GatewayReceivers are not available in cluster");
   }
 }

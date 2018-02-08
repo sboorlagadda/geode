@@ -975,7 +975,7 @@ public class ManagementAdapter {
         (GatewaySenderMBean) service.getLocalGatewaySenderMXBean(sender.getId());
     bean.stopMonitor();
 
-    ObjectName gatewaySenderName = MBeanJMXAdapter.getAsyncEventQueueMBeanName(
+    ObjectName gatewaySenderName = MBeanJMXAdapter.getGatewaySenderMBeanName(
         internalCache.getDistributedSystem().getDistributedMember(), sender.getId());
     service.unregisterMBean(gatewaySenderName);
 
