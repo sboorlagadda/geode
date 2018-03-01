@@ -77,6 +77,11 @@ dependencies {
     exclude module: 'spring-aop'
   }
 
+  testCompile 'org.seleniumhq.selenium:selenium-api:' + project.'selenium.version'
+  testCompile 'org.seleniumhq.selenium:selenium-chrome-driver:' + project.'selenium.version'
+  testCompile 'org.seleniumhq.selenium:selenium-support:' + project.'selenium.version'
+  testCompile 'io.cucumber:cucumber-java8:' + project.'cucumber-jvm.version'
+  testCompile 'io.cucumber:cucumber-junit:' + project.'cucumber-jvm.version'
   testCompile 'org.apache.httpcomponents:httpclient:' + project.'httpclient.version'
   testCompile 'org.apache.httpcomponents:httpcore:' + project.'httpcore.version'
   testCompile 'com.google.guava:guava:' + project.'guava.version'
