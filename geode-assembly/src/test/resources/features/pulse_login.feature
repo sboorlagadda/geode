@@ -1,5 +1,6 @@
 Feature: Pulse Authentication
-
-  Scenario: Sign in and sign out
+  Scenario: Should navigate to clusterDetail page
     When I open pulse
-    Then I see login page
+    And I see login page
+    And I login using user "admin" and password "admin"
+    Then I see cluster details page

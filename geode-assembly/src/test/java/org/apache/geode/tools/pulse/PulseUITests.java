@@ -1,19 +1,15 @@
 package org.apache.geode.tools.pulse;
 
-import cucumber.api.java8.En;
-import org.apache.geode.test.junit.categories.IntegrationTest;
+import cucumber.api.CucumberOptions;
+import cucumber.api.junit.Cucumber;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import cucumber.api.CucumberOptions;
-import cucumber.api.junit.Cucumber;
+import org.apache.geode.test.junit.categories.IntegrationTest;
 
 @Category(IntegrationTest.class)
 @RunWith(Cucumber.class)
-@CucumberOptions(
-    features = "classpath:features",
-    plugin = {"pretty", "html:target/cucumber-html-report"},
-    tags = {}
-)
-public class PulseUITests implements En {
+@CucumberOptions(features = "classpath:features",
+    plugin = {"pretty", "html:target/cucumber-html-report"}, tags = {})
+public class PulseUITests {
 }
