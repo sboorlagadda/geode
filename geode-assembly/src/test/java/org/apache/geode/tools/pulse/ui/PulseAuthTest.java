@@ -13,49 +13,59 @@
  * the License.
  *
  */
-package org.apache.geode.tools.pulse.tests.ui;
+package org.apache.geode.tools.pulse.ui;
 
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 import org.openqa.selenium.WebDriver;
 
+import org.apache.geode.examples.SimpleSecurityManager;
 import org.apache.geode.test.junit.categories.UITest;
-import org.apache.geode.tools.pulse.tests.rules.ScreenshotOnFailureRule;
-import org.apache.geode.tools.pulse.tests.rules.ServerRule;
-import org.apache.geode.tools.pulse.tests.rules.WebDriverRule;
+import org.apache.geode.test.junit.rules.EmbeddedPulseRule;
+import org.apache.geode.test.junit.rules.LocatorStarterRule;
+import org.apache.geode.test.junit.rules.ScreenshotOnFailureRule;
+import org.apache.geode.test.junit.rules.WebDriverRule;
+import org.apache.geode.tools.pulse.internal.data.Cluster;
 
 @Category(UITest.class)
-@FixMethodOrder(MethodSorters.JVM)
 public class PulseAuthTest extends PulseBase {
 
   @ClassRule
-  public static ServerRule serverRule = new ServerRule("pulse-auth.json");
+  public static LocatorStarterRule locator = new LocatorStarterRule().withJMXManager()
+      .withSecurityManager(SimpleSecurityManager.class).withAutoStart();
+
+  @Rule
+  public EmbeddedPulseRule pulseRule = new EmbeddedPulseRule();
 
   @Rule
   public WebDriverRule webDriverRule =
-      new WebDriverRule("pulseUser", "12345", serverRule.getPulseURL());
+      new WebDriverRule("clusterRead", "clusterRead", getPulseURL());
 
   @Rule
   public ScreenshotOnFailureRule screenshotOnFailureRule =
       new ScreenshotOnFailureRule(this::getWebDriver);
 
-  @Override
+  private Cluster cluster;
+
+  @Before
+  public void before() {
+    pulseRule.useJmxManager("localhost", locator.getJmxPort());
+    cluster = pulseRule.getRepository().getCluster("clusterRead", "clusterRead");
+  }
+
   public WebDriver getWebDriver() {
     return webDriverRule.getDriver();
   }
 
   @Override
   public String getPulseURL() {
-    return serverRule.getPulseURL();
+    return "http://localhost:" + locator.getHttpPort() + "/pulse/";
   }
 
-  @Before
-  public void setupPulseTestUtils() {
-    PulseTestUtils.setDriverProvider(() -> webDriverRule.getDriver());
+  @Override
+  public Cluster getCluster() {
+    return this.cluster;
   }
-
 }

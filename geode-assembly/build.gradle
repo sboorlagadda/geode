@@ -98,6 +98,9 @@ dependencies {
   testRuntime files("${System.getProperty('java.home')}/../lib/tools.jar")
   testRuntime files("$buildDir/install/${distributions.main.baseName}/lib/geode-dependencies.jar")
 
+  testCompile 'org.seleniumhq.selenium:selenium-api:' + project.'selenium.version'
+  testCompile 'org.seleniumhq.selenium:selenium-chrome-driver:' + project.'selenium.version'
+  testCompile 'org.seleniumhq.selenium:selenium-support:' + project.'selenium.version'
 
   gfshDependencies ('org.springframework:spring-web:' + project.'springframework.version'){
     exclude module: 'spring-core'

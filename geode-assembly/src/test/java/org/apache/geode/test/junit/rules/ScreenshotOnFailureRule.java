@@ -14,7 +14,7 @@
  *
  */
 
-package org.apache.geode.tools.pulse.tests.rules;
+package org.apache.geode.test.junit.rules;
 
 import java.io.File;
 import java.io.IOException;

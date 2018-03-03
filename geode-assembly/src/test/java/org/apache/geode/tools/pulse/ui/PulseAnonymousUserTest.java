@@ -13,48 +13,64 @@
  * the License.
  *
  */
-package org.apache.geode.tools.pulse.tests.ui;
 
-import org.junit.Before;
+package org.apache.geode.tools.pulse.ui;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import org.apache.geode.test.junit.categories.UITest;
-import org.apache.geode.tools.pulse.tests.rules.ScreenshotOnFailureRule;
-import org.apache.geode.tools.pulse.tests.rules.ServerRule;
-import org.apache.geode.tools.pulse.tests.rules.WebDriverRule;
+import org.apache.geode.test.junit.rules.LocatorStarterRule;
+import org.apache.geode.test.junit.rules.ScreenshotOnFailureRule;
+import org.apache.geode.test.junit.rules.WebDriverRule;
 
 @Category(UITest.class)
 @FixMethodOrder(MethodSorters.JVM)
-public class PulseNoAuthTest extends PulseBase {
+public class PulseAnonymousUserTest {
 
   @ClassRule
-  public static ServerRule serverRule = new ServerRule(null);
+  public static LocatorStarterRule locator =
+      new LocatorStarterRule().withJMXManager().withAutoStart();
 
   @Rule
-  public WebDriverRule webDriverRule =
-      new WebDriverRule("admin", "admin", serverRule.getPulseURL());
+  public WebDriverRule webDriverRule = new WebDriverRule(getPulseURL());
 
   @Rule
   public ScreenshotOnFailureRule screenshotOnFailureRule =
       new ScreenshotOnFailureRule(this::getWebDriver);
 
-  @Override
   public WebDriver getWebDriver() {
     return webDriverRule.getDriver();
   }
 
-  @Override
   public String getPulseURL() {
-    return serverRule.getPulseURL();
+    return "http://localhost:" + locator.getHttpPort() + "/pulse/";
   }
 
-  @Before
-  public void setupPulseTestUtils() {
-    PulseTestUtils.setDriverProvider(() -> webDriverRule.getDriver());
+  @Test
+  public void userCanGetToPulseLoginPage() {
+    webDriverRule.getDriver().get(getPulseURL() + "login.html");
+
+    WebElement userNameElement = webDriverRule.getDriver().findElement(By.id("user_name"));
+    WebElement passwordElement = webDriverRule.getDriver().findElement(By.id("user_password"));
+
+    assertThat(userNameElement).isNotNull();
+    assertThat(passwordElement).isNotNull();
+  }
+
+  @Test
+  public void userCannotGetToPulseDetails() {
+    // TODO: Verify this is true that user can get to pulse version without logging in
+    webDriverRule.getDriver().get(getPulseURL() + "pulseVersion");
+    assertThat(webDriverRule.getDriver().getPageSource()).contains("sourceRevision");
   }
 }

@@ -14,7 +14,7 @@
  *
  */
 
-package org.apache.geode.tools.pulse.tests.ui;
+package org.apache.geode.tools.pulse.ui;
 
 public class PulseTestConstants {
   public static final String DATA_VIEW_LABEL = "Data View";
