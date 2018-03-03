@@ -16,11 +16,13 @@
 package org.apache.geode.tools.pulse.ui;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.openqa.selenium.WebDriver;
 
+import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.junit.categories.UITest;
 import org.apache.geode.test.junit.rules.EmbeddedPulseRule;
 import org.apache.geode.test.junit.rules.LocatorStarterRule;
@@ -35,6 +37,9 @@ public class PulseNoAuthTest extends PulseBase {
   public static LocatorStarterRule locator =
       new LocatorStarterRule().withJMXManager().withAutoStart();
 
+  @ClassRule
+  public static ClusterStartupRule clusterRule = new ClusterStartupRule();
+
   @Rule
   public EmbeddedPulseRule pulseRule = new EmbeddedPulseRule();
 
@@ -46,6 +51,12 @@ public class PulseNoAuthTest extends PulseBase {
       new ScreenshotOnFailureRule(this::getWebDriver);
 
   private Cluster cluster;
+
+  @BeforeClass
+  public static void beforeClass() {
+    int locatorPort = locator.getPort();
+    clusterRule.startServerVM(1, x -> x.withConnectionToLocator(locatorPort));
+  }
 
   @Before
   public void before() {

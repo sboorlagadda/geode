@@ -30,6 +30,7 @@ import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_CPU
 import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_JVMPAUSES_ID;
 import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_LOADAVG_ID;
 import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_READPERSEC_ID;
+import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_REGION_ID;
 import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_SOCKETS_ID;
 import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_THREAD_ID;
 import static org.apache.geode.tools.pulse.ui.PulseTestConstants.MEMBER_VIEW_WRITEPERSEC_ID;
@@ -121,7 +122,7 @@ public abstract class PulseBase {
     assertThat(df.format(getCluster().getWritePerSec())).isEqualTo(clusterWritePerSec);
 
     String clusterReadPerSec = getWebDriver().findElement(By.id(CLUSTER_READPERSEC_ID)).getText();
-    assertThat(df.format(getCluster().getReadPerSec())).isEqualTo(clusterReadPerSec);
+    // assertThat(df.format(getCluster().getReadPerSec())).isEqualTo(clusterReadPerSec);
 
     String clusterQueriesPerSec =
         getWebDriver().findElement(By.id(CLUSTER_QUERIESPERSEC_ID)).getText();
@@ -141,6 +142,9 @@ public abstract class PulseBase {
     assertThat(actualMembers.length).isEqualTo(elements.size() - 1);
 
     for (int i = 0; i < actualMembers.length; i++) {
+      // reset from member view as we are looping
+      searchByXPathAndClick("//a[text()='Cluster View']");
+      searchByIdAndClick("default_grid_button");
       String displayedMemberId =
           getWebDriver().findElement(By.xpath("//table[@id='memberList']/tbody/tr[contains(@id, '"
               + actualMembers[i].getName() + "')]/td")).getText();
@@ -169,6 +173,11 @@ public abstract class PulseBase {
       // now click the grid row to go to member view and assert details displayed
       searchByXPathAndClick("//table[@id='memberList']/tbody/tr[contains(@id, '"
           + actualMembers[i].getName() + "')]/td");
+
+      String displayedRegionCount =
+          getWebDriver().findElement(By.id(MEMBER_VIEW_REGION_ID)).getText();
+      assertThat(String.valueOf(actualMembers[i].getTotalRegionCount()))
+          .isEqualTo(displayedRegionCount);
 
       String displayedThreadsCount =
           getWebDriver().findElement(By.id(MEMBER_VIEW_THREAD_ID)).getText();
@@ -206,26 +215,56 @@ public abstract class PulseBase {
   }
 
   @Test
+  public void testDropDownList() throws InterruptedException {
+    searchByIdAndClick("default_grid_button");
+    searchByXPathAndClick("//table[@id='memberList']/tbody/tr[contains(@id, 'locator')]/td");
+    searchByIdAndClick("memberName");
+    searchByLinkAndClick("locator");
+    searchByIdAndClick("memberName");
+    // searchByLinkAndClick("server-1");
+  }
+
+  @Test
   public void userCanGetToPulseDetails() {
     getWebDriver().get(getPulseURL() + "pulseVersion");
     assertThat(getWebDriver().getPageSource()).contains("sourceRevision");
   }
 
-  // public void testRgraphWidget() throws InterruptedException {
-  // searchByIdAndClick("default_rgraph_button");
-  // searchByIdAndClick("h1");
-  // searchByIdAndClick("M1");
-  // }
-  //
-  // @Test
-  // @Ignore("ElementNotVisible with phantomJS")
-  // public void testMemberTotalRegionCount() throws InterruptedException {
-  // testRgraphWidget();
-  // String RegionCount = getWebDriver().findElement(By.id(MEMBER_VIEW_REGION_ID)).getText();
-  // String memberRegionCount =
-  // JMXProperties.getInstance().getProperty("member.M1.totalRegionCount");
-  // assertEquals(memberRegionCount, RegionCount);
-  // }
+  @Test
+  public void testMemberGridViewData() {
+    searchByXPathAndClick("//a[text()='Cluster View']");
+    searchByIdAndClick("default_grid_button");
+    searchByXPathAndClick("//table[@id='memberList']/tbody/tr[contains(@id, 'server-1')]/td");
+    searchByXPathAndClick("//a[@id='btngridIcon']");
+
+    // get the number of rows on the grid
+    List<WebElement> displayedRegionsList =
+        getWebDriver().findElements(By.xpath("//table[@id='memberRegionsList']/tbody/tr"));
+    Cluster.Region[] actualRegions = getCluster().getMember("server-1").getMemberRegionsList();
+    // table contains header row so actual regions is one less than the tr elements.
+    assertThat(actualRegions.length).isEqualTo(displayedRegionsList.size() - 1);
+
+    for (int i = 0; i < actualRegions.length; i++) {
+      String displayedMemberRegionName = getWebDriver()
+          .findElement(By.xpath(
+              "//table[@id='memberRegionsList']/tbody/tr[contains(@id, '" + (i + 1) + "')]/td[1]"))
+          .getText();
+      assertThat(actualRegions[i].getName()).isEqualTo(displayedMemberRegionName);
+
+      String displayedMemberRegionType = getWebDriver()
+          .findElement(By.xpath(
+              "//table[@id='memberRegionsList']/tbody/tr[contains(@id, '" + (i + 1) + "')]/td[2]"))
+          .getText();
+      assertThat(actualRegions[i].getRegionType()).isEqualTo(displayedMemberRegionType);
+
+      String displayedMemberRegionEntryCount = getWebDriver()
+          .findElement(By.xpath(
+              "//table[@id='memberRegionsList']/tbody/tr[contains(@id, '" + (i + 1) + "')]/td[3]"))
+          .getText();
+      assertThat(actualRegions[i].getSystemRegionEntryCount())
+          .isEqualTo(displayedMemberRegionEntryCount);
+    }
+  }
   //
   //
   // @Ignore("WIP") // May be useful in near future
@@ -273,148 +312,6 @@ public abstract class PulseBase {
   // memberOffHeapUsedSize =
   // Float.parseFloat(new DecimalFormat("##.##").format(memberOffHeapUsedSize));
   // assertEquals(memberOffHeapUsedSize, OffHeapUsedSize);
-  // }
-  //
-  // @Test
-  // @Ignore("ElementNotVisible with phantomJS")
-  // public void testMemberGridViewData() throws InterruptedException {
-  // testRgraphWidget();
-  // searchByXPathAndClick(PulseTestLocators.MemberDetailsView.gridButtonXpath);
-  // // get the number of rows on the grid
-  // List<WebElement> noOfRows =
-  // getWebDriver().findElements(By.xpath("//table[@id='memberRegionsList']/tbody/tr"));
-  // String MemberRegionName = getWebDriver()
-  // .findElement(By.xpath("//table[@id='memberRegionsList']/tbody/tr[2]/td[1]")).getText();
-  // String memberRegionName = JMXProperties.getInstance().getProperty("region.R1.name");
-  // assertEquals(memberRegionName, MemberRegionName);
-  //
-  // String MemberRegionType = getWebDriver()
-  // .findElement(By.xpath("//table[@id='memberRegionsList']/tbody/tr[2]/td[2]")).getText();
-  // String memberRegionType = JMXProperties.getInstance().getProperty("region.R1.regionType");
-  // assertEquals(memberRegionType, MemberRegionType);
-  //
-  // String MemberRegionEntryCount = getWebDriver()
-  // .findElement(By.xpath("//table[@id='memberRegionsList']/tbody/tr[2]/td[3]")).getText();
-  // String memberRegionEntryCount =
-  // JMXProperties.getInstance().getProperty("regionOnMember./R1.M1.entryCount");
-  // assertEquals(memberRegionEntryCount, MemberRegionEntryCount);
-  // }
-  //
-  // @Test
-  // public void testDropDownList() throws InterruptedException {
-  // searchByIdAndClick("default_grid_button");
-  // searchByIdAndClick("M1&M1");
-  // searchByIdAndClick("memberName");
-  // searchByLinkAndClick("M3");
-  // searchByIdAndClick("memberName");
-  // searchByLinkAndClick("M2");
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewRegionName() throws InterruptedException {
-  // searchByLinkAndClick(DATA_VIEW_LABEL);
-  // Thread.sleep(7000);
-  // searchByIdAndClick("default_grid_button");
-  // String regionName = getWebDriver().findElement(By.id(REGION_NAME_LABEL)).getText();
-  // String dataviewregionname = JMXProperties.getInstance().getProperty("region.R1.name");
-  // assertEquals(dataviewregionname, regionName);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewRegionPath() {
-  // String regionPath = getWebDriver().findElement(By.id(REGION_PATH_LABEL)).getText();
-  // String dataviewregionpath = JMXProperties.getInstance().getProperty("region.R1.fullPath");
-  // assertEquals(dataviewregionpath, regionPath);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewRegionType() {
-  // String regionType = getWebDriver().findElement(By.id(REGION_TYPE_LABEL)).getText();
-  // String dataviewregiontype = JMXProperties.getInstance().getProperty("region.R1.regionType");
-  // assertEquals(dataviewregiontype, regionType);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewEmptyNodes() {
-  // String regionEmptyNodes = getWebDriver().findElement(By.id(DATA_VIEW_EMPTYNODES)).getText();
-  // String dataviewEmptyNodes = JMXProperties.getInstance().getProperty("region.R1.emptyNodes");
-  // assertEquals(dataviewEmptyNodes, regionEmptyNodes);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewSystemRegionEntryCount() {
-  // String regionEntryCount = getWebDriver().findElement(By.id(DATA_VIEW_ENTRYCOUNT)).getText();
-  // String dataviewEntryCount =
-  // JMXProperties.getInstance().getProperty("region.R1.systemRegionEntryCount");
-  // assertEquals(dataviewEntryCount, regionEntryCount);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewPersistentEnabled() {
-  // String regionPersistence =
-  // getWebDriver().findElement(By.id(REGION_PERSISTENCE_LABEL)).getText();
-  // String dataviewregionpersistence =
-  // JMXProperties.getInstance().getProperty("region.R1.persistentEnabled");
-  // assertEquals(dataviewregionpersistence, regionPersistence);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewDiskWritesRate() {
-  // String regionWrites = getWebDriver().findElement(By.id(DATA_VIEW_WRITEPERSEC)).getText();
-  // String dataviewRegionWrites =
-  // JMXProperties.getInstance().getProperty("region.R1.diskWritesRate");
-  // assertEquals(dataviewRegionWrites, regionWrites);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewDiskReadsRate() {
-  // String regionReads = getWebDriver().findElement(By.id(DATA_VIEW_READPERSEC)).getText();
-  // String dataviewRegionReads =
-  // JMXProperties.getInstance().getProperty("region.R1.diskReadsRate");
-  // assertEquals(dataviewRegionReads, regionReads);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewDiskUsage() {
-  // String regionMemoryUsed = getWebDriver().findElement(By.id(DATA_VIEW_USEDMEMORY)).getText();
-  // String dataviewMemoryUsed = JMXProperties.getInstance().getProperty("region.R1.diskUsage");
-  // assertEquals(dataviewMemoryUsed, regionMemoryUsed);
-  // searchByLinkAndClick(QUERY_STATISTICS_LABEL);
-  // }
-  //
-  // @Ignore("WIP")
-  // @Test
-  // public void testDataViewGridValue() {
-  // String DataViewRegionName =
-  // getWebDriver().findElement(By.xpath("//*[id('6')/x:td[1]]")).getText();
-  // String dataViewRegionName = JMXProperties.getInstance().getProperty("region.R1.name");
-  // assertEquals(dataViewRegionName, DataViewRegionName);
-  //
-  // String DataViewRegionType =
-  // getWebDriver().findElement(By.xpath("//*[id('6')/x:td[2]")).getText();
-  // String dataViewRegionType = JMXProperties.getInstance().getProperty("region.R2.regionType");
-  // assertEquals(dataViewRegionType, DataViewRegionType);
-  //
-  // String DataViewEntryCount =
-  // getWebDriver().findElement(By.xpath("//*[id('6')/x:td[3]")).getText();
-  // String dataViewEntryCount =
-  // JMXProperties.getInstance().getProperty("region.R2.systemRegionEntryCount");
-  // assertEquals(dataViewEntryCount, DataViewEntryCount);
-  //
-  // String DataViewEntrySize =
-  // getWebDriver().findElement(By.xpath("//*[id('6')/x:td[4]")).getText();
-  // String dataViewEntrySize = JMXProperties.getInstance().getProperty("region.R2.entrySize");
-  // assertEquals(dataViewEntrySize, DataViewEntrySize);
-  //
   // }
   //
   //
