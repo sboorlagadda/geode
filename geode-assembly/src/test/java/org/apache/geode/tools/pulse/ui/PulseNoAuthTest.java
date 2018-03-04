@@ -15,6 +15,7 @@
  */
 package org.apache.geode.tools.pulse.ui;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -25,6 +26,7 @@ import org.openqa.selenium.WebDriver;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.junit.categories.UITest;
 import org.apache.geode.test.junit.rules.EmbeddedPulseRule;
+import org.apache.geode.test.junit.rules.GfshCommandRule;
 import org.apache.geode.test.junit.rules.LocatorStarterRule;
 import org.apache.geode.test.junit.rules.ScreenshotOnFailureRule;
 import org.apache.geode.test.junit.rules.WebDriverRule;
@@ -40,6 +42,9 @@ public class PulseNoAuthTest extends PulseBase {
   @ClassRule
   public static ClusterStartupRule clusterRule = new ClusterStartupRule();
 
+  @ClassRule
+  public static GfshCommandRule gfsh = new GfshCommandRule();
+
   @Rule
   public EmbeddedPulseRule pulseRule = new EmbeddedPulseRule();
 
@@ -53,9 +58,20 @@ public class PulseNoAuthTest extends PulseBase {
   private Cluster cluster;
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception {
     int locatorPort = locator.getPort();
     clusterRule.startServerVM(1, x -> x.withConnectionToLocator(locatorPort));
+
+    gfsh.connectAndVerify(locator.getJmxPort(), GfshCommandRule.PortType.jmxManager);
+    gfsh.executeAndAssertThat("create region --name=FOO --type=REPLICATE --if-not-exists")
+        .statusIsSuccess();
+    // locator.waitTillRegionIsReadyOnServers("FOO", 1);
+    gfsh.executeAndAssertThat("put --key=A --value=APPLE --region=/FOO");
+  }
+
+  @AfterClass
+  public static void afterClass() {
+    gfsh.executeAndAssertThat("destroy region --name=FOO").statusIsSuccess();
   }
 
   @Before
