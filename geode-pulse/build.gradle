@@ -135,7 +135,9 @@ task uiTest(type:Test) {
     includeCategories 'org.apache.geode.test.junit.categories.UITest'
     excludeCategories 'org.apache.geode.test.junit.categories.FlakyTest'
   }
-
+  testLogging {
+    showStandardStreams = true
+  }
   forkEvery(1)
   doFirst {
     TestPropertiesWriter.writeTestProperties(buildDir, name)
