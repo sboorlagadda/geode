@@ -9,8 +9,8 @@ import org.apache.geode.test.junit.categories.IntegrationTest;
 
 @Category(IntegrationTest.class)
 @RunWith(Cucumber.class)
-@CucumberOptions(features = "classpath:features/pulse",
-    glue = {"org/apache/geode/tools/pulse/steps/pulse"},
+@CucumberOptions(features = "classpath:features/gfsh",
+    glue = {"org/apache/geode/tools/pulse/steps/gfsh"},
     plugin = {"pretty", "html:target/cucumber-html-report"}, tags = {})
-public class PulseUITests {
+public class GfshCreateRegionTests {
 }

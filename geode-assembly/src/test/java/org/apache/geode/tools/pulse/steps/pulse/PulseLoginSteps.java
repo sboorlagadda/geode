@@ -1,4 +1,4 @@
-package org.apache.geode.tools.pulse.steps;
+package org.apache.geode.tools.pulse.steps.pulse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -17,21 +17,28 @@ import org.apache.geode.test.junit.rules.LocatorStarterRule;
 
 public class PulseLoginSteps implements En {
   public WebDriver driver;
-
-  @ClassRule
-  public static LocatorStarterRule locator = new LocatorStarterRule().withJMXManager();
+  public LocatorStarterRule locator = new LocatorStarterRule().withJMXManager();
 
   public PulseLoginSteps() {
 
-    Before(() -> locator.startLocator());
-    After(() -> {
-      driver.quit();
+    Before(() -> {
+      locator.startLocator();
+
+      ChromeOptions options = new ChromeOptions();
+      // options.addArguments("headless");
+      options.addArguments("window-size=1200x600");
+      driver = new ChromeDriver(options);
     });
 
-    ChromeOptions options = new ChromeOptions();
-    options.addArguments("headless");
-    options.addArguments("window-size=1200x600");
-    driver = new ChromeDriver(options);
+    After(() -> {
+      driver.quit();
+      locator.after();
+    });
+
+    Given("^I have pulse started$", () -> {
+      // pulse is already started with locator auto start
+    });
+
 
     Given("I open pulse", () -> {
       driver.get("http://localhost:" + locator.getHttpPort() + "/pulse/");
