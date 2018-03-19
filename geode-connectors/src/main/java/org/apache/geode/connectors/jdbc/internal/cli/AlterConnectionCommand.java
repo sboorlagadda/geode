@@ -27,7 +27,7 @@ import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
-import org.apache.geode.management.internal.cli.commands.GfshCommand;
+import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -37,7 +37,7 @@ import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
 @Experimental
-public class AlterConnectionCommand extends GfshCommand {
+public class AlterConnectionCommand extends InternalGfshCommand {
   static final String ALTER_JDBC_CONNECTION = "alter jdbc-connection";
   static final String ALTER_JDBC_CONNECTION__HELP =
       EXPERIMENTAL + "Alter properties for an existing jdbc connection.";

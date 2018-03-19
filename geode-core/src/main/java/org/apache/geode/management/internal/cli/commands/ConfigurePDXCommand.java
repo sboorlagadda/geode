@@ -22,6 +22,7 @@ import java.util.Arrays;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
+import org.apache.geode.distributed.internal.InternalClusterConfigurationService;
 import org.apache.geode.internal.cache.CacheConfig;
 import org.apache.geode.internal.cache.xmlcache.CacheCreation;
 import org.apache.geode.internal.cache.xmlcache.CacheXml;
@@ -36,7 +37,7 @@ import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.pdx.ReflectionBasedAutoSerializer;
 import org.apache.geode.security.ResourcePermission;
 
-public class ConfigurePDXCommand extends GfshCommand {
+public class ConfigurePDXCommand extends InternalGfshCommand {
   @CliCommand(value = CliStrings.CONFIGURE_PDX, help = CliStrings.CONFIGURE_PDX__HELP)
   @CliMetaData(relatedTopic = CliStrings.TOPIC_GEODE_REGION)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
@@ -127,7 +128,8 @@ public class ConfigurePDXCommand extends GfshCommand {
 
       result = ResultBuilder.buildResult(ird);
       persistClusterConfiguration(result,
-          () -> getConfigurationService().addXmlEntity(xmlEntity, null));
+          () -> ((InternalClusterConfigurationService) getConfigurationService())
+              .addXmlEntity(xmlEntity, null));
 
     } catch (Exception e) {
       return ResultBuilder.createGemFireErrorResult(e.getMessage());
