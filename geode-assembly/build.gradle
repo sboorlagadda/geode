@@ -72,6 +72,7 @@ dependencies {
   testCompile project(':geode-junit')
   testCompile project(':geode-pulse')
   testCompile files(project(':geode-core').sourceSets.test.output)
+  testCompile files(project(':geode-dunit').sourceSets.main.output)
   testCompile files(project(':geode-pulse').sourceSets.test.output)
   testCompile ('org.springframework:spring-web:' + project.'springframework.version') {
     exclude module: 'aopalliance'
@@ -231,7 +232,7 @@ task depsJar (type: Jar, dependsOn: ':geode-core:classes') {
   description 'Assembles the jar archive that defines the gemfire classpath.'
   archiveName 'geode-dependencies.jar'
   doFirst {
-    manifest { 
+    manifest {
       attributes("Class-Path": cp())
     }
   }

@@ -133,6 +133,7 @@ dependencies {
   testCompile project(':geode-junit')
 
   testCompile files(project(':geode-old-versions').sourceSets.main.output)
+  testCompile files(project(':geode-dunit').sourceSets.main.output)
 
   // Test Dependencies
   // External

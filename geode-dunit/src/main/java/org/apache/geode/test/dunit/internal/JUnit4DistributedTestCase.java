@@ -46,7 +46,6 @@ import org.apache.geode.cache.Region;
 import org.apache.geode.cache.query.QueryTestUtils;
 import org.apache.geode.cache.query.internal.QueryObserverHolder;
 import org.apache.geode.cache30.ClientServerTestCase;
-import org.apache.geode.cache30.GlobalLockingDUnitTest;
 import org.apache.geode.cache30.MultiVMRegionTestCase;
 import org.apache.geode.cache30.RegionTestCase;
 import org.apache.geode.distributed.DistributedSystem;
@@ -573,7 +572,7 @@ public abstract class JUnit4DistributedTestCase implements DistributedTestFixtur
     DiskStoreObserver.setInstance(null);
     unregisterInstantiatorsInThisVM();
     DistributionMessageObserver.setInstance(null);
-    GlobalLockingDUnitTest.region_testBug32356 = null;
+    // Sai GlobalLockingDUnitTest.region_testBug32356 = null;
     InitialImageOperation.slowImageProcessing = 0;
     InternalClientMembership.unregisterAllListeners();
     LogWrapper.close();
