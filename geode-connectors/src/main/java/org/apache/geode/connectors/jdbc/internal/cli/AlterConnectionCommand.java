@@ -25,10 +25,9 @@ import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.distributed.DistributedMember;
-import org.apache.geode.distributed.internal.InternalClusterConfigurationService;
 import org.apache.geode.management.cli.CliMetaData;
+import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.cli.Result;
-import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -38,7 +37,7 @@ import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
 @Experimental
-public class AlterConnectionCommand extends InternalGfshCommand {
+public class AlterConnectionCommand extends GfshCommand {
   static final String ALTER_JDBC_CONNECTION = "alter jdbc-connection";
   static final String ALTER_JDBC_CONNECTION__HELP =
       EXPERIMENTAL + "Alter properties for an existing jdbc connection.";
@@ -136,9 +135,9 @@ public class AlterConnectionCommand extends InternalGfshCommand {
 
   private void updateClusterConfiguration(final Result result, final XmlEntity xmlEntity) {
     if (xmlEntity != null) {
-      persistClusterConfiguration(result,
-          () -> ((InternalClusterConfigurationService) getConfigurationService())
-              .addXmlEntity(xmlEntity, null));
+      //persistClusterConfiguration(result,
+//          () -> ((InternalClusterConfigurationService) getConfigurationService())
+//              .addXmlEntity(xmlEntity, null));
     }
   }
 }
