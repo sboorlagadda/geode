@@ -161,9 +161,6 @@ public class StartLocatorCommand extends InternalGfshCommand {
     StartMemberUtils.setPropertyIfNotNull(gemfireProperties,
         ConfigurationProperties.ENABLE_CLUSTER_CONFIGURATION, enableSharedConfiguration);
     StartMemberUtils.setPropertyIfNotNull(gemfireProperties,
-        ConfigurationProperties.LOAD_CLUSTER_CONFIGURATION_FROM_DIR,
-        loadSharedConfigurationFromDirectory);
-    StartMemberUtils.setPropertyIfNotNull(gemfireProperties,
         ConfigurationProperties.CLUSTER_CONFIGURATION_DIR, clusterConfigDir);
     StartMemberUtils.setPropertyIfNotNull(gemfireProperties,
         ConfigurationProperties.HTTP_SERVICE_PORT, httpServicePort);

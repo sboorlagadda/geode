@@ -491,32 +491,23 @@ public class InternalClusterConfigurationService implements ClusterConfiguration
 
   /**
    * Creates the shared configuration service
-   *
-   * @param loadSharedConfigFromDir when set to true, loads the configuration from the share_config
-   *        directory
    */
-  void initSharedConfiguration(boolean loadSharedConfigFromDir)
+  void initSharedConfiguration()
       throws CacheLoaderException, TimeoutException, IllegalStateException, IOException,
       TransformerException, SAXException, ParserConfigurationException {
     this.status.set(SharedConfigurationStatus.STARTED);
     Region<String, Configuration> configRegion = this.getConfigurationRegion();
     lockSharedConfiguration();
     try {
-      if (loadSharedConfigFromDir) {
-        logger.info("Reading cluster configuration from '{}' directory",
-            InternalClusterConfigurationService.CLUSTER_CONFIG_ARTIFACTS_DIR_NAME);
-        loadSharedConfigurationFromDisk();
-      } else {
-        persistSecuritySettings(configRegion);
-        // for those groups that have jar files, need to download the jars from other locators
-        // if it doesn't exist yet
-        for (Entry<String, Configuration> stringConfigurationEntry : configRegion.entrySet()) {
-          Configuration config = stringConfigurationEntry.getValue();
-          for (String jar : config.getJarNames()) {
-            if (!getPathToJarOnThisLocator(stringConfigurationEntry.getKey(), jar).toFile()
-                .exists()) {
-              downloadJarFromOtherLocators(stringConfigurationEntry.getKey(), jar);
-            }
+      persistSecuritySettings(configRegion);
+      // for those groups that have jar files, need to download the jars from other locators
+      // if it doesn't exist yet
+      for (Entry<String, Configuration> stringConfigurationEntry : configRegion.entrySet()) {
+        Configuration config = stringConfigurationEntry.getValue();
+        for (String jar : config.getJarNames()) {
+          if (!getPathToJarOnThisLocator(stringConfigurationEntry.getKey(), jar).toFile()
+              .exists()) {
+            downloadJarFromOtherLocators(stringConfigurationEntry.getKey(), jar);
           }
         }
       }

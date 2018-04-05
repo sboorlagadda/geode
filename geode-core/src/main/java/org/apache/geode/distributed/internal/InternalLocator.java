@@ -183,10 +183,6 @@ public class InternalLocator extends Locator implements ConnectListener {
     return this.config.getEnableClusterConfiguration();
   }
 
-  private boolean loadFromSharedConfigDir() {
-    return this.config.getLoadClusterConfigFromDir();
-  }
-
   public boolean isSharedConfigurationRunning() {
     return this.sharedConfig != null
         && this.sharedConfig.getStatus() == SharedConfigurationStatus.RUNNING;
@@ -1329,7 +1325,7 @@ public class InternalLocator extends Locator implements ConnectListener {
         // locator.sharedConfig will already be created in case of auto-reconnect
         locator.sharedConfig = new InternalClusterConfigurationService(locator.myCache);
       }
-      locator.sharedConfig.initSharedConfiguration(locator.loadFromSharedConfigDir());
+      locator.sharedConfig.initSharedConfiguration();
       logger.info(
           "Cluster configuration service start up completed successfully and is now running ....");
       isSharedConfigurationStarted = true;
