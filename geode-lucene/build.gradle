@@ -27,8 +27,6 @@ dependencies {
       exclude module: 'lucene-sandbox'
     }
 
-    testCompile project(':geode-junit')
-
     //Lucene test framework.
     testCompile 'org.apache.lucene:lucene-test-framework:' + project.'lucene.version'
     testCompile 'org.apache.lucene:lucene-codecs:' + project.'lucene.version'
@@ -36,7 +34,7 @@ dependencies {
     testCompile 'org.apache.lucene:lucene-analyzers-phonetic:' + project.'lucene.version'
     testCompile 'com.pholser:junit-quickcheck-generators:' + project.'junit-quickcheck.version'
     testCompile files(project(':geode-core').sourceSets.test.output)
-    testCompile files(project(':geode-dunit').sourceSets.main.output)
+    testCompile files(project(':geode-test').sourceSets.main.output)
 }
 
 //The lucene integration tests don't have any issues that requiring forking

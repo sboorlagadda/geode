@@ -131,8 +131,7 @@ dependencies {
   jcaCompile sourceSets.main.output
 
   // Test Dependencies
-  testCompile project(':geode-junit')
-  testCompile files(project(':geode-dunit').sourceSets.main.output)
+  testCompile files(project(':geode-test').sourceSets.main.output)
 
   // External
   testCompile 'com.jayway.jsonpath:json-path-assert:' + project.'json-path-assert.version'

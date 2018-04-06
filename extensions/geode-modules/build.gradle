@@ -30,9 +30,8 @@ dependencies {
   testCompile 'org.httpunit:httpunit:' + project.'httpunit.version'
   testRuntime 'org.apache.tomcat:coyote:' + project.'tomcat6.version'
 
-  testCompile project(path: ':geode-junit')
   testCompile files(project(':geode-core').sourceSets.test.output)
-  testCompile files(project(':geode-dunit').sourceSets.main.output)
+  testCompile files(project(':geode-test').sourceSets.main.output)
 }
 
 disableMavenPublishing()

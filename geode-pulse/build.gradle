@@ -75,9 +75,9 @@ dependencies {
   provided 'org.mortbay.jetty:servlet-api:' + project.'mortbay-jetty-servlet-api.version'
   provided 'com.google.guava:guava:' + project.'guava.version'
 
-  testCompile project(':geode-junit')
   testCompile project(':geode-core')
   testCompile files(project(':geode-core').sourceSets.test.output)
+  testCompile project(':geode-test')
 
   testCompile 'org.seleniumhq.selenium:selenium-api:' + project.'selenium.version'
   testCompile 'org.seleniumhq.selenium:selenium-chrome-driver:' + project.'selenium.version'

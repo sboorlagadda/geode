@@ -19,9 +19,9 @@ project.ext.installs = new Properties();
 
 dependencies {
   compile files(project(':geode-core').sourceSets.main.output)
-  compile files(project(':geode-junit').sourceSets.main.output)
   compile project(':geode-json')
 
+  compile 'com.jayway.jsonpath:json-path:' + project.'json-path.version'
   compile 'org.apache.logging.log4j:log4j-api:' + project.'log4j.version'
   compile 'org.apache.logging.log4j:log4j-core:' + project.'log4j.version'
   compile 'commons-io:commons-io:' + project.'commons-io.version'
