@@ -572,7 +572,6 @@ public abstract class JUnit4DistributedTestCase implements DistributedTestFixtur
     DiskStoreObserver.setInstance(null);
     unregisterInstantiatorsInThisVM();
     DistributionMessageObserver.setInstance(null);
-    // Sai GlobalLockingDUnitTest.region_testBug32356 = null;
     InitialImageOperation.slowImageProcessing = 0;
     InternalClientMembership.unregisterAllListeners();
     LogWrapper.close();
