@@ -130,12 +130,10 @@ dependencies {
 
   jcaCompile sourceSets.main.output
 
+  // Test Dependencies
   testCompile project(':geode-junit')
-
-  testCompile files(project(':geode-old-versions').sourceSets.main.output)
   testCompile files(project(':geode-dunit').sourceSets.main.output)
 
-  // Test Dependencies
   // External
   testCompile 'com.jayway.jsonpath:json-path-assert:' + project.'json-path-assert.version'
   testCompile 'org.apache.bcel:bcel:' + project.'bcel.version'
@@ -242,4 +240,3 @@ dependencies {
 }
 
 tasks.eclipse.dependsOn(generateGrammarSource)
-

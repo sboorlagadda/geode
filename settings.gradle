@@ -16,7 +16,6 @@
  */
 rootProject.name = 'geode'
 
-include 'geode-old-versions'
 include 'geode-common'
 include 'geode-dunit'
 include 'geode-json'
