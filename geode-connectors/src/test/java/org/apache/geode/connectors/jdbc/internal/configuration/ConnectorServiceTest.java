@@ -17,10 +17,13 @@
 
 package org.apache.geode.connectors.jdbc.internal.configuration;
 
+import java.net.URL;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import org.apache.geode.internal.ClassPathLoader;
 import org.apache.geode.internal.config.JAXBService;
 import org.apache.geode.test.junit.categories.UnitTest;
 
@@ -33,6 +36,10 @@ public class ConnectorServiceTest {
   public void setUp() throws Exception {
     jaxbService = new JAXBService();
     jaxbService.registerBindClassWithSchema(ConnectorService.class, ConnectorService.SCHEMA);
+    // find the local jdbc-1.0.xsd
+    URL local_xsd = ClassPathLoader.getLatest()
+        .getResource("META-INF/schemas/geode.apache.org/schema/jdbc/jdbc-1.0.xsd");
+    jaxbService.validateWith(local_xsd);
   }
 
   @Test
@@ -43,7 +50,8 @@ public class ConnectorServiceTest {
     connection.setUrl("url");
     connection.setPassword("password");
     connection.setUser("user");
-    connection.setParameters("parameters");
+
+    connection.setParameters("key:value,key1:value1");
     service.getConnection().add(connection);
 
     System.out.println(jaxbService.marshall(service));

@@ -1,8 +1,14 @@
 
 package org.apache.geode.connectors.jdbc.internal.configuration;
 
+import static org.apache.geode.connectors.jdbc.internal.xml.JdbcConnectorServiceXmlParser.PARAMS_DELIMITER;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -207,6 +213,8 @@ public class ConnectorService {
         @XmlAttribute(name = "parameters")
         protected String parameters;
 
+        protected Map<String, String> parameterMap = new HashMap<>();
+
         /**
          * Gets the value of the name property.
          * 
@@ -317,16 +325,39 @@ public class ConnectorService {
 
         /**
          * Sets the value of the parameters property.
-         * 
+         *
          * @param value
          *     allowed object is
          *     {@link String }
-         *     
+         *
          */
         public void setParameters(String value) {
-            this.parameters = value;
+            this.setParameters(value.split(","));
         }
 
+        public void setParameters(String[] params){
+            Arrays.stream(params).forEach(s->{
+                if (!s.isEmpty()) {
+                    String[] keyValuePair = s.split(PARAMS_DELIMITER);
+                    validateParam(keyValuePair, s);
+                    parameterMap.put(keyValuePair[0], keyValuePair[1]);
+                }
+            });
+            this.parameters = Arrays.stream(params).collect(Collectors.joining(","));
+        }
+
+        public Map<String, String> getParameterMap(){
+            return parameterMap;
+        }
+
+        private void validateParam(String[] paramKeyValue, String param) {
+            // paramKeyValue is produced by split which will never give us
+            // an empty second element
+            if ((paramKeyValue.length != 2) || paramKeyValue[0].isEmpty()) {
+                throw new IllegalArgumentException("Parameter '" + param
+                    + "' is not of the form 'parameterName" + PARAMS_DELIMITER + "value'");
+            }
+        }
     }
 
 

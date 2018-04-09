@@ -24,6 +24,7 @@ import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.GfshCommand;
@@ -75,6 +76,12 @@ public class AlterConnectionCommand extends GfshCommand {
           help = ALTER_CONNECTION__PARAMS__HELP) String[] params) {
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
+    ConnectorService.Connection connection = new ConnectorService.Connection();
+    connection.setUser(user);
+    connection.setPassword(password);
+    connection.setUrl(url);
+    connection.setName(name);
+    connection.setParameters(params);
     ConnectionConfiguration configuration = getArguments(name, url, user, password, params);
 
     // action
