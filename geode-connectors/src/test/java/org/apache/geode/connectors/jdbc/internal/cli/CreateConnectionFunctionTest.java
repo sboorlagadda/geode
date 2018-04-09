@@ -35,8 +35,8 @@ import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.cache.InternalCache;
@@ -48,8 +48,8 @@ public class CreateConnectionFunctionTest {
 
   private static final String CONNECTION_NAME = "theConnection";
 
-  private ConnectionConfiguration connectionConfig;
-  private FunctionContext<ConnectionConfiguration> context;
+  private ConnectorService.Connection connectionConfig;
+  private FunctionContext<ConnectorService.Connection> context;
   private ResultSender<Object> resultSender;
   private JdbcConnectorService service;
 

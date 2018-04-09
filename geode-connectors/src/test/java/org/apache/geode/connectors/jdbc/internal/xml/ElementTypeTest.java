@@ -46,10 +46,10 @@ import org.xml.sax.Attributes;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheXmlException;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.extension.ExtensionPoint;
 import org.apache.geode.internal.cache.xmlcache.CacheCreation;
 import org.apache.geode.test.junit.categories.UnitTest;
@@ -134,7 +134,7 @@ public class ElementTypeTest {
 
     CONNECTION.startElement(stack, attributes);
 
-    ConnectionConfiguration config = ((ConnectionConfigBuilder) stack.pop()).build();
+    ConnectorService.Connection config = (ConnectorService.Connection) stack.pop();
     assertThat(config.getName()).isEqualTo("connectionName");
     assertThat(config.getUrl()).isEqualTo("url");
     assertThat(config.getUser()).isEqualTo("username");
@@ -153,7 +153,7 @@ public class ElementTypeTest {
 
     CONNECTION.startElement(stack, attributes);
 
-    ConnectionConfiguration config = ((ConnectionConfigBuilder) stack.pop()).build();
+    ConnectorService.Connection config = (ConnectorService.Connection) stack.pop();
     assertThat(config.getName()).isEqualTo("connectionName");
     assertThat(config.getUrl()).isEqualTo("url");
     assertThat(config.getUser()).isNull();

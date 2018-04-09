@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -15,8 +16,11 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
+
+import org.apache.geode.cache.configuration.CacheElement;
 
 
 /**
@@ -82,7 +86,7 @@ import javax.xml.bind.annotation.XmlValue;
     "regionMapping"
 })
 @XmlRootElement(name = "connector-service", namespace = "http://geode.apache.org/schema/jdbc")
-public class ConnectorService {
+public class ConnectorService implements CacheElement {
     public static String SCHEMA = "http://geode.apache.org/schema/jdbc http://geode.apache.org/schema/jdbc/jdbc-1.0.xsd";
 
     @XmlElement(namespace = "http://geode.apache.org/schema/jdbc")
@@ -178,6 +182,11 @@ public class ConnectorService {
         this.name = value;
     }
 
+    @Override
+    public String getId() {
+        return getName();
+    }
+
 
     /**
      * <p>Java class for anonymous complex type.
@@ -201,7 +210,7 @@ public class ConnectorService {
      * 
      */
     @XmlAccessorType(XmlAccessType.FIELD)
-    public static class Connection {
+    public static class Connection implements CacheElement{
         @XmlAttribute(name = "name")
         protected String name;
         @XmlAttribute(name = "url")
@@ -213,8 +222,26 @@ public class ConnectorService {
         @XmlAttribute(name = "parameters")
         protected String parameters;
 
+        @XmlTransient
         protected Map<String, String> parameterMap = new HashMap<>();
 
+        public Connection(){};
+
+        public Connection(String name, String url, String user, String password, String[] parameters){
+            this.name = name;
+            this.url = url;
+            this.user = user;
+            this.password = password;
+            setParameters(parameters);
+        }
+
+        public Connection(String name, String url, String user, String password, Map<String, String> parameterMap){
+            this.name = name;
+            this.url = url;
+            this.user = user;
+            this.password = password;
+            setParameters(parameterMap);
+        }
         /**
          * Gets the value of the name property.
          * 
@@ -336,6 +363,10 @@ public class ConnectorService {
         }
 
         public void setParameters(String[] params){
+            if(params == null) {
+                return;
+            }
+
             Arrays.stream(params).forEach(s->{
                 if (!s.isEmpty()) {
                     String[] keyValuePair = s.split(PARAMS_DELIMITER);
@@ -344,6 +375,11 @@ public class ConnectorService {
                 }
             });
             this.parameters = Arrays.stream(params).collect(Collectors.joining(","));
+        }
+
+        public void setParameters(Map<String, String> parameterMap){
+            this.parameterMap = parameterMap;
+            this.parameters = parameterMap.keySet().stream().map(k->k+":"+parameterMap.get(k)).collect(Collectors.joining(","));
         }
 
         public Map<String, String> getParameterMap(){
@@ -357,6 +393,19 @@ public class ConnectorService {
                 throw new IllegalArgumentException("Parameter '" + param
                     + "' is not of the form 'parameterName" + PARAMS_DELIMITER + "value'");
             }
+        }
+
+        public Properties getConnectionProperties() {
+            Properties properties = new Properties();
+            if (parameterMap != null) {
+                properties.putAll(parameterMap);
+            }
+            return properties;
+        }
+
+        @Override
+        public String getId() {
+            return getName();
         }
     }
 

@@ -29,6 +29,7 @@ import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.Operation;
 import org.apache.geode.cache.Region;
 import org.apache.geode.connectors.jdbc.JdbcConnectorException;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.pdx.PdxInstance;
 
@@ -49,7 +50,7 @@ public class SqlHandler {
     manager.close();
   }
 
-  Connection getConnection(ConnectionConfiguration config) throws SQLException {
+  Connection getConnection(ConnectorService.Connection config) throws SQLException {
     return manager.getOrCreateDataSource(config).getConnection();
   }
 
@@ -59,7 +60,7 @@ public class SqlHandler {
     }
 
     RegionMapping regionMapping = getMappingForRegion(region.getName());
-    ConnectionConfiguration connectionConfig =
+    ConnectorService.Connection connectionConfig =
         getConnectionConfig(regionMapping.getConnectionConfigName());
     PdxInstance result;
     try (Connection connection = getConnection(connectionConfig)) {
@@ -96,8 +97,8 @@ public class SqlHandler {
     return regionMapping;
   }
 
-  private ConnectionConfiguration getConnectionConfig(String connectionConfigName) {
-    ConnectionConfiguration connectionConfig =
+  private ConnectorService.Connection getConnectionConfig(String connectionConfigName) {
+    ConnectorService.Connection connectionConfig =
         this.configService.getConnectionConfig(connectionConfigName);
     if (connectionConfig == null) {
       throw new JdbcConnectorException("JDBC connection with name " + connectionConfigName
@@ -149,7 +150,7 @@ public class SqlHandler {
       throw new IllegalArgumentException("PdxInstance cannot be null for non-destroy operations");
     }
     RegionMapping regionMapping = getMappingForRegion(region.getName());
-    ConnectionConfiguration connectionConfig =
+    ConnectorService.Connection connectionConfig =
         getConnectionConfig(regionMapping.getConnectionConfigName());
 
     try (Connection connection = getConnection(connectionConfig)) {

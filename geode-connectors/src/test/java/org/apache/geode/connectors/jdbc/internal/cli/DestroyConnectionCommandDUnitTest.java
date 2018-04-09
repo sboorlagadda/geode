@@ -25,10 +25,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
@@ -82,7 +81,7 @@ public class DestroyConnectionCommandDUnitTest implements Serializable {
 
     server.invoke(() -> {
       InternalCache cache = ClusterStartupRule.getCache();
-      ConnectionConfiguration config =
+      ConnectorService.Connection config =
           cache.getService(JdbcConnectorService.class).getConnectionConfig("name");
       assertThat(config).isNull();
     });
@@ -91,8 +90,9 @@ public class DestroyConnectionCommandDUnitTest implements Serializable {
   private void createConnection() throws ConnectionConfigExistsException {
     InternalCache cache = ClusterStartupRule.getCache();
     JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-
-    service.createConnectionConfig(new ConnectionConfigBuilder().withName(connectionName).build());
+    ConnectorService.Connection connection = new ConnectorService.Connection();
+    connection.setName(connectionName);
+    service.createConnectionConfig(connection);
 
     assertThat(service.getConnectionConfig(connectionName)).isNotNull();
   }

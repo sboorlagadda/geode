@@ -23,7 +23,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
@@ -56,7 +56,7 @@ public class ListConnectionCommand extends InternalGfshCommand {
     }
 
     // action
-    ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration[]>> resultCollector =
+    ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection[]>> resultCollector =
         execute(new ListConnectionFunction(), targetMembers.iterator().next());
 
     // output
@@ -65,9 +65,9 @@ public class ListConnectionCommand extends InternalGfshCommand {
     return createResult(tabularResultData, connectionsExist);
   }
 
-  ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration[]>> execute(
+  ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection[]>> execute(
       ListConnectionFunction function, DistributedMember targetMember) {
-    return (ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration[]>>) executeFunction(
+    return (ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection[]>>) executeFunction(
         function, null, targetMember);
   }
 
@@ -84,13 +84,13 @@ public class ListConnectionCommand extends InternalGfshCommand {
    * Returns true if any connections exist
    */
   private boolean fillTabularResultData(
-      ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration[]>> resultCollector,
+      ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection[]>> resultCollector,
       TabularResultData tabularResultData) {
-    Set<ConnectionConfiguration> connectionConfigs = new HashSet<>();
+    Set<ConnectorService.Connection> connectionConfigs = new HashSet<>();
 
     for (Object resultObject : resultCollector.getResult()) {
-      if (resultObject instanceof ConnectionConfiguration[]) {
-        connectionConfigs.addAll(Arrays.asList((ConnectionConfiguration[]) resultObject));
+      if (resultObject instanceof ConnectorService.Connection[]) {
+        connectionConfigs.addAll(Arrays.asList((ConnectorService.Connection[]) resultObject));
       } else if (resultObject instanceof Throwable) {
         throw new IllegalStateException((Throwable) resultObject);
       } else {
@@ -98,7 +98,7 @@ public class ListConnectionCommand extends InternalGfshCommand {
       }
     }
 
-    for (ConnectionConfiguration connectionConfig : connectionConfigs) {
+    for (ConnectorService.Connection connectionConfig : connectionConfigs) {
       tabularResultData.accumulate(LIST_OF_CONNECTIONS, connectionConfig.getName());
     }
 

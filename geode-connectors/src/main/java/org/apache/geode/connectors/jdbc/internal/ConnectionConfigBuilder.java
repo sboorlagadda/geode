@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 
 @Experimental
 public class ConnectionConfigBuilder {
@@ -76,7 +77,7 @@ public class ConnectionConfigBuilder {
     }
   }
 
-  public ConnectionConfiguration build() {
-    return new ConnectionConfiguration(name, url, user, password, parameters);
+  public ConnectorService.Connection build() {
+    return new ConnectorService.Connection(name, url, user, password, parameters);
   }
 }

@@ -25,9 +25,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.result.CommandResult;
@@ -39,9 +38,9 @@ public class ListMappingCommandIntegrationTest {
   private InternalCache cache;
   private JdbcConnectorService service;
 
-  private ConnectionConfiguration connectionConfig1;
-  private ConnectionConfiguration connectionConfig2;
-  private ConnectionConfiguration connectionConfig3;
+  private ConnectorService.Connection connectionConfig1;
+  private ConnectorService.Connection connectionConfig2;
+  private ConnectorService.Connection connectionConfig3;
 
   private ListConnectionCommand command;
 
@@ -49,12 +48,9 @@ public class ListMappingCommandIntegrationTest {
   public void setup() throws Exception {
     String[] params = new String[] {"param1:value1", "param2:value2"};
 
-    connectionConfig1 = new ConnectionConfigBuilder().withName("connection1").withUrl("url1")
-        .withUser("user1").withPassword("password1").withParameters(params).build();
-    connectionConfig2 = new ConnectionConfigBuilder().withName("connection2").withUrl("url2")
-        .withUser("user2").withPassword("password2").withParameters(params).build();
-    connectionConfig3 = new ConnectionConfigBuilder().withName("connection3").withUrl("url3")
-        .withUser("user3").withPassword("password3").withParameters(params).build();
+    connectionConfig1 = new ConnectorService.Connection("connection1", "url1", "user1" ,"password1" ,params);
+    connectionConfig2 = new ConnectorService.Connection("connection2", "url2", "user2" ,"password2", params);
+    connectionConfig3 = new ConnectorService.Connection("connection3", "url3", "user3", "password3", params);
 
     cache = (InternalCache) new CacheFactory().set("locators", "").set("mcast-port", "0")
         .set(ENABLE_CLUSTER_CONFIGURATION, "true").create();

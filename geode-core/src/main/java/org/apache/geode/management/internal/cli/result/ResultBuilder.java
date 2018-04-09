@@ -190,6 +190,10 @@ public class ResultBuilder {
   }
 
   public static CommandResult buildResult(List<CliFunctionResult> functionResults) {
+    return buildResult(functionResults, null, null);
+  }
+
+  public static CommandResult buildResult(List<CliFunctionResult> functionResults, String header, String footer) {
     TabularResultData tabularData = ResultBuilder.createTabularResultData();
     boolean success = false;
     for (CliFunctionResult result : functionResults) {
@@ -201,9 +205,17 @@ public class ResultBuilder {
       }
     }
 
+    if(header != null) {
+      tabularData.setHeader(header);
+    }
+    if(footer != null) {
+      tabularData.setFooter(footer);
+    }
+
     tabularData.setStatus(success ? Result.Status.OK : Result.Status.ERROR);
     return ResultBuilder.buildResult(tabularData);
   }
+
 
   /**
    * Prepare Result from JSON. Type of result is expected to there in the JSON as 'contentType'

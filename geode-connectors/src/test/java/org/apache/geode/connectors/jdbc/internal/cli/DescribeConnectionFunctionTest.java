@@ -32,8 +32,8 @@ import org.mockito.ArgumentCaptor;
 
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.cache.InternalCache;
@@ -48,7 +48,7 @@ public class DescribeConnectionFunctionTest {
   private DescribeConnectionFunction function;
   private JdbcConnectorService service;
   private FunctionContext<String> context;
-  private ConnectionConfiguration connectionConfig;
+  private ConnectorService.Connection connectionConfig;
   private ResultSender<Object> resultSender;
 
   @Before
@@ -58,7 +58,7 @@ public class DescribeConnectionFunctionTest {
     InternalCache cache = mock(InternalCache.class);
     context = mock(FunctionContext.class);
     service = mock(JdbcConnectorService.class);
-    connectionConfig = mock(ConnectionConfiguration.class);
+    connectionConfig = mock(ConnectorService.Connection.class);
     resultSender = mock(ResultSender.class);
 
     DistributedMember member = mock(DistributedMember.class);

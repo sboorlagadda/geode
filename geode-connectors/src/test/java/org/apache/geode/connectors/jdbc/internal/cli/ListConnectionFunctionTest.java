@@ -33,8 +33,8 @@ import org.mockito.ArgumentCaptor;
 
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.cache.InternalCache;
@@ -48,11 +48,11 @@ public class ListConnectionFunctionTest {
   private ResultSender<Object> resultSender;
   private JdbcConnectorService service;
 
-  private ConnectionConfiguration connectionConfig1;
-  private ConnectionConfiguration connectionConfig2;
-  private ConnectionConfiguration connectionConfig3;
+  private ConnectorService.Connection connectionConfig1;
+  private ConnectorService.Connection connectionConfig2;
+  private ConnectorService.Connection connectionConfig3;
 
-  private Set<ConnectionConfiguration> expected;
+  private Set<ConnectorService.Connection> expected;
 
   private ListConnectionFunction function;
 
@@ -65,9 +65,9 @@ public class ListConnectionFunctionTest {
     service = mock(JdbcConnectorService.class);
     DistributedSystem system = mock(DistributedSystem.class);
 
-    connectionConfig1 = mock(ConnectionConfiguration.class);
-    connectionConfig2 = mock(ConnectionConfiguration.class);
-    connectionConfig3 = mock(ConnectionConfiguration.class);
+    connectionConfig1 = mock(ConnectorService.Connection.class);
+    connectionConfig2 = mock(ConnectorService.Connection.class);
+    connectionConfig3 = mock(ConnectorService.Connection.class);
 
     expected = new HashSet<>();
 
@@ -106,7 +106,7 @@ public class ListConnectionFunctionTest {
     expected.add(connectionConfig2);
     expected.add(connectionConfig3);
 
-    ConnectionConfiguration[] actual = function.getConnectionConfigAsArray(service);
+    ConnectorService.Connection[] actual = function.getConnectionConfigAsArray(service);
 
     assertThat(actual).containsExactlyInAnyOrder(connectionConfig1, connectionConfig2,
         connectionConfig3);
@@ -114,7 +114,7 @@ public class ListConnectionFunctionTest {
 
   @Test
   public void getConnectionConfigsReturnsEmpty() {
-    ConnectionConfiguration[] actual = function.getConnectionConfigAsArray(service);
+    ConnectorService.Connection[] actual = function.getConnectionConfigAsArray(service);
 
     assertThat(actual).isEmpty();
   }

@@ -27,12 +27,12 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
-import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
+import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -67,11 +67,11 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     DistributedMember targetMember = members.iterator().next();
 
     // action
-    ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration>> resultCollector =
-        execute(new DescribeConnectionFunction(), name, targetMember);
+    List<CliFunctionResult> resultCollector =
+        executeAndGetFunctionResult(new DescribeConnectionFunction(), name, targetMember);
 
     // output
-    ConnectionConfiguration config = resultCollector.getResult().get(0);
+    ConnectorService.Connection config = resultCollector.getResult().get(0);
     if (config == null) {
       return ResultBuilder.createInfoResult(
           String.format(EXPERIMENTAL + "\n" + "Connection named '%s' not found", name));
@@ -83,13 +83,7 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     return ResultBuilder.buildResult(resultData);
   }
 
-  ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration>> execute(
-      DescribeConnectionFunction function, String connectionName, DistributedMember targetMember) {
-    return (ResultCollector<ConnectionConfiguration, List<ConnectionConfiguration>>) executeFunction(
-        function, connectionName, targetMember);
-  }
-
-  private void fillResultData(ConnectionConfiguration config, CompositeResultData resultData) {
+  private void fillResultData(ConnectorService.Connection config, CompositeResultData resultData) {
     CompositeResultData.SectionResultData sectionResult =
         resultData.addSection(RESULT_SECTION_NAME);
     sectionResult.addSeparator('-');
@@ -104,7 +98,7 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     TabularResultData tabularResultData = sectionResult.addTable(CREATE_CONNECTION__PARAMS);
     tabularResultData.setHeader("Additional connection parameters:");
     if (config.getParameters() != null) {
-      config.getParameters().entrySet().forEach((entry) -> {
+      config.getParameterMap().entrySet().forEach((entry) -> {
         tabularResultData.accumulate("Param Name", entry.getKey());
         tabularResultData.accumulate("Value", entry.getValue());
       });

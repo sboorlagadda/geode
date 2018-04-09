@@ -19,10 +19,9 @@ import java.util.Stack;
 import org.xml.sax.Attributes;
 
 import org.apache.geode.cache.CacheXmlException;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.xmlcache.CacheCreation;
 
 public enum ElementType {
@@ -51,13 +50,13 @@ public enum ElementType {
         throw new CacheXmlException(
             "jdbc <connection> elements must occur within <connector-service> elements");
       }
-      ConnectionConfigBuilder connectionConfigBuilder = new ConnectionConfigBuilder()
-          .withName(attributes.getValue(JdbcConnectorServiceXmlParser.NAME))
-          .withUrl(attributes.getValue(JdbcConnectorServiceXmlParser.URL))
-          .withUser(attributes.getValue(JdbcConnectorServiceXmlParser.USER))
-          .withPassword(attributes.getValue(JdbcConnectorServiceXmlParser.PASSWORD))
-          .withParameters(parseParameters(attributes));
-      stack.push(connectionConfigBuilder);
+      ConnectorService.Connection connection = new ConnectorService.Connection();
+      connection.setName(attributes.getValue(JdbcConnectorServiceXmlParser.NAME));
+      connection.setUrl(attributes.getValue(JdbcConnectorServiceXmlParser.URL));
+      connection.setUser(attributes.getValue(JdbcConnectorServiceXmlParser.USER));
+      connection.setPassword(attributes.getValue(JdbcConnectorServiceXmlParser.PASSWORD));
+      connection.setParameters(parseParameters(attributes));
+      stack.push(connection);
     }
 
     private String[] parseParameters(Attributes attributes) {
@@ -71,7 +70,7 @@ public enum ElementType {
 
     @Override
     void endElement(Stack<Object> stack) {
-      ConnectionConfiguration config = ((ConnectionConfigBuilder) stack.pop()).build();
+      ConnectorService.Connection config = (ConnectorService.Connection) stack.pop();
       JdbcServiceConfiguration connectorService = (JdbcServiceConfiguration) stack.peek();
       connectorService.addConnectionConfig(config);
     }

@@ -33,8 +33,8 @@ import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.json.GfJsonObject;
@@ -47,7 +47,7 @@ public class DescribeConnectionCommandIntegrationTest {
 
   private InternalCache cache;
   private JdbcConnectorService service;
-  private ConnectionConfiguration connectionConfig;
+  private ConnectorService.Connection connectionConfig;
   private DescribeConnectionCommand command;
 
   @Before
@@ -100,7 +100,7 @@ public class DescribeConnectionCommandIntegrationTest {
     GfJsonObject tableContent =
         sectionContent.getJSONObject(TABLE_DATA_ACCESSOR + "-" + CREATE_CONNECTION__PARAMS)
             .getJSONObject("content");
-    connectionConfig.getParameters().entrySet().forEach((entry) -> {
+    connectionConfig.getParameterMap().entrySet().forEach((entry) -> {
       assertThat(tableContent.get("Param Name").toString()).contains(entry.getKey());
       assertThat(tableContent.get("Value").toString()).contains(entry.getValue());
     });

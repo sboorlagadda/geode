@@ -24,10 +24,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfiguration;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.test.junit.categories.IntegrationTest;
@@ -94,7 +94,7 @@ public class CreateMappingCommandIntegrationTest {
         keyInValue, fieldMappings);
     JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
 
-    ConnectionConfiguration connectionConfig = service.getConnectionConfig(regionName);
+    ConnectorService.Connection connectionConfig = service.getConnectionConfig(regionName);
 
     Result result = createRegionMappingCommand.createMapping(regionName, connectionName, tableName,
         pdxClass, keyInValue, fieldMappings);

@@ -48,6 +48,7 @@ import org.apache.geode.InternalGemFireException;
 import org.apache.geode.cache.Operation;
 import org.apache.geode.cache.Region;
 import org.apache.geode.connectors.jdbc.JdbcConnectorException;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.pdx.internal.PdxInstanceImpl;
 import org.apache.geode.pdx.internal.PdxType;
@@ -66,7 +67,7 @@ public class SqlHandlerTest {
 
   private DataSourceManager manager;
   private JdbcDataSource dataSource;
-  private ConnectionConfiguration connectionConfig;
+  private ConnectorService.Connection connectionConfig;
   private JdbcConnectorService connectorService;
   private TableMetaDataManager tableMetaDataManager;
   private TableMetaDataView tableMetaDataView;
@@ -84,7 +85,7 @@ public class SqlHandlerTest {
   public void setup() throws Exception {
     manager = mock(DataSourceManager.class);
     dataSource = mock(JdbcDataSource.class);
-    connectionConfig = mock(ConnectionConfiguration.class);
+    connectionConfig = mock(ConnectorService.Connection.class);
     when(connectionConfig.getName()).thenReturn(CONNECTION_CONFIG_NAME);
     when(connectionConfig.getUrl()).thenReturn("fake:url");
     region = mock(Region.class);

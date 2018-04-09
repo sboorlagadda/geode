@@ -17,6 +17,8 @@
 
 package org.apache.geode.connectors.jdbc.internal.configuration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URL;
 
 import org.junit.Before;
@@ -43,17 +45,26 @@ public class ConnectorServiceTest {
   }
 
   @Test
-  public void name() {
+  public void connectorServiceCanBeCorrectlyMarshalled() {
     ConnectorService service = new ConnectorService();
-    ConnectorService.Connection connection = new ConnectorService.Connection();
-    connection.setName("name");
-    connection.setUrl("url");
-    connection.setPassword("password");
-    connection.setUser("user");
-
+    ConnectorService.Connection connection = new ConnectorService.Connection("name", "url", "user", "password", (String[])null);
     connection.setParameters("key:value,key1:value1");
     service.getConnection().add(connection);
 
-    System.out.println(jaxbService.marshall(service));
+    assertThat(connection.getParameterMap()).hasSize(2);
+    assertThat(connection.getParameterMap()).containsOnlyKeys("key", "key1");
+    assertThat(connection.getParameterMap()).containsValues("value", "value1");
+
+    String xml = jaxbService.marshall(service);
+    System.out.println(xml);
+
+    assertThat(xml).contains("name=\"name\"")
+        .contains("url=\"url\"")
+        .contains("user=\"user\"")
+        .contains("password=\"password\"")
+        .contains("parameters=\"key:value,key1:value1\"");
+
+    assertThat(xml).contains("xmlns:jdbc=\"http://geode.apache.org/schema/jdbc\"");
+    assertThat(xml).contains("<jdbc:connection");
   }
 }
