@@ -23,12 +23,12 @@ import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand
 import java.util.List;
 import java.util.Set;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
@@ -67,11 +67,11 @@ public class DescribeMappingCommand extends InternalGfshCommand {
     DistributedMember targetMember = members.iterator().next();
 
     // action
-    ResultCollector<RegionMapping, List<RegionMapping>> resultCollector =
+    ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping>> resultCollector =
         execute(new DescribeMappingFunction(), regionName, targetMember);
 
     // output
-    RegionMapping config = resultCollector.getResult().get(0);
+    ConnectorService.RegionMapping config = resultCollector.getResult().get(0);
     if (config == null) {
       return ResultBuilder.createInfoResult(
           String.format(EXPERIMENTAL + "\n" + "Mapping for region '%s' not found", regionName));
@@ -83,13 +83,13 @@ public class DescribeMappingCommand extends InternalGfshCommand {
     return ResultBuilder.buildResult(resultData);
   }
 
-  ResultCollector<RegionMapping, List<RegionMapping>> execute(DescribeMappingFunction function,
+  ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping>> execute(DescribeMappingFunction function,
       String connectionName, DistributedMember targetMember) {
-    return (ResultCollector<RegionMapping, List<RegionMapping>>) executeFunction(function,
+    return (ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping>>) executeFunction(function,
         connectionName, targetMember);
   }
 
-  private void fillResultData(RegionMapping mapping, CompositeResultData resultData) {
+  private void fillResultData(ConnectorService.RegionMapping mapping, CompositeResultData resultData) {
     CompositeResultData.SectionResultData sectionResult =
         resultData.addSection(RESULT_SECTION_NAME);
     sectionResult.addSeparator('-');

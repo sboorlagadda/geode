@@ -40,7 +40,7 @@ public class JdbcConnectorServiceTest {
   private ConnectorService.Connection config;
   private ConnectorService.Connection config2;
   private ConnectorService.Connection configToAlter;
-  private RegionMapping mapping;
+  private ConnectorService.RegionMapping mapping;
 
   private JdbcConnectorServiceImpl service;
 
@@ -48,7 +48,7 @@ public class JdbcConnectorServiceTest {
   public void setUp() throws Exception {
     InternalCache cache = mock(InternalCache.class);
     config = mock(ConnectorService.Connection.class);
-    mapping = mock(RegionMapping.class);
+    mapping = mock(ConnectorService.RegionMapping.class);
     config2 = mock(ConnectorService.Connection.class);
     Map<String, String> parameters = new HashMap<>();
     parameters.put("key1", "value1");

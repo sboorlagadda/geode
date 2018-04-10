@@ -88,7 +88,10 @@ public class AlterConnectionCommand extends GfshCommand {
     ClusterConfigurationService ccService = getConfigurationService();
 
     if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
-      ConnectorService service =ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      if (service == null) {
+        service = new ConnectorService();
+      }
       ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
       service.getConnection().remove(conn);
       service.getConnection().add(connection);

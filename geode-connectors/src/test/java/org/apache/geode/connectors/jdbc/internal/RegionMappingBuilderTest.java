@@ -18,11 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
-import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.test.junit.categories.UnitTest;
 
 @Category(UnitTest.class)
@@ -30,7 +29,7 @@ public class RegionMappingBuilderTest {
 
   @Test
   public void createsMappingWithDefaultValuesIfNonAreSet() {
-    RegionMapping regionMapping = new RegionMappingBuilder().build();
+    ConnectorService.RegionMapping regionMapping = new RegionMappingBuilder().build();
 
     assertThat(regionMapping.getRegionName()).isNull();
     assertThat(regionMapping.getTableName()).isNull();
@@ -41,7 +40,7 @@ public class RegionMappingBuilderTest {
 
   @Test
   public void createsMappingWithSpecifiedValues() {
-    RegionMapping regionMapping = new RegionMappingBuilder().withTableName("tableName")
+    ConnectorService.RegionMapping regionMapping = new RegionMappingBuilder().withTableName("tableName")
         .withRegionName("regionName").withPrimaryKeyInValue("true").withPdxClassName("pdxClassName")
         .withConnectionConfigName("configName").withFieldToColumnMapping("fieldName", "columnName")
         .build();
@@ -57,7 +56,7 @@ public class RegionMappingBuilderTest {
 
   @Test
   public void createsMappingWithNullAsPrimaryKeyInValue() {
-    RegionMapping regionMapping = new RegionMappingBuilder().withRegionName("regionName")
+    ConnectorService.RegionMapping regionMapping = new RegionMappingBuilder().withRegionName("regionName")
         .withConnectionConfigName("configName").withPrimaryKeyInValue((String) null).build();
 
     assertThat(regionMapping.getRegionName()).isEqualTo("regionName");
@@ -67,7 +66,7 @@ public class RegionMappingBuilderTest {
 
   @Test
   public void createsMappingWithNullFieldToColumnMappings() {
-    RegionMapping regionMapping = new RegionMappingBuilder().withRegionName("regionName")
+    ConnectorService.RegionMapping regionMapping = new RegionMappingBuilder().withRegionName("regionName")
         .withConnectionConfigName("configName").withFieldToColumnMappings(null).build();
 
     assertThat(regionMapping.getRegionName()).isEqualTo("regionName");
@@ -78,7 +77,7 @@ public class RegionMappingBuilderTest {
   @Test
   public void createsFieldMappingsFromArray() {
     String[] fieldMappings = new String[] {"field1:column1", "field2:column2"};
-    RegionMapping regionMapping =
+    ConnectorService.RegionMapping regionMapping =
         new RegionMappingBuilder().withFieldToColumnMappings(fieldMappings).build();
 
     assertThat(regionMapping.getColumnNameForField("field1", mock(TableMetaDataView.class)))
@@ -90,7 +89,7 @@ public class RegionMappingBuilderTest {
   @Test
   public void createsFieldMappingsFromArrayWithEmptyElement() {
     String[] fieldMappings = new String[] {"field1:column1", "", "field2:column2"};
-    RegionMapping regionMapping =
+    ConnectorService.RegionMapping regionMapping =
         new RegionMappingBuilder().withFieldToColumnMappings(fieldMappings).build();
 
     assertThat(regionMapping.getColumnNameForField("field1", mock(TableMetaDataView.class)))

@@ -14,18 +14,6 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PARAMS;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PASSWORD;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__URL;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__USER;
-
-import java.util.List;
-import java.util.Set;
-
-import org.springframework.shell.core.annotation.CliCommand;
-import org.springframework.shell.core.annotation.CliOption;
-
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
@@ -39,6 +27,17 @@ import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
+import java.util.List;
+import java.util.Set;
+
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PARAMS;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PASSWORD;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__URL;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__USER;
 
 @Experimental
 public class DescribeConnectionCommand extends InternalGfshCommand {
@@ -68,7 +67,7 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
 
     // action
     ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>> resultCollector =
-        execute(new DescribeConnectionFunction(), name, targetMember);
+        (ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>>) executeFunction(new DescribeConnectionFunction(), name, targetMember);
 
     // output
     ConnectorService.Connection config = resultCollector.getResult().get(0);
@@ -81,12 +80,6 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     fillResultData(config, resultData);
     resultData.setHeader(EXPERIMENTAL);
     return ResultBuilder.buildResult(resultData);
-  }
-
-  ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>> execute(
-      DescribeConnectionFunction function, String connectionName, DistributedMember targetMember) {
-    return (ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>>) executeFunction(
-        function, connectionName, targetMember);
   }
 
   private void fillResultData(ConnectorService.Connection config, CompositeResultData resultData) {

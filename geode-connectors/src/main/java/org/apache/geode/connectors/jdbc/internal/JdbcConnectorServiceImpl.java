@@ -30,7 +30,7 @@ import org.apache.geode.management.internal.beans.CacheServiceMBeanBase;
 public class JdbcConnectorServiceImpl implements JdbcConnectorService {
 
   private final Map<String, ConnectorService.Connection> connectionsByName = new ConcurrentHashMap<>();
-  private final Map<String, RegionMapping> mappingsByRegion = new ConcurrentHashMap<>();
+  private final Map<String, ConnectorService.RegionMapping> mappingsByRegion = new ConcurrentHashMap<>();
   private final DataSourceManager manager =
       new DataSourceManager(new HikariJdbcDataSourceFactory());
   private volatile InternalCache cache;
@@ -76,8 +76,8 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
   }
 
   @Override
-  public Set<RegionMapping> getRegionMappings() {
-    Set<RegionMapping> regionMappings = new HashSet<>();
+  public Set<ConnectorService.RegionMapping> getRegionMappings() {
+    Set<ConnectorService.RegionMapping> regionMappings = new HashSet<>();
     regionMappings.addAll(mappingsByRegion.values());
     return regionMappings;
   }
@@ -88,8 +88,9 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
   }
 
   @Override
-  public void createRegionMapping(RegionMapping mapping) throws RegionMappingExistsException {
-    RegionMapping existing = mappingsByRegion.putIfAbsent(mapping.getRegionName(), mapping);
+  public void createRegionMapping(ConnectorService.RegionMapping mapping) throws RegionMappingExistsException {
+    ConnectorService.RegionMapping
+        existing = mappingsByRegion.putIfAbsent(mapping.getRegionName(), mapping);
     if (existing != null) {
       throw new RegionMappingExistsException(
           "RegionMapping for region " + mapping.getRegionName() + " exists");
@@ -97,9 +98,9 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
   }
 
   @Override
-  public void replaceRegionMapping(RegionMapping alteredMapping)
+  public void replaceRegionMapping(ConnectorService.RegionMapping alteredMapping)
       throws RegionMappingNotFoundException {
-    RegionMapping existingMapping = mappingsByRegion.get(alteredMapping.getRegionName());
+    ConnectorService.RegionMapping existingMapping = mappingsByRegion.get(alteredMapping.getRegionName());
     if (existingMapping == null) {
       throw new RegionMappingNotFoundException(
           "RegionMapping for region " + existingMapping.getRegionName() + " was not found");
@@ -109,7 +110,7 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
   }
 
   @Override
-  public RegionMapping getMappingForRegion(String regionName) {
+  public ConnectorService.RegionMapping getMappingForRegion(String regionName) {
     return mappingsByRegion.get(regionName);
   }
 

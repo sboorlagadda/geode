@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import java.io.Serializable;
 
 import org.apache.commons.lang.SerializationUtils;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +36,6 @@ import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingExistsException;
 import org.apache.geode.distributed.DistributedMember;
@@ -49,8 +49,8 @@ public class CreateMappingFunctionTest {
 
   private static final String REGION_NAME = "testRegion";
 
-  private RegionMapping regionMapping;
-  private FunctionContext<RegionMapping> context;
+  private ConnectorService.RegionMapping regionMapping;
+  private FunctionContext<ConnectorService.RegionMapping> context;
   private DistributedMember distributedMember;
   private ResultSender<Object> resultSender;
   private JdbcConnectorService service;

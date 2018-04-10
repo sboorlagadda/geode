@@ -17,17 +17,16 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 
 @Experimental
-public class DescribeMappingFunction extends JdbcCliFunction<String, RegionMapping> {
+public class DescribeMappingFunction extends JdbcCliFunction<String, ConnectorService.RegionMapping> {
 
   DescribeMappingFunction() {
     super();
   }
 
-  @Override
-  RegionMapping getFunctionResult(JdbcConnectorService service, FunctionContext<String> context) {
+  @Override ConnectorService.RegionMapping getFunctionResult(JdbcConnectorService service, FunctionContext<String> context) {
     return service.getMappingForRegion(context.getArguments());
   }
 }

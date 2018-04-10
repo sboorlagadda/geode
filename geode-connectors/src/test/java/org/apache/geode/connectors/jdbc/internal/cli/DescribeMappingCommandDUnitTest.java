@@ -25,13 +25,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingExistsException;
 import org.apache.geode.internal.cache.InternalCache;
@@ -104,7 +104,7 @@ public class DescribeMappingCommandDUnitTest implements Serializable {
     JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
 
     String[] fieldMappings = new String[] {"field1:column1", "field2:column2"};
-    RegionMapping regionMapping = new RegionMappingBuilder().withRegionName(REGION_NAME)
+    ConnectorService.RegionMapping regionMapping = new RegionMappingBuilder().withRegionName(REGION_NAME)
         .withConnectionConfigName("connection").withTableName("testTable")
         .withPdxClassName("myPdxClass").withPrimaryKeyInValue(true)
         .withFieldToColumnMappings(fieldMappings).build();

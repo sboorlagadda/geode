@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 
 @Experimental
 public class RegionMappingBuilder {
@@ -92,8 +93,8 @@ public class RegionMappingBuilder {
     }
   }
 
-  public RegionMapping build() {
-    return new RegionMapping(regionName, pdxClassName, tableName, connectionConfigName,
+  public ConnectorService.RegionMapping build() {
+    return new ConnectorService.RegionMapping(regionName, pdxClassName, tableName, connectionConfigName,
         primaryKeyInValue, fieldToColumnMap);
   }
 }

@@ -20,6 +20,8 @@ package org.apache.geode.connectors.jdbc.internal.configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -66,5 +68,22 @@ public class ConnectorServiceTest {
 
     assertThat(xml).contains("xmlns:jdbc=\"http://geode.apache.org/schema/jdbc\"");
     assertThat(xml).contains("<jdbc:connection");
+  }
+
+  @Test
+  public void name() {
+    ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping();
+    mapping.setConnectionConfigName("configName");
+    mapping.setPdxClassName("pdxClassName");
+    mapping.setRegionName("regionA");
+    mapping.setTableName("tableName");
+    List<ConnectorService.RegionMapping.FieldMapping> fieldMappings = new ArrayList<>();
+    fieldMappings.add(new ConnectorService.RegionMapping.FieldMapping("field1", "column1"));
+    fieldMappings.add(new ConnectorService.RegionMapping.FieldMapping("field2", "column2"));
+
+    mapping.setFieldMapping(fieldMappings);
+
+    String xml = jaxbService.marshall(mapping);
+    System.out.println(xml);
   }
 }

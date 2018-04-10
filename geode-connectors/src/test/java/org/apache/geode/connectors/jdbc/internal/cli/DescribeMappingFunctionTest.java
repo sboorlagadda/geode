@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.io.Serializable;
 
 import org.apache.commons.lang.SerializationUtils;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,7 +34,6 @@ import org.mockito.ArgumentCaptor;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.cache.InternalCache;
@@ -48,7 +48,7 @@ public class DescribeMappingFunctionTest {
   private DescribeMappingFunction function;
   private JdbcConnectorService service;
   private FunctionContext<String> context;
-  private RegionMapping regionMapping;
+  private ConnectorService.RegionMapping regionMapping;
   private ResultSender<Object> resultSender;
 
   @Before
@@ -58,7 +58,7 @@ public class DescribeMappingFunctionTest {
     InternalCache cache = mock(InternalCache.class);
     context = mock(FunctionContext.class);
     service = mock(JdbcConnectorService.class);
-    regionMapping = mock(RegionMapping.class);
+    regionMapping = mock(ConnectorService.RegionMapping.class);
     resultSender = mock(ResultSender.class);
 
     DistributedMember member = mock(DistributedMember.class);

@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.Cache;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.xmlcache.XmlGenerator;
@@ -41,8 +40,8 @@ public class JdbcServiceConfigurationTest {
   private JdbcConnectorService service;
   private ConnectorService.Connection connection1;
   private ConnectorService.Connection connection2;
-  private RegionMapping mapping1;
-  private RegionMapping mapping2;
+  private ConnectorService.RegionMapping mapping1;
+  private ConnectorService.RegionMapping mapping2;
 
   private JdbcServiceConfiguration configuration;
 
@@ -50,8 +49,8 @@ public class JdbcServiceConfigurationTest {
   public void setUp() throws Exception {
     connection1 = mock(ConnectorService.Connection.class);
     connection2 = mock(ConnectorService.Connection.class);
-    mapping1 = mock(RegionMapping.class);
-    mapping2 = mock(RegionMapping.class);
+    mapping1 = mock(ConnectorService.RegionMapping.class);
+    mapping2 = mock(ConnectorService.RegionMapping.class);
     service = mock(JdbcConnectorService.class);
     cache = mock(InternalCache.class);
 

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import java.io.Serializable;
 import java.util.Properties;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -36,7 +37,6 @@ import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
 import org.apache.geode.distributed.Locator;
 import org.apache.geode.distributed.internal.InternalLocator;
@@ -136,7 +136,7 @@ public class JdbcClusterConfigDistributedTest implements Serializable {
     validateRegionMapping(service.getMappingForRegion(regionName));
   }
 
-  private void validateRegionMapping(RegionMapping regionMapping) {
+  private void validateRegionMapping(ConnectorService.RegionMapping regionMapping) {
     assertThat(regionMapping).isNotNull();
     assertThat(regionMapping.getRegionName()).isEqualTo(regionName);
     assertThat(regionMapping.getConnectionConfigName()).isEqualTo(connectionName);

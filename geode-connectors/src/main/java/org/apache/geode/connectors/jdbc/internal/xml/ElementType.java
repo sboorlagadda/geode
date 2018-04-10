@@ -19,7 +19,6 @@ import java.util.Stack;
 import org.xml.sax.Attributes;
 
 import org.apache.geode.cache.CacheXmlException;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.xmlcache.CacheCreation;
@@ -95,7 +94,7 @@ public enum ElementType {
 
     @Override
     void endElement(Stack<Object> stack) {
-      RegionMapping mapping = ((RegionMappingBuilder) stack.pop()).build();
+      ConnectorService.RegionMapping mapping = ((RegionMappingBuilder) stack.pop()).build();
       JdbcServiceConfiguration connectorService = (JdbcServiceConfiguration) stack.peek();
       connectorService.addRegionMapping(mapping);
     }

@@ -59,7 +59,7 @@ public class SqlHandler {
       throw new IllegalArgumentException("Key for query cannot be null");
     }
 
-    RegionMapping regionMapping = getMappingForRegion(region.getName());
+    ConnectorService.RegionMapping regionMapping = getMappingForRegion(region.getName());
     ConnectorService.Connection connectionConfig =
         getConnectionConfig(regionMapping.getConnectionConfigName());
     PdxInstance result;
@@ -88,8 +88,8 @@ public class SqlHandler {
     return statement.executeQuery();
   }
 
-  private RegionMapping getMappingForRegion(String regionName) {
-    RegionMapping regionMapping = this.configService.getMappingForRegion(regionName);
+  private ConnectorService.RegionMapping getMappingForRegion(String regionName) {
+    ConnectorService.RegionMapping regionMapping = this.configService.getMappingForRegion(regionName);
     if (regionMapping == null) {
       throw new JdbcConnectorException("JDBC mapping for region " + regionName
           + " not found. Create the mapping with the gfsh command 'create jdbc-mapping'.");
@@ -149,7 +149,7 @@ public class SqlHandler {
     if (value == null && operation != Operation.DESTROY) {
       throw new IllegalArgumentException("PdxInstance cannot be null for non-destroy operations");
     }
-    RegionMapping regionMapping = getMappingForRegion(region.getName());
+    ConnectorService.RegionMapping regionMapping = getMappingForRegion(region.getName());
     ConnectorService.Connection connectionConfig =
         getConnectionConfig(regionMapping.getConnectionConfigName());
 
@@ -218,7 +218,7 @@ public class SqlHandler {
   }
 
   <K> List<ColumnValue> getColumnToValueList(TableMetaDataView tableMetaData,
-      RegionMapping regionMapping, K key, PdxInstance value, Operation operation) {
+      ConnectorService.RegionMapping regionMapping, K key, PdxInstance value, Operation operation) {
     String keyColumnName = tableMetaData.getKeyColumnName();
     ColumnValue keyColumnValue =
         new ColumnValue(true, keyColumnName, key, tableMetaData.getColumnDataType(keyColumnName));
@@ -233,7 +233,7 @@ public class SqlHandler {
   }
 
   private List<ColumnValue> createColumnValueList(TableMetaDataView tableMetaData,
-      RegionMapping regionMapping, PdxInstance value) {
+      ConnectorService.RegionMapping regionMapping, PdxInstance value) {
     final String keyColumnName = tableMetaData.getKeyColumnName();
     List<ColumnValue> result = new ArrayList<>();
     for (String fieldName : value.getFieldNames()) {

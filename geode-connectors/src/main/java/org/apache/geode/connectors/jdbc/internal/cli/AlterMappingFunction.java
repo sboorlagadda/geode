@@ -19,13 +19,13 @@ import java.util.Map;
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingNotFoundException;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.configuration.domain.XmlEntity;
 
 @Experimental
-public class AlterMappingFunction extends JdbcCliFunction<RegionMapping, CliFunctionResult> {
+public class AlterMappingFunction extends JdbcCliFunction<ConnectorService.RegionMapping, CliFunctionResult> {
 
   AlterMappingFunction() {
     super();
@@ -33,16 +33,16 @@ public class AlterMappingFunction extends JdbcCliFunction<RegionMapping, CliFunc
 
   @Override
   CliFunctionResult getFunctionResult(JdbcConnectorService service,
-      FunctionContext<RegionMapping> context) throws Exception {
-    RegionMapping mapping = context.getArguments();
-    RegionMapping existingMapping = service.getMappingForRegion(mapping.getRegionName());
+      FunctionContext<ConnectorService.RegionMapping> context) throws Exception {
+    ConnectorService.RegionMapping mapping = context.getArguments();
+    ConnectorService.RegionMapping existingMapping = service.getMappingForRegion(mapping.getRegionName());
     if (existingMapping == null) {
       throw new RegionMappingNotFoundException(
           "RegionMapping for region " + mapping.getRegionName() + " was not found");
     }
 
     // action
-    RegionMapping alteredMapping = alterRegionMapping(mapping, existingMapping);
+    ConnectorService.RegionMapping alteredMapping = alterRegionMapping(mapping, existingMapping);
     service.replaceRegionMapping(alteredMapping);
 
     // output
@@ -52,7 +52,7 @@ public class AlterMappingFunction extends JdbcCliFunction<RegionMapping, CliFunc
     return result;
   }
 
-  RegionMapping alterRegionMapping(RegionMapping regionMapping, RegionMapping existingMapping) {
+  ConnectorService.RegionMapping alterRegionMapping(ConnectorService.RegionMapping regionMapping, ConnectorService.RegionMapping existingMapping) {
     String connectionName = regionMapping.getConnectionConfigName() == null
         ? existingMapping.getConnectionConfigName() : regionMapping.getConnectionConfigName();
     String table = getValue(regionMapping.getTableName(), existingMapping.getTableName());
@@ -65,7 +65,7 @@ public class AlterMappingFunction extends JdbcCliFunction<RegionMapping, CliFunc
     if (fieldMappings == null) {
       fieldMappings = existingMapping.getFieldToColumnMap();
     }
-    RegionMapping alteredMapping = new RegionMapping(existingMapping.getRegionName(), pdxClassName,
+    ConnectorService.RegionMapping alteredMapping = new ConnectorService.RegionMapping(existingMapping.getRegionName(), pdxClassName,
         table, connectionName, keyInValue, fieldMappings);
     return alteredMapping;
   }

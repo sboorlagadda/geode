@@ -31,13 +31,13 @@ import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
@@ -99,7 +99,7 @@ public class AlterMappingCommandDUnitTest {
 
     server.invoke(() -> {
       InternalCache cache = ClusterStartupRule.getCache();
-      RegionMapping mapping =
+      ConnectorService.RegionMapping mapping =
           cache.getService(JdbcConnectorService.class).getMappingForRegion("testRegion");
       assertThat(mapping.getConnectionConfigName()).isEqualTo("newConnection");
       assertThat(mapping.getTableName()).isEqualTo("newTable");
@@ -128,7 +128,7 @@ public class AlterMappingCommandDUnitTest {
 
     server.invoke(() -> {
       InternalCache cache = ClusterStartupRule.getCache();
-      RegionMapping mapping =
+      ConnectorService.RegionMapping mapping =
           cache.getService(JdbcConnectorService.class).getMappingForRegion("testRegion");
       assertThat(mapping.getConnectionConfigName()).isEqualTo("connection");
       assertThat(mapping.getTableName()).isNull();

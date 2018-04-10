@@ -35,15 +35,15 @@ public interface JdbcConnectorService extends CacheService {
 
   Set<ConnectorService.Connection> getConnectionConfigs();
 
-  void createRegionMapping(RegionMapping mapping) throws RegionMappingExistsException;
+  void createRegionMapping(ConnectorService.RegionMapping mapping) throws RegionMappingExistsException;
 
-  void replaceRegionMapping(RegionMapping mapping) throws RegionMappingNotFoundException;
+  void replaceRegionMapping(ConnectorService.RegionMapping mapping) throws RegionMappingNotFoundException;
 
   void destroyRegionMapping(String regionName);
 
-  RegionMapping getMappingForRegion(String regionName);
+  ConnectorService.RegionMapping getMappingForRegion(String regionName);
 
-  Set<RegionMapping> getRegionMappings();
+  Set<ConnectorService.RegionMapping> getRegionMappings();
 
   DataSourceManager getDataSourceManager();
 }

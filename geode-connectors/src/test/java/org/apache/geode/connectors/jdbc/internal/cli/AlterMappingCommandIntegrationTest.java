@@ -17,6 +17,7 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import static org.apache.geode.distributed.ConfigurationProperties.ENABLE_CLUSTER_CONFIGURATION;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +25,6 @@ import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.test.junit.categories.IntegrationTest;
@@ -71,7 +71,7 @@ public class AlterMappingCommandIntegrationTest {
     assertThat(result.getStatus()).isSameAs(Result.Status.OK);
 
     JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    RegionMapping regionMapping = service.getMappingForRegion(regionName);
+    ConnectorService.RegionMapping regionMapping = service.getMappingForRegion(regionName);
 
     assertThat(regionMapping).isNotNull();
     assertThat(regionMapping.getConnectionConfigName()).isEqualTo("newConnection");

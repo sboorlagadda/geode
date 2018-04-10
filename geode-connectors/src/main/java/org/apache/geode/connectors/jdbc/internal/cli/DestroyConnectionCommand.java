@@ -21,7 +21,6 @@ import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
-import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.CommandResult;
@@ -55,21 +54,20 @@ public class DestroyConnectionCommand extends InternalGfshCommand {
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
 
-    ClusterConfigurationService ccService = getConfigurationService();
     // action
     List<CliFunctionResult> results = executeAndGetFunctionResult(new DestroyConnectionFunction(), name, targetMembers);
 
     boolean persisted = false;
+    ClusterConfigurationService ccService = getConfigurationService();
 
     if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
       ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-      if(service == null) {
-        service = new ConnectorService();
+      if(service != null) {
+        ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
+        service.getConnection().remove(conn);
+        ccService.saveCustomCacheElement("cluster", service);
+        persisted = true;
       }
-      ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
-      service.getConnection().remove(conn);
-      ccService.saveCustomCacheElement("cluster", service);
-      persisted = true;
     }
 
     CommandResult commandResult = ResultBuilder.buildResult(results, EXPERIMENTAL, null);

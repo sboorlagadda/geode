@@ -19,11 +19,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.springframework.shell.core.annotation.CliCommand;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
@@ -55,7 +55,7 @@ public class ListMappingCommand extends InternalGfshCommand {
     }
 
     // action
-    ResultCollector<RegionMapping, List<RegionMapping[]>> resultCollector =
+    ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping[]>> resultCollector =
         execute(new ListMappingFunction(), targetMembers.iterator().next());
 
     // output
@@ -64,9 +64,9 @@ public class ListMappingCommand extends InternalGfshCommand {
     return createResult(tabularResultData, mappingsExist);
   }
 
-  ResultCollector<RegionMapping, List<RegionMapping[]>> execute(ListMappingFunction function,
+  ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping[]>> execute(ListMappingFunction function,
       DistributedMember targetMember) {
-    return (ResultCollector<RegionMapping, List<RegionMapping[]>>) executeFunction(function, null,
+    return (ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping[]>>) executeFunction(function, null,
         targetMember);
   }
 
@@ -83,13 +83,13 @@ public class ListMappingCommand extends InternalGfshCommand {
    * Returns true if any connections exist
    */
   private boolean fillTabularResultData(
-      ResultCollector<RegionMapping, List<RegionMapping[]>> resultCollector,
+      ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping[]>> resultCollector,
       TabularResultData tabularResultData) {
-    Set<RegionMapping> regionMappings = new HashSet<>();
+    Set<ConnectorService.RegionMapping> regionMappings = new HashSet<>();
 
     for (Object resultObject : resultCollector.getResult()) {
-      if (resultObject instanceof RegionMapping[]) {
-        regionMappings.addAll(Arrays.asList((RegionMapping[]) resultObject));
+      if (resultObject instanceof ConnectorService.RegionMapping[]) {
+        regionMappings.addAll(Arrays.asList((ConnectorService.RegionMapping[]) resultObject));
       } else if (resultObject instanceof Throwable) {
         throw new IllegalStateException((Throwable) resultObject);
       } else {
@@ -97,7 +97,7 @@ public class ListMappingCommand extends InternalGfshCommand {
       }
     }
 
-    for (RegionMapping mapping : regionMappings) {
+    for (ConnectorService.RegionMapping mapping : regionMappings) {
       tabularResultData.accumulate(LIST_OF_MAPPINGS, mapping.getRegionName());
     }
 

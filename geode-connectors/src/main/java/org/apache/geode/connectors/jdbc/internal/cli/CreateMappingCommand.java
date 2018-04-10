@@ -17,12 +17,12 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.internal.InternalClusterConfigurationService;
@@ -83,7 +83,7 @@ public class CreateMappingCommand extends InternalGfshCommand {
 
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
-    RegionMapping mapping =
+    ConnectorService.RegionMapping mapping =
         getArguments(regionName, connectionName, table, pdxClassName, keyInValue, fieldMappings);
 
     // action
@@ -99,7 +99,7 @@ public class CreateMappingCommand extends InternalGfshCommand {
     return result;
   }
 
-  RegionMapping getArguments(String regionName, String connectionName, String table,
+  ConnectorService.RegionMapping getArguments(String regionName, String connectionName, String table,
       String pdxClassName, boolean keyInValue, String[] fieldMappings) {
     RegionMappingBuilder builder = new RegionMappingBuilder().withRegionName(regionName)
         .withConnectionConfigName(connectionName).withTableName(table)
@@ -109,7 +109,7 @@ public class CreateMappingCommand extends InternalGfshCommand {
   }
 
   ResultCollector<CliFunctionResult, List<CliFunctionResult>> execute(
-      CreateMappingFunction function, RegionMapping regionMapping,
+      CreateMappingFunction function, ConnectorService.RegionMapping regionMapping,
       Set<DistributedMember> targetMembers) {
     return (ResultCollector<CliFunctionResult, List<CliFunctionResult>>) executeFunction(function,
         regionMapping, targetMembers);

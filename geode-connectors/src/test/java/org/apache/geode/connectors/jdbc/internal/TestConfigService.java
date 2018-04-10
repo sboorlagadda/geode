@@ -53,8 +53,8 @@ public class TestConfigService {
     return cache;
   }
 
-  private static RegionMapping createRegionMapping(String pdxClassName, boolean primaryKeyInValue) {
-    return new RegionMapping(REGION_NAME, pdxClassName, REGION_TABLE_NAME, CONNECTION_CONFIG_NAME,
+  private static ConnectorService.RegionMapping createRegionMapping(String pdxClassName, boolean primaryKeyInValue) {
+    return new ConnectorService.RegionMapping(REGION_NAME, pdxClassName, REGION_TABLE_NAME, CONNECTION_CONFIG_NAME,
         primaryKeyInValue, Collections.emptyMap());
   }
 

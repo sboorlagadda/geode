@@ -35,6 +35,7 @@ import java.util.Date;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class SqlToPdxInstanceCreatorTest {
   private static final String PDX_FIELD_NAME_2 = COLUMN_NAME_2.toLowerCase();
 
   private InternalCache cache;
-  private RegionMapping regionMapping;
+  private ConnectorService.RegionMapping regionMapping;
   private ResultSet resultSet;
   private TableMetaDataView tableMetaDataView;
 
@@ -75,7 +76,7 @@ public class SqlToPdxInstanceCreatorTest {
   @Before
   public void setup() throws Exception {
     cache = mock(InternalCache.class);
-    regionMapping = mock(RegionMapping.class);
+    regionMapping = mock(ConnectorService.RegionMapping.class);
     resultSet = mock(ResultSet.class);
     tableMetaDataView = mock(TableMetaDataView.class);
     when(tableMetaDataView.getKeyColumnName()).thenReturn(KEY_COLUMN);

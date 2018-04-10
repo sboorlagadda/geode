@@ -3,12 +3,18 @@ package org.apache.geode.connectors.jdbc.internal.configuration;
 
 import static org.apache.geode.connectors.jdbc.internal.xml.JdbcConnectorServiceXmlParser.PARAMS_DELIMITER;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -18,9 +24,13 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlValue;
 
+import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.configuration.CacheElement;
+import org.apache.geode.connectors.jdbc.JdbcConnectorException;
+import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
+import org.apache.geode.pdx.internal.PdxType;
+import org.apache.geode.pdx.internal.TypeRegistry;
 
 
 /**
@@ -80,6 +90,7 @@ import org.apache.geode.cache.configuration.CacheElement;
  * 
  * 
  */
+@Experimental
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "connection",
@@ -144,7 +155,7 @@ public class ConnectorService implements CacheElement {
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link ConnectorService.RegionMapping }
-     * 
+     *
      * 
      */
     public List<ConnectorService.RegionMapping> getRegionMapping() {
@@ -414,313 +425,429 @@ public class ConnectorService implements CacheElement {
     }
 
 
-    /**
-     * <p>Java class for anonymous complex type.
-     * 
-     * <p>The following schema fragment specifies the expected content contained within this class.
-     * 
-     * <pre>
-     * &lt;complexType>
-     *   &lt;complexContent>
-     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
-     *       &lt;sequence>
-     *         &lt;element name="field-mapping" maxOccurs="unbounded" minOccurs="0">
-     *           &lt;complexType>
-     *             &lt;simpleContent>
-     *               &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
-     *                 &lt;attribute name="field-name" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *                 &lt;attribute name="column-name" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *               &lt;/extension>
-     *             &lt;/simpleContent>
-     *           &lt;/complexType>
-     *         &lt;/element>
-     *       &lt;/sequence>
-     *       &lt;attribute name="connection-name" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *       &lt;attribute name="region" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *       &lt;attribute name="table" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *       &lt;attribute name="pdx-class" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *       &lt;attribute name="primary-key-in-value" type="{http://www.w3.org/2001/XMLSchema}string" />
-     *     &lt;/restriction>
-     *   &lt;/complexContent>
-     * &lt;/complexType>
-     * </pre>
-     * 
-     * 
-     */
-    @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {
-        "fieldMapping"
-    })
-    public static class RegionMapping {
+  /**
+   * <p>Java class for anonymous complex type.
+   *
+   * <p>The following schema fragment specifies the expected content contained within this class.
+   *
+   * <pre>
+   * &lt;complexType>
+   *   &lt;complexContent>
+   *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+   *       &lt;sequence>
+   *         &lt;element name="field-mapping" maxOccurs="unbounded" minOccurs="0">
+   *           &lt;complexType>
+   *             &lt;simpleContent>
+   *               &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
+   *                 &lt;attribute name="field-name" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *                 &lt;attribute name="column-name" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *               &lt;/extension>
+   *             &lt;/simpleContent>
+   *           &lt;/complexType>
+   *         &lt;/element>
+   *       &lt;/sequence>
+   *       &lt;attribute name="connection-name" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *       &lt;attribute name="region" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *       &lt;attribute name="table" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *       &lt;attribute name="pdx-class" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *       &lt;attribute name="primary-key-in-value" type="{http://www.w3.org/2001/XMLSchema}string" />
+   *     &lt;/restriction>
+   *   &lt;/complexContent>
+   * &lt;/complexType>
+   * </pre>
+   *
+   *
+   */
+  @XmlAccessorType(XmlAccessType.FIELD)
+  @XmlType(name = "", propOrder = {
+      "fieldMapping"
+  })
+  public static class RegionMapping implements CacheElement {
+    @XmlElement(name = "field-mapping", namespace = "http://geode.apache.org/schema/jdbc")
+    protected List<ConnectorService.RegionMapping.FieldMapping> fieldMapping;
+    @XmlAttribute(name = "connection-name")
+    protected String connectionConfigName;
+    @XmlAttribute(name = "region")
+    protected String regionName;
+    @XmlAttribute(name = "table")
+    protected String tableName;
+    @XmlAttribute(name = "pdx-class")
+    protected String pdxClassName;
+    @XmlAttribute(name = "primary-key-in-value")
+    protected Boolean primaryKeyInValue;
 
-        @XmlElement(name = "field-mapping", namespace = "http://geode.apache.org/schema/jdbc")
-        protected List<ConnectorService.RegionMapping.FieldMapping> fieldMapping;
-        @XmlAttribute(name = "connection-name")
-        protected String connectionName;
-        @XmlAttribute(name = "region")
-        protected String region;
-        @XmlAttribute(name = "table")
-        protected String table;
-        @XmlAttribute(name = "pdx-class")
-        protected String pdxClass;
-        @XmlAttribute(name = "primary-key-in-value")
-        protected String primaryKeyInValue;
+    @XmlTransient
+    private ConcurrentMap<String, String> fieldToColumnMap;
+    @XmlTransient
+    private ConcurrentMap<String, String> columnToFieldMap;
+    @XmlTransient
+    private Map<String, String> configuredFieldToColumnMap;
+    @XmlTransient
+    private Map<String, String> configuredColumnToFieldMap;
 
-        /**
-         * Gets the value of the fieldMapping property.
-         * 
-         * <p>
-         * This accessor method returns a reference to the live list,
-         * not a snapshot. Therefore any modification you make to the
-         * returned list will be present inside the JAXB object.
-         * This is why there is not a <CODE>set</CODE> method for the fieldMapping property.
-         * 
-         * <p>
-         * For example, to add a new item, do as follows:
-         * <pre>
-         *    getFieldMapping().add(newItem);
-         * </pre>
-         * 
-         * 
-         * <p>
-         * Objects of the following type(s) are allowed in the list
-         * {@link ConnectorService.RegionMapping.FieldMapping }
-         * 
-         * 
-         */
-        public List<ConnectorService.RegionMapping.FieldMapping> getFieldMapping() {
-            if (fieldMapping == null) {
-                fieldMapping = new ArrayList<ConnectorService.RegionMapping.FieldMapping>();
-            }
-            return this.fieldMapping;
-        }
-
-        /**
-         * Gets the value of the connectionName property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getConnectionName() {
-            return connectionName;
-        }
-
-        /**
-         * Sets the value of the connectionName property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setConnectionName(String value) {
-            this.connectionName = value;
-        }
-
-        /**
-         * Gets the value of the region property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getRegion() {
-            return region;
-        }
-
-        /**
-         * Sets the value of the region property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setRegion(String value) {
-            this.region = value;
-        }
-
-        /**
-         * Gets the value of the table property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getTable() {
-            return table;
-        }
-
-        /**
-         * Sets the value of the table property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setTable(String value) {
-            this.table = value;
-        }
-
-        /**
-         * Gets the value of the pdxClass property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getPdxClass() {
-            return pdxClass;
-        }
-
-        /**
-         * Sets the value of the pdxClass property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setPdxClass(String value) {
-            this.pdxClass = value;
-        }
-
-        /**
-         * Gets the value of the primaryKeyInValue property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getPrimaryKeyInValue() {
-            return primaryKeyInValue;
-        }
-
-        /**
-         * Sets the value of the primaryKeyInValue property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setPrimaryKeyInValue(String value) {
-            this.primaryKeyInValue = value;
-        }
-
-
-        /**
-         * <p>Java class for anonymous complex type.
-         * 
-         * <p>The following schema fragment specifies the expected content contained within this class.
-         * 
-         * <pre>
-         * &lt;complexType>
-         *   &lt;simpleContent>
-         *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
-         *       &lt;attribute name="field-name" type="{http://www.w3.org/2001/XMLSchema}string" />
-         *       &lt;attribute name="column-name" type="{http://www.w3.org/2001/XMLSchema}string" />
-         *     &lt;/extension>
-         *   &lt;/simpleContent>
-         * &lt;/complexType>
-         * </pre>
-         * 
-         * 
-         */
-        @XmlAccessorType(XmlAccessType.FIELD)
-        @XmlType(name = "", propOrder = {
-            "value"
-        })
-        public static class FieldMapping {
-
-            @XmlValue
-            protected String value;
-            @XmlAttribute(name = "field-name")
-            protected String fieldName;
-            @XmlAttribute(name = "column-name")
-            protected String columnName;
-
-            /**
-             * Gets the value of the value property.
-             * 
-             * @return
-             *     possible object is
-             *     {@link String }
-             *     
-             */
-            public String getValue() {
-                return value;
-            }
-
-            /**
-             * Sets the value of the value property.
-             * 
-             * @param value
-             *     allowed object is
-             *     {@link String }
-             *     
-             */
-            public void setValue(String value) {
-                this.value = value;
-            }
-
-            /**
-             * Gets the value of the fieldName property.
-             * 
-             * @return
-             *     possible object is
-             *     {@link String }
-             *     
-             */
-            public String getFieldName() {
-                return fieldName;
-            }
-
-            /**
-             * Sets the value of the fieldName property.
-             * 
-             * @param value
-             *     allowed object is
-             *     {@link String }
-             *     
-             */
-            public void setFieldName(String value) {
-                this.fieldName = value;
-            }
-
-            /**
-             * Gets the value of the columnName property.
-             * 
-             * @return
-             *     possible object is
-             *     {@link String }
-             *     
-             */
-            public String getColumnName() {
-                return columnName;
-            }
-
-            /**
-             * Sets the value of the columnName property.
-             * 
-             * @param value
-             *     allowed object is
-             *     {@link String }
-             *     
-             */
-            public void setColumnName(String value) {
-                this.columnName = value;
-            }
-
-        }
-
+    public RegionMapping() {
+      this.fieldToColumnMap = new ConcurrentHashMap<>();
+      this.columnToFieldMap = new ConcurrentHashMap<>();
+      this.configuredFieldToColumnMap = null;
+      this.configuredColumnToFieldMap = null;
     }
 
+    public RegionMapping(String regionName, String pdxClassName, String tableName,
+        String connectionConfigName, Boolean primaryKeyInValue,
+        Map<String, String> configuredFieldToColumnMap) {
+      this.regionName = regionName;
+      this.pdxClassName = pdxClassName;
+      this.tableName = tableName;
+      this.connectionConfigName = connectionConfigName;
+      this.primaryKeyInValue = primaryKeyInValue;
+      this.fieldToColumnMap = new ConcurrentHashMap<>();
+      this.columnToFieldMap = new ConcurrentHashMap<>();
+      if (configuredFieldToColumnMap != null) {
+        this.configuredFieldToColumnMap =
+            Collections.unmodifiableMap(new HashMap<>(configuredFieldToColumnMap));
+        this.configuredColumnToFieldMap =
+            Collections.unmodifiableMap(createReverseMap(configuredFieldToColumnMap));
+        this.fieldMapping = configuredFieldToColumnMap.keySet().stream().map(key -> new FieldMapping(key, configuredFieldToColumnMap.get(key))).collect(Collectors.toList());
+      } else {
+        this.configuredFieldToColumnMap = null;
+        this.configuredColumnToFieldMap = null;
+      }
+    }
+
+    public void setConnectionConfigName(String connectionConfigName) {
+      this.connectionConfigName = connectionConfigName;
+    }
+
+    public void setRegionName(String regionName) {
+      this.regionName = regionName;
+    }
+
+    public void setTableName(String tableName) {
+      this.tableName = tableName;
+    }
+
+    public void setPdxClassName(String pdxClassName) {
+      this.pdxClassName = pdxClassName;
+    }
+
+    public void setPrimaryKeyInValue(Boolean primaryKeyInValue) {
+      this.primaryKeyInValue = primaryKeyInValue;
+    }
+
+
+    public void setFieldMapping(List<ConnectorService.RegionMapping.FieldMapping> fieldMapping) {
+      this.fieldMapping = fieldMapping;
+      if(fieldMapping != null) {
+        this.configuredFieldToColumnMap = new HashMap<>();
+        this.configuredColumnToFieldMap = new HashMap<>();
+
+        fieldMapping.stream().forEach(mapping -> {
+          this.configuredColumnToFieldMap.put(mapping.getColumnName(), mapping.getFieldName());
+          this.configuredFieldToColumnMap.put(mapping.getFieldName(), mapping.getColumnName());
+        });
+      }
+    }
+
+    private Map<String, String> createReverseMap(Map<String, String> input) {
+      Map<String, String> output = new HashMap<>();
+      for (Map.Entry<String, String> entry : input.entrySet()) {
+        String reverseMapKey = entry.getValue();
+        String reverseMapValue = entry.getKey();
+        if (output.containsKey(reverseMapKey)) {
+          throw new IllegalArgumentException(
+              "The field " + reverseMapValue + " can not be mapped to more than one column.");
+        }
+        output.put(reverseMapKey, reverseMapValue);
+      }
+      return output;
+    }
+
+    public List<ConnectorService.RegionMapping.FieldMapping> getFieldMapping() {
+      return fieldMapping;
+    }
+
+    public String getConnectionConfigName() {
+      return connectionConfigName;
+    }
+
+    public String getRegionName() {
+      return regionName;
+    }
+
+    public String getPdxClassName() {
+      return pdxClassName;
+    }
+
+    public String getTableName() {
+      return tableName;
+    }
+
+    public Boolean getPrimaryKeyInValue() {
+      return primaryKeyInValue;
+    }
+
+    public Boolean isPrimaryKeyInValue() {
+      return primaryKeyInValue;
+    }
+
+    public String getRegionToTableName() {
+      if (tableName == null) {
+        return regionName;
+      }
+      return tableName;
+    }
+
+    private String getConfiguredColumnNameForField(String fieldName) {
+      String result = fieldName;
+      if (configuredFieldToColumnMap != null) {
+        String mapResult = configuredFieldToColumnMap.get(fieldName);
+        if (mapResult != null) {
+          result = mapResult;
+        }
+      }
+      return result;
+    }
+
+    public String getColumnNameForField(String fieldName, TableMetaDataView tableMetaDataView) {
+      String columnName = fieldToColumnMap.get(fieldName);
+      if (columnName == null) {
+        String configuredColumnName = getConfiguredColumnNameForField(fieldName);
+        Set<String> columnNames = tableMetaDataView.getColumnNames();
+        if (columnNames.contains(configuredColumnName)) {
+          // exact match
+          columnName = configuredColumnName;
+        } else {
+          for (String candidate : columnNames) {
+            if (candidate.equalsIgnoreCase(configuredColumnName)) {
+              if (columnName != null) {
+                throw new JdbcConnectorException(
+                    "The SQL table has at least two columns that match the PDX field: " + fieldName);
+              }
+              columnName = candidate;
+            }
+          }
+        }
+
+        if (columnName == null) {
+          columnName = configuredColumnName;
+        }
+        fieldToColumnMap.put(fieldName, columnName);
+        columnToFieldMap.put(columnName, fieldName);
+      }
+      return columnName;
+    }
+
+    private String getConfiguredFieldNameForColumn(String columnName) {
+      String result = columnName;
+      if (configuredColumnToFieldMap != null) {
+        String mapResult = configuredColumnToFieldMap.get(columnName);
+        if (mapResult != null) {
+          result = mapResult;
+        }
+      }
+      return result;
+    }
+
+    public String getFieldNameForColumn(String columnName, TypeRegistry typeRegistry) {
+      String fieldName = columnToFieldMap.get(columnName);
+      if (fieldName == null) {
+        String configuredFieldName = getConfiguredFieldNameForColumn(columnName);
+        if (getPdxClassName() == null) {
+          if (configuredFieldName.equals(configuredFieldName.toUpperCase())) {
+            fieldName = configuredFieldName.toLowerCase();
+          } else {
+            fieldName = configuredFieldName;
+          }
+        } else {
+          Set<PdxType> pdxTypes = getPdxTypesForClassName(typeRegistry);
+          fieldName = findExactMatch(configuredFieldName, pdxTypes);
+          if (fieldName == null) {
+            fieldName = findCaseInsensitiveMatch(columnName, configuredFieldName, pdxTypes);
+          }
+        }
+        assert fieldName != null;
+        fieldToColumnMap.put(fieldName, columnName);
+        columnToFieldMap.put(columnName, fieldName);
+      }
+      return fieldName;
+    }
+
+    private Set<PdxType> getPdxTypesForClassName(TypeRegistry typeRegistry) {
+      Set<PdxType> pdxTypes = typeRegistry.getPdxTypesForClassName(getPdxClassName());
+      if (pdxTypes.isEmpty()) {
+        throw new JdbcConnectorException(
+            "The class " + getPdxClassName() + " has not been pdx serialized.");
+      }
+      return pdxTypes;
+    }
+
+    /**
+     * Given a column name and a set of pdx types, find the field name in those types that match,
+     * ignoring case, the column name.
+     *
+     * @return the matching field name or null if no match
+     * @throws JdbcConnectorException if no fields match
+     * @throws JdbcConnectorException if more than one field matches
+     */
+    private String findCaseInsensitiveMatch(String columnName, String configuredFieldName,
+        Set<PdxType> pdxTypes) {
+      HashSet<String> matchingFieldNames = new HashSet<>();
+      for (PdxType pdxType : pdxTypes) {
+        for (String existingFieldName : pdxType.getFieldNames()) {
+          if (existingFieldName.equalsIgnoreCase(configuredFieldName)) {
+            matchingFieldNames.add(existingFieldName);
+          }
+        }
+      }
+      if (matchingFieldNames.isEmpty()) {
+        throw new JdbcConnectorException("The class " + getPdxClassName()
+            + " does not have a field that matches the column " + columnName);
+      } else if (matchingFieldNames.size() > 1) {
+        throw new JdbcConnectorException(
+            "Could not determine what pdx field to use for the column name " + columnName
+                + " because the pdx fields " + matchingFieldNames + " all match it.");
+      }
+      return matchingFieldNames.iterator().next();
+    }
+
+    /**
+     * Given a column name, search the given pdxTypes for a field whose name exactly matches the
+     * column name.
+     *
+     * @return the matching field name or null if no match
+     */
+    private String findExactMatch(String columnName, Set<PdxType> pdxTypes) {
+      for (PdxType pdxType : pdxTypes) {
+        if (pdxType.getPdxField(columnName) != null) {
+          return columnName;
+        }
+      }
+      return null;
+    }
+
+    public Map<String, String> getFieldToColumnMap() {
+      return configuredFieldToColumnMap;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      RegionMapping that = (RegionMapping) o;
+
+      if (primaryKeyInValue != that.primaryKeyInValue) {
+        return false;
+      }
+      if (regionName != null ? !regionName.equals(that.regionName) : that.regionName != null) {
+        return false;
+      }
+      if (pdxClassName != null ? !pdxClassName.equals(that.pdxClassName)
+          : that.pdxClassName != null) {
+        return false;
+      }
+      if (tableName != null ? !tableName.equals(that.tableName) : that.tableName != null) {
+        return false;
+      }
+      if (connectionConfigName != null ? !connectionConfigName.equals(that.connectionConfigName)
+          : that.connectionConfigName != null) {
+        return false;
+      }
+
+      return (configuredFieldToColumnMap != null
+          ? configuredFieldToColumnMap.equals(that.configuredFieldToColumnMap)
+          : that.configuredFieldToColumnMap == null);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = regionName != null ? regionName.hashCode() : 0;
+      result = 31 * result + (pdxClassName != null ? pdxClassName.hashCode() : 0);
+      result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
+      result = 31 * result + (connectionConfigName != null ? connectionConfigName.hashCode() : 0);
+      result = 31 * result + (primaryKeyInValue ? 1 : 0);
+      result = 31 * result
+          + (configuredFieldToColumnMap != null ? configuredFieldToColumnMap.hashCode() : 0);
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return "RegionMapping{" + "regionName='" + regionName + '\'' + ", pdxClassName='" + pdxClassName
+          + '\'' + ", tableName='" + tableName + '\'' + ", connectionConfigName='"
+          + connectionConfigName + '\'' + ", primaryKeyInValue=" + primaryKeyInValue
+          + ", fieldToColumnMap=" + configuredFieldToColumnMap + '}';
+    }
+
+    @Override public String getId() {
+      return getConnectionConfigName();
+    }
+
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class FieldMapping implements Serializable {
+      @XmlAttribute(name = "field-name")
+      protected String fieldName;
+      @XmlAttribute(name = "column-name")
+      protected String columnName;
+
+      public FieldMapping(){}
+
+      public FieldMapping(String fieldName, String columnName){
+        this.fieldName = fieldName;
+        this.columnName = columnName;
+      }
+      /**
+       * Gets the value of the fieldName property.
+       *
+       * @return
+       *     possible object is
+       *     {@link String }
+       *
+       */
+      public String getFieldName() {
+        return fieldName;
+      }
+
+      /**
+       * Sets the value of the fieldName property.
+       *
+       * @param value
+       *     allowed object is
+       *     {@link String }
+       *
+       */
+      public void setFieldName(String value) {
+        this.fieldName = value;
+      }
+
+      /**
+       * Gets the value of the columnName property.
+       *
+       * @return
+       *     possible object is
+       *     {@link String }
+       *
+       */
+      public String getColumnName() {
+        return columnName;
+      }
+
+      /**
+       * Sets the value of the columnName property.
+       *
+       * @param value
+       *     allowed object is
+       *     {@link String }
+       *
+       */
+      public void setColumnName(String value) {
+        this.columnName = value;
+      }
+
+    }
+  }
 }

@@ -76,7 +76,7 @@ public class SqlHandlerTest {
   private InternalCache cache;
   private SqlHandler handler;
   private PreparedStatement statement;
-  private RegionMapping regionMapping;
+  private ConnectorService.RegionMapping regionMapping;
   private PdxInstanceImpl value;
   private Object key;
 
@@ -107,7 +107,7 @@ public class SqlHandlerTest {
 
     when(connectorService.getConnectionConfig(CONNECTION_CONFIG_NAME)).thenReturn(connectionConfig);
 
-    regionMapping = mock(RegionMapping.class);
+    regionMapping = mock(ConnectorService.RegionMapping.class);
     when(regionMapping.getConnectionConfigName()).thenReturn(CONNECTION_CONFIG_NAME);
     when(regionMapping.getRegionName()).thenReturn(REGION_NAME);
     when(regionMapping.getTableName()).thenReturn(TABLE_NAME);
@@ -147,7 +147,7 @@ public class SqlHandlerTest {
     @SuppressWarnings("unchecked")
     Region<Object, Object> region2 = mock(Region.class);
     when(region2.getName()).thenReturn("region2");
-    RegionMapping regionMapping2 = mock(RegionMapping.class);
+    ConnectorService.RegionMapping regionMapping2 = mock(ConnectorService.RegionMapping.class);
     when(regionMapping2.getConnectionConfigName()).thenReturn("bogus connection name");
     when(regionMapping2.getRegionName()).thenReturn("region2");
     when(connectorService.getMappingForRegion("region2")).thenReturn(regionMapping2);

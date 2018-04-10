@@ -17,12 +17,12 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.RegionMapping;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.internal.InternalClusterConfigurationService;
@@ -83,7 +83,7 @@ public class AlterMappingCommand extends InternalGfshCommand {
           specifiedDefaultValue = "") String[] fieldMappings) {
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
-    RegionMapping mapping =
+    ConnectorService.RegionMapping mapping =
         getArguments(regionName, connectionName, table, pdxClassName, keyInValue, fieldMappings);
 
     // action
@@ -100,12 +100,12 @@ public class AlterMappingCommand extends InternalGfshCommand {
   }
 
   ResultCollector<CliFunctionResult, List<CliFunctionResult>> execute(AlterMappingFunction function,
-      RegionMapping mapping, Set<DistributedMember> targetMembers) {
+      ConnectorService.RegionMapping mapping, Set<DistributedMember> targetMembers) {
     return (ResultCollector<CliFunctionResult, List<CliFunctionResult>>) executeFunction(function,
         mapping, targetMembers);
   }
 
-  private RegionMapping getArguments(String regionName, String connectionName, String table,
+  private ConnectorService.RegionMapping getArguments(String regionName, String connectionName, String table,
       String pdxClassName, Boolean keyInValue, String[] fieldMappings) {
     RegionMappingBuilder builder = new RegionMappingBuilder().withRegionName(regionName)
         .withConnectionConfigName(connectionName).withTableName(table)
