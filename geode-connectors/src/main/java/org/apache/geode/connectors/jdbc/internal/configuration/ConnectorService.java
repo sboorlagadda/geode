@@ -476,20 +476,8 @@ public class ConnectorService implements CacheElement {
     @XmlAttribute(name = "primary-key-in-value")
     protected Boolean primaryKeyInValue;
 
-    @XmlTransient
-    private ConcurrentMap<String, String> fieldToColumnMap;
-    @XmlTransient
-    private ConcurrentMap<String, String> columnToFieldMap;
-    @XmlTransient
-    private Map<String, String> configuredFieldToColumnMap;
-    @XmlTransient
-    private Map<String, String> configuredColumnToFieldMap;
 
     public RegionMapping() {
-      this.fieldToColumnMap = new ConcurrentHashMap<>();
-      this.columnToFieldMap = new ConcurrentHashMap<>();
-      this.configuredFieldToColumnMap = null;
-      this.configuredColumnToFieldMap = null;
     }
 
     public RegionMapping(String regionName, String pdxClassName, String tableName,
@@ -500,17 +488,8 @@ public class ConnectorService implements CacheElement {
       this.tableName = tableName;
       this.connectionConfigName = connectionConfigName;
       this.primaryKeyInValue = primaryKeyInValue;
-      this.fieldToColumnMap = new ConcurrentHashMap<>();
-      this.columnToFieldMap = new ConcurrentHashMap<>();
       if (configuredFieldToColumnMap != null) {
-        this.configuredFieldToColumnMap =
-            Collections.unmodifiableMap(new HashMap<>(configuredFieldToColumnMap));
-        this.configuredColumnToFieldMap =
-            Collections.unmodifiableMap(createReverseMap(configuredFieldToColumnMap));
         this.fieldMapping = configuredFieldToColumnMap.keySet().stream().map(key -> new FieldMapping(key, configuredFieldToColumnMap.get(key))).collect(Collectors.toList());
-      } else {
-        this.configuredFieldToColumnMap = null;
-        this.configuredColumnToFieldMap = null;
       }
     }
 
@@ -534,35 +513,10 @@ public class ConnectorService implements CacheElement {
       this.primaryKeyInValue = primaryKeyInValue;
     }
 
-
-    public void setFieldMapping(List<ConnectorService.RegionMapping.FieldMapping> fieldMapping) {
-      this.fieldMapping = fieldMapping;
-      if(fieldMapping != null) {
-        this.configuredFieldToColumnMap = new HashMap<>();
-        this.configuredColumnToFieldMap = new HashMap<>();
-
-        fieldMapping.stream().forEach(mapping -> {
-          this.configuredColumnToFieldMap.put(mapping.getColumnName(), mapping.getFieldName());
-          this.configuredFieldToColumnMap.put(mapping.getFieldName(), mapping.getColumnName());
-        });
-      }
-    }
-
-    private Map<String, String> createReverseMap(Map<String, String> input) {
-      Map<String, String> output = new HashMap<>();
-      for (Map.Entry<String, String> entry : input.entrySet()) {
-        String reverseMapKey = entry.getValue();
-        String reverseMapValue = entry.getKey();
-        if (output.containsKey(reverseMapKey)) {
-          throw new IllegalArgumentException(
-              "The field " + reverseMapValue + " can not be mapped to more than one column.");
-        }
-        output.put(reverseMapKey, reverseMapValue);
-      }
-      return output;
-    }
-
     public List<ConnectorService.RegionMapping.FieldMapping> getFieldMapping() {
+      if(fieldMapping == null) {
+        fieldMapping = new ArrayList<>();
+      }
       return fieldMapping;
     }
 
@@ -597,78 +551,55 @@ public class ConnectorService implements CacheElement {
       return tableName;
     }
 
-    private String getConfiguredColumnNameForField(String fieldName) {
-      String result = fieldName;
-      if (configuredFieldToColumnMap != null) {
-        String mapResult = configuredFieldToColumnMap.get(fieldName);
-        if (mapResult != null) {
-          result = mapResult;
-        }
-      }
-      return result;
-    }
-
     public String getColumnNameForField(String fieldName, TableMetaDataView tableMetaDataView) {
-      String columnName = fieldToColumnMap.get(fieldName);
-      if (columnName == null) {
-        String configuredColumnName = getConfiguredColumnNameForField(fieldName);
-        Set<String> columnNames = tableMetaDataView.getColumnNames();
-        if (columnNames.contains(configuredColumnName)) {
-          // exact match
-          columnName = configuredColumnName;
-        } else {
-          for (String candidate : columnNames) {
-            if (candidate.equalsIgnoreCase(configuredColumnName)) {
-              if (columnName != null) {
-                throw new JdbcConnectorException(
-                    "The SQL table has at least two columns that match the PDX field: " + fieldName);
-              }
-              columnName = candidate;
-            }
-          }
-        }
-
-        if (columnName == null) {
-          columnName = configuredColumnName;
-        }
-        fieldToColumnMap.put(fieldName, columnName);
-        columnToFieldMap.put(columnName, fieldName);
+      FieldMapping configured = getFieldMapping().stream().filter(m -> m.getFieldName().equals(fieldName)).findAny().orElse(null);
+      if(configured != null){
+        return configured.getColumnName();
       }
-      return columnName;
-    }
 
-    private String getConfiguredFieldNameForColumn(String columnName) {
-      String result = columnName;
-      if (configuredColumnToFieldMap != null) {
-        String mapResult = configuredColumnToFieldMap.get(columnName);
-        if (mapResult != null) {
-          result = mapResult;
-        }
+      Set<String> columnNames = tableMetaDataView.getColumnNames();
+      if(columnNames.contains(fieldName)) {
+        return fieldName;
       }
-      return result;
+
+      List<String> ignoreCaseMatch = columnNames.stream().filter(c -> c.equalsIgnoreCase(fieldName)).collect(Collectors.toList());
+      if(ignoreCaseMatch.size() > 1){
+        throw new JdbcConnectorException(
+            "The SQL table has at least two columns that match the PDX field: " + fieldName);
+      }
+
+      if (ignoreCaseMatch.size() == 1) {
+        return ignoreCaseMatch.get(0);
+      }
+
+      // there is no match either in the configured mapping or the table columns
+      return fieldName;
     }
 
     public String getFieldNameForColumn(String columnName, TypeRegistry typeRegistry) {
-      String fieldName = columnToFieldMap.get(columnName);
-      if (fieldName == null) {
-        String configuredFieldName = getConfiguredFieldNameForColumn(columnName);
-        if (getPdxClassName() == null) {
-          if (configuredFieldName.equals(configuredFieldName.toUpperCase())) {
-            fieldName = configuredFieldName.toLowerCase();
-          } else {
-            fieldName = configuredFieldName;
-          }
-        } else {
-          Set<PdxType> pdxTypes = getPdxTypesForClassName(typeRegistry);
-          fieldName = findExactMatch(configuredFieldName, pdxTypes);
-          if (fieldName == null) {
-            fieldName = findCaseInsensitiveMatch(columnName, configuredFieldName, pdxTypes);
-          }
-        }
-        assert fieldName != null;
-        fieldToColumnMap.put(fieldName, columnName);
-        columnToFieldMap.put(columnName, fieldName);
+      String fieldName = null;
+
+      FieldMapping configured = getFieldMapping().stream().filter(m -> m.getColumnName().equals(columnName)).findAny().orElse(null);
+
+      if(configured != null) {
+        return configured.getFieldName();
       }
+
+      if (getPdxClassName() == null) {
+        if (columnName.equals(columnName.toUpperCase())) {
+          fieldName = columnName.toLowerCase();
+        } else {
+          fieldName = columnName;
+        }
+      } else {
+        Set<PdxType> pdxTypes = getPdxTypesForClassName(typeRegistry);
+        fieldName = findExactMatch(columnName, pdxTypes);
+        if (fieldName == null) {
+          fieldName = findCaseInsensitiveMatch(columnName, pdxTypes);
+        }
+      }
+      assert fieldName != null;
+
       return fieldName;
     }
 
@@ -689,12 +620,11 @@ public class ConnectorService implements CacheElement {
      * @throws JdbcConnectorException if no fields match
      * @throws JdbcConnectorException if more than one field matches
      */
-    private String findCaseInsensitiveMatch(String columnName, String configuredFieldName,
-        Set<PdxType> pdxTypes) {
+    private String findCaseInsensitiveMatch(String columnName, Set<PdxType> pdxTypes) {
       HashSet<String> matchingFieldNames = new HashSet<>();
       for (PdxType pdxType : pdxTypes) {
         for (String existingFieldName : pdxType.getFieldNames()) {
-          if (existingFieldName.equalsIgnoreCase(configuredFieldName)) {
+          if (existingFieldName.equalsIgnoreCase(columnName)) {
             matchingFieldNames.add(existingFieldName);
           }
         }
@@ -725,10 +655,6 @@ public class ConnectorService implements CacheElement {
       return null;
     }
 
-    public Map<String, String> getFieldToColumnMap() {
-      return configuredFieldToColumnMap;
-    }
-
     @Override
     public boolean equals(Object o) {
       if (this == o) {
@@ -757,10 +683,7 @@ public class ConnectorService implements CacheElement {
           : that.connectionConfigName != null) {
         return false;
       }
-
-      return (configuredFieldToColumnMap != null
-          ? configuredFieldToColumnMap.equals(that.configuredFieldToColumnMap)
-          : that.configuredFieldToColumnMap == null);
+      return true;
     }
 
     @Override
@@ -770,8 +693,6 @@ public class ConnectorService implements CacheElement {
       result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
       result = 31 * result + (connectionConfigName != null ? connectionConfigName.hashCode() : 0);
       result = 31 * result + (primaryKeyInValue ? 1 : 0);
-      result = 31 * result
-          + (configuredFieldToColumnMap != null ? configuredFieldToColumnMap.hashCode() : 0);
       return result;
     }
 
@@ -779,8 +700,7 @@ public class ConnectorService implements CacheElement {
     public String toString() {
       return "RegionMapping{" + "regionName='" + regionName + '\'' + ", pdxClassName='" + pdxClassName
           + '\'' + ", tableName='" + tableName + '\'' + ", connectionConfigName='"
-          + connectionConfigName + '\'' + ", primaryKeyInValue=" + primaryKeyInValue
-          + ", fieldToColumnMap=" + configuredFieldToColumnMap + '}';
+          + connectionConfigName + '\'' + ", primaryKeyInValue=" + primaryKeyInValue + '}';
     }
 
     @Override public String getId() {

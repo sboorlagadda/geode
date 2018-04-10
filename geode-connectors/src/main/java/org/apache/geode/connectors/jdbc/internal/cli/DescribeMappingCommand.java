@@ -102,11 +102,11 @@ public class DescribeMappingCommand extends InternalGfshCommand {
 
     TabularResultData tabularResultData = sectionResult.addTable(FIELD_TO_COLUMN_TABLE);
     tabularResultData.setHeader("Field to Column Mappings:");
-    if (mapping.getFieldToColumnMap() != null) {
-      mapping.getFieldToColumnMap().entrySet().forEach((entry) -> {
-        tabularResultData.accumulate("Field", entry.getKey());
-        tabularResultData.accumulate("Column", entry.getValue());
-      });
-    }
+//    if (mapping.getFieldToColumnMap() != null) {
+//      mapping.getFieldToColumnMap().entrySet().forEach((entry) -> {
+//        tabularResultData.accumulate("Field", entry.getKey());
+//        tabularResultData.accumulate("Column", entry.getValue());
+//      });
+//    }
   }
 }

@@ -75,7 +75,6 @@ public class RegionMappingTest {
     assertThat(mapping.getRegionName()).isNull();
     assertThat(mapping.getConnectionConfigName()).isNull();
     assertThat(mapping.getPdxClassName()).isNull();
-    assertThat(mapping.getFieldToColumnMap()).isNull();
     assertThat(mapping.getRegionToTableName()).isNull();
     assertThat(mapping.getColumnNameForField("fieldName", mock(TableMetaDataView.class)))
         .isEqualTo("fieldName");
@@ -353,17 +352,9 @@ public class RegionMappingTest {
     fieldMap.put(fieldName2, columnName2);
     mapping = new ConnectorService.RegionMapping(null, null, null, null, true, fieldMap);
 
-    Map<String, String> actualFieldMap = mapping.getFieldToColumnMap();
-
-    assertThat(actualFieldMap).isEqualTo(fieldMap);
-  }
-
-  @Test
-  public void regionMappingFailsForInvalidFieldToColumnMapping() {
-    fieldMap.put(fieldName1, columnName1);
-    fieldMap.put(fieldName2, columnName1);
-    expectedException.expect(IllegalArgumentException.class);
-    new ConnectorService.RegionMapping(null, null, null, null, true, fieldMap);
+//    Map<String, String> actualFieldMap = mapping.getFieldToColumnMap();
+//
+//    assertThat(actualFieldMap).isEqualTo(fieldMap);
   }
 
   @Test
@@ -386,18 +377,6 @@ public class RegionMappingTest {
     ConnectorService.RegionMapping
         rm2 = new ConnectorService.RegionMapping("regionName", null, null, "connectionName", false, null);
     assertThat(rm1).isEqualTo(rm2);
-  }
-
-  @Test
-  public void verifyTwoSimiliarInstancesAreNotEqual() {
-    fieldMap.put(fieldName1, columnName1);
-    fieldMap.put(fieldName2, columnName2);
-    ConnectorService.RegionMapping
-        rm1 = new ConnectorService.RegionMapping("regionName", "pdxClassName", "tableName",
-        "connectionName", true, fieldMap);
-    ConnectorService.RegionMapping rm2 =
-        new ConnectorService.RegionMapping("regionName", "pdxClassName", "tableName", "connectionName", true, null);
-    assertThat(rm1).isNotEqualTo(rm2);
   }
 
 
@@ -454,48 +433,6 @@ public class RegionMappingTest {
         rm2 = new ConnectorService.RegionMapping(null, "pdxClass", null, null, false, null);
     boolean result = rm1.equals(rm2);
     assertThat(result).isFalse();
-  }
-
-  @Test
-  public void verifyMappingWithDifferentFieldMappingAreNotEqual() {
-    Map<String, String> fieldMap1 = new HashMap<>();
-    Map<String, String> fieldMap2 = new HashMap<>();
-    fieldMap1.put(fieldName1, columnName1);
-    fieldMap2.put(fieldName2, columnName2);
-
-    ConnectorService.RegionMapping
-        rm1 = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, fieldMap1);
-    ConnectorService.RegionMapping
-        rm2 = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, fieldMap2);
-    boolean result = rm1.equals(rm2);
-    assertThat(result).isFalse();
-  }
-
-  @Test
-  public void verifyMappingWithOneFieldMappingNullAreNotEqual() {
-    Map<String, String> fieldMap1 = new HashMap<>();
-
-    ConnectorService.RegionMapping
-        rm1 = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, fieldMap1);
-    ConnectorService.RegionMapping
-        rm2 = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, null);
-    boolean result = rm1.equals(rm2);
-    assertThat(result).isFalse();
-
-    rm1 = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, null);
-    rm2 = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, fieldMap1);
-    result = rm1.equals(rm2);
-    assertThat(result).isFalse();
-  }
-
-  @Test
-  public void verifyToStringForExpectedMessage() {
-    mapping = new ConnectorService.RegionMapping("name", "pdxClass", "tname", "cc", true, null);
-
-    String result = mapping.toString();
-    System.out.println("DEBUG:" + result);
-
-    assertThat(result).contains("RegionMapping{regionName='");
   }
 
 }

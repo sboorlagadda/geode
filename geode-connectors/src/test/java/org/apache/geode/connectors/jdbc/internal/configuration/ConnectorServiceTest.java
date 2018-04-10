@@ -71,19 +71,33 @@ public class ConnectorServiceTest {
   }
 
   @Test
-  public void name() {
+  public void regionMappingTest() {
+    ConnectorService service = new ConnectorService();
     ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping();
     mapping.setConnectionConfigName("configName");
     mapping.setPdxClassName("pdxClassName");
     mapping.setRegionName("regionA");
     mapping.setTableName("tableName");
-    List<ConnectorService.RegionMapping.FieldMapping> fieldMappings = new ArrayList<>();
-    fieldMappings.add(new ConnectorService.RegionMapping.FieldMapping("field1", "column1"));
-    fieldMappings.add(new ConnectorService.RegionMapping.FieldMapping("field2", "column2"));
+    mapping.getFieldMapping().add(new ConnectorService.RegionMapping.FieldMapping("field1", "column1"));
+    mapping.getFieldMapping().add(new ConnectorService.RegionMapping.FieldMapping("field2", "column2"));
 
-    mapping.setFieldMapping(fieldMappings);
+    service.getRegionMapping().add(mapping);
+    String xml = jaxbService.marshall(service);
 
-    String xml = jaxbService.marshall(mapping);
+    assertThat(xml).contains("jdbc:connector-service")
+        .contains("connection-name=\"configName\" ")
+        .contains("pdx-class=\"pdxClassName\"")
+        .contains("<jdbc:field-mapping field-name=\"field1\" column-name=\"column1\"/>");
     System.out.println(xml);
+
+    ConnectorService service2 = jaxbService.unMarshall(xml);
+    assertThat(service2.getRegionMapping()).hasSize(1);
+    List<ConnectorService.RegionMapping.FieldMapping> mappings =
+        service2.getRegionMapping().get(0).getFieldMapping();
+
+    assertThat(mappings.get(0).getFieldName()).isEqualTo("field1");
+    assertThat(mappings.get(0).getColumnName()).isEqualTo("column1");
+    assertThat(mappings.get(1).getFieldName()).isEqualTo("field2");
+    assertThat(mappings.get(1).getColumnName()).isEqualTo("column2");
   }
 }

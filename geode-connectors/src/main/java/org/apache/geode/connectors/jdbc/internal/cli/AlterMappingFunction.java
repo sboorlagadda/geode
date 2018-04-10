@@ -61,12 +61,12 @@ public class AlterMappingFunction extends JdbcCliFunction<ConnectorService.Regio
     Boolean keyInValue = regionMapping.isPrimaryKeyInValue() == null
         ? existingMapping.isPrimaryKeyInValue() : regionMapping.isPrimaryKeyInValue();
 
-    Map<String, String> fieldMappings = regionMapping.getFieldToColumnMap();
-    if (fieldMappings == null) {
-      fieldMappings = existingMapping.getFieldToColumnMap();
-    }
+//    Map<String, String> fieldMappings = regionMapping.getFieldToColumnMap();
+//    if (fieldMappings == null) {
+//      fieldMappings = existingMapping.getFieldToColumnMap();
+//    }
     ConnectorService.RegionMapping alteredMapping = new ConnectorService.RegionMapping(existingMapping.getRegionName(), pdxClassName,
-        table, connectionName, keyInValue, fieldMappings);
+        table, connectionName, keyInValue, null);
     return alteredMapping;
   }
 
