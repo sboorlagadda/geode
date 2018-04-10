@@ -378,8 +378,12 @@ public class ConnectorService implements CacheElement {
         }
 
         public void setParameters(Map<String, String> parameterMap){
-            this.parameterMap = parameterMap;
-            this.parameters = parameterMap.keySet().stream().map(k->k+":"+parameterMap.get(k)).collect(Collectors.joining(","));
+          if(parameterMap == null) {
+            return;
+          }
+
+          this.parameterMap = parameterMap;
+          this.parameters = parameterMap.keySet().stream().map(k->k+":"+parameterMap.get(k)).collect(Collectors.joining(","));
         }
 
         public Map<String, String> getParameterMap(){

@@ -81,24 +81,11 @@ public class AlterConnectionCommand extends GfshCommand {
     connection.setName(name);
     connection.setParameters(params);
 
-    ClusterConfigurationService ccService = getConfigurationService();
-
-    if(ccService != null){
-      // search for the connection that has this id to see if it exists
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-      if(service == null){
-        throw new EntityNotFoundException("connection with name "+ name + "does not exist.");
-      }
-      ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
-      if(conn == null){
-        throw new EntityNotFoundException("connection with name "+ name + "does not exist.");
-      }
-    }
-
     // action
     List<CliFunctionResult> results = executeAndGetFunctionResult(new AlterConnectionFunction(), connection, targetMembers);
 
     boolean persisted = false;
+    ClusterConfigurationService ccService = getConfigurationService();
 
     if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
       ConnectorService service =ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);

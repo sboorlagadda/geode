@@ -59,7 +59,7 @@ public class AlterConnectionFunction
     String password = getValue(connectionConfig.getPassword(), existingConfig.getPassword());
 
     Map<String, String> parameters = connectionConfig.getParameterMap();
-    if (parameters == null) {
+    if (parameters.keySet().isEmpty()) {
       parameters = existingConfig.getParameterMap();
     }
     ConnectorService.Connection alteredConfig =

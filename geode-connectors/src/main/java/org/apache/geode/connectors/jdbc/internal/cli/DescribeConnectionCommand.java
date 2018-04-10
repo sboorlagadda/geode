@@ -27,12 +27,12 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -67,8 +67,8 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     DistributedMember targetMember = members.iterator().next();
 
     // action
-    List<CliFunctionResult> resultCollector =
-        executeAndGetFunctionResult(new DescribeConnectionFunction(), name, targetMember);
+    ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>> resultCollector =
+        execute(new DescribeConnectionFunction(), name, targetMember);
 
     // output
     ConnectorService.Connection config = resultCollector.getResult().get(0);
@@ -81,6 +81,12 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     fillResultData(config, resultData);
     resultData.setHeader(EXPERIMENTAL);
     return ResultBuilder.buildResult(resultData);
+  }
+
+  ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>> execute(
+      DescribeConnectionFunction function, String connectionName, DistributedMember targetMember) {
+    return (ResultCollector<ConnectorService.Connection, List<ConnectorService.Connection>>) executeFunction(
+        function, connectionName, targetMember);
   }
 
   private void fillResultData(ConnectorService.Connection config, CompositeResultData resultData) {
