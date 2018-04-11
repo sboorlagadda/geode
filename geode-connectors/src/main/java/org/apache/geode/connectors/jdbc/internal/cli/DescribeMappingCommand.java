@@ -62,11 +62,11 @@ public class DescribeMappingCommand extends InternalGfshCommand {
     // search for the connection that has this id to see if it exists
     ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
     if(service == null){
-      throw new EntityNotFoundException("mapping with name "+ regionName + "does not exist.");
+      throw new EntityNotFoundException("Mapping for region '"+ regionName + "' not found");
     }
     ConnectorService.RegionMapping mapping = ccService.findIdentifiable(service.getRegionMapping(), regionName);
     if(mapping == null){
-      throw new EntityNotFoundException("mapping with name "+ regionName + "does not exist.");
+      throw new EntityNotFoundException("Mapping for region '"+ regionName + "' not found");
     }
 
     CompositeResultData resultData = ResultBuilder.createCompositeResultData();

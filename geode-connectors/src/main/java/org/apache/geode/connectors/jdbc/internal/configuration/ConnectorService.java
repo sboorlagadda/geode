@@ -371,7 +371,7 @@ public class ConnectorService implements CacheElement {
          *
          */
         public void setParameters(String value) {
-            this.setParameters(value.split(","));
+            this.parameters = value;
         }
 
         public void setParameters(String[] params){
@@ -398,8 +398,15 @@ public class ConnectorService implements CacheElement {
           this.parameters = parameterMap.keySet().stream().map(k->k+":"+parameterMap.get(k)).collect(Collectors.joining(","));
         }
 
-        public Map<String, String> getParameterMap(){
-            return parameterMap;
+        public Map<String, String> getParameterMap() {
+          if(this.parameters != null && !this.parameters.isEmpty()) {
+            String[] params = this.parameters.split(",");
+            Arrays.stream(params).forEach(s->{
+              String[] keyValuePair = s.split(PARAMS_DELIMITER);
+              parameterMap.put(keyValuePair[0], keyValuePair[1]);
+            });
+          }
+          return this.parameterMap;
         }
 
         private void validateParam(String[] paramKeyValue, String param) {

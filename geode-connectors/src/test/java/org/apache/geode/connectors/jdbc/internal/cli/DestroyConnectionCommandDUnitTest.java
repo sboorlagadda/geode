@@ -14,6 +14,12 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PARAMS;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PASSWORD;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__URL;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__USER;
 import static org.apache.geode.connectors.jdbc.internal.cli.DestroyConnectionCommand.DESTROY_CONNECTION;
 import static org.apache.geode.connectors.jdbc.internal.cli.DestroyConnectionCommand.DESTROY_CONNECTION__NAME;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,9 +67,16 @@ public class DestroyConnectionCommandDUnitTest implements Serializable {
     locator = startupRule.startLocatorVM(0);
     server = startupRule.startServerVM(1, locator.getPort());
 
-    server.invoke(() -> createConnection());
-
     gfsh.connectAndVerify(locator);
+
+    CommandStringBuilder csb = new CommandStringBuilder(CREATE_CONNECTION);
+    csb.addOption(CREATE_CONNECTION__NAME, "name");
+    csb.addOption(CREATE_CONNECTION__URL, "url");
+    csb.addOption(CREATE_CONNECTION__USER, "username");
+    csb.addOption(CREATE_CONNECTION__PASSWORD, "secret");
+    csb.addOption(CREATE_CONNECTION__PARAMS, "param1:value1,param2:value2");
+
+    gfsh.executeAndAssertThat(csb.toString()).statusIsSuccess();
   }
 
   @Test
@@ -85,15 +98,5 @@ public class DestroyConnectionCommandDUnitTest implements Serializable {
           cache.getService(JdbcConnectorService.class).getConnectionConfig("name");
       assertThat(config).isNull();
     });
-  }
-
-  private void createConnection() throws ConnectionConfigExistsException {
-    InternalCache cache = ClusterStartupRule.getCache();
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    ConnectorService.Connection connection = new ConnectorService.Connection();
-    connection.setName(connectionName);
-    service.createConnectionConfig(connection);
-
-    assertThat(service.getConnectionConfig(connectionName)).isNotNull();
   }
 }

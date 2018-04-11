@@ -102,7 +102,7 @@ public class DescribeConnectionCommandDUnitTest implements Serializable {
 
     CommandResultAssert commandResultAssert = gfsh.executeAndAssertThat(csb.toString());
 
-    commandResultAssert.statusIsSuccess();
+    commandResultAssert.statusIsError();
     commandResultAssert
         .containsOutput(String.format("Connection named '%s' not found", "nonExisting"));
   }

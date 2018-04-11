@@ -75,7 +75,7 @@ public class DescribeMappingCommandIntegrationTest {
     String nonExistingMappingRegionName = "non existing";
     Result result = command.describeMapping(nonExistingMappingRegionName);
 
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
+    assertThat(result.getStatus()).isSameAs(Result.Status.ERROR);
     CommandResult commandResult = (CommandResult) result;
     String tableContent = commandResult.getTableContent().toString();
     assertThat(tableContent)

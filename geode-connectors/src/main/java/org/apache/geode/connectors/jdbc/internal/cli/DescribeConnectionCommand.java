@@ -62,13 +62,11 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
     // search for the connection that has this id to see if it exists
     ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
     if(service == null){
-      return ResultBuilder.createInfoResult(
-          String.format(EXPERIMENTAL + "\n" + "Connection named '%s' not found", name));
+      throw new EntityNotFoundException("Connection named '" + name + "' not found");
     }
     ConnectorService.Connection connection = ccService.findIdentifiable(service.getConnection(), name);
     if(connection == null){
-      return ResultBuilder.createInfoResult(
-          String.format(EXPERIMENTAL + "\n" + "Connection named '%s' not found", name));
+      throw new EntityNotFoundException("Connection named '" + name + "' not found");
     }
 
     CompositeResultData resultData = ResultBuilder.createCompositeResultData();
