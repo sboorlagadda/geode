@@ -14,37 +14,33 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__CONNECTION_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__PDX_CLASS_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__REGION_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__TABLE_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__VALUE_CONTAINS_PRIMARY_KEY;
-
-import java.util.List;
-import java.util.Set;
-
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.springframework.shell.core.annotation.CliCommand;
-import org.springframework.shell.core.annotation.CliOption;
-
 import org.apache.geode.annotations.Experimental;
-import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
+import org.apache.geode.distributed.ClusterConfigurationService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
+import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__CONNECTION_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__PDX_CLASS_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__REGION_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__TABLE_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__VALUE_CONTAINS_PRIMARY_KEY;
 
 @Experimental
 public class DescribeMappingCommand extends InternalGfshCommand {
   static final String DESCRIBE_MAPPING = "describe jdbc-mapping";
   static final String DESCRIBE_MAPPING__HELP =
-      EXPERIMENTAL + "Describe the specified jdbc mapping.";
+      EXPERIMENTAL + "Describe the jdbc mapping in cluster configuration";
   static final String DESCRIBE_MAPPING__REGION_NAME = "region";
   static final String DESCRIBE_MAPPING__REGION_NAME__HELP =
       "Region name of the jdbc mapping to be described.";
@@ -59,34 +55,24 @@ public class DescribeMappingCommand extends InternalGfshCommand {
   public Result describeMapping(@CliOption(key = DESCRIBE_MAPPING__REGION_NAME, mandatory = true,
       help = DESCRIBE_MAPPING__REGION_NAME__HELP) String regionName) {
 
-    // input
-    Set<DistributedMember> members = getMembers(null, null);
-    if (members.isEmpty()) {
-      return ResultBuilder.createUserErrorResult(CliStrings.NO_MEMBERS_FOUND_MESSAGE);
+    ClusterConfigurationService ccService = getConfigurationService();
+    if(ccService == null){
+      return ResultBuilder.createUserErrorResult("cluster configuration service is not running");
     }
-    DistributedMember targetMember = members.iterator().next();
-
-    // action
-    ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping>> resultCollector =
-        execute(new DescribeMappingFunction(), regionName, targetMember);
-
-    // output
-    ConnectorService.RegionMapping config = resultCollector.getResult().get(0);
-    if (config == null) {
-      return ResultBuilder.createInfoResult(
-          String.format(EXPERIMENTAL + "\n" + "Mapping for region '%s' not found", regionName));
+    // search for the connection that has this id to see if it exists
+    ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+    if(service == null){
+      throw new EntityNotFoundException("mapping with name "+ regionName + "does not exist.");
+    }
+    ConnectorService.RegionMapping mapping = ccService.findIdentifiable(service.getRegionMapping(), regionName);
+    if(mapping == null){
+      throw new EntityNotFoundException("mapping with name "+ regionName + "does not exist.");
     }
 
     CompositeResultData resultData = ResultBuilder.createCompositeResultData();
-    fillResultData(config, resultData);
+    fillResultData(mapping, resultData);
     resultData.setHeader(EXPERIMENTAL);
     return ResultBuilder.buildResult(resultData);
-  }
-
-  ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping>> execute(DescribeMappingFunction function,
-      String connectionName, DistributedMember targetMember) {
-    return (ResultCollector<ConnectorService.RegionMapping, List<ConnectorService.RegionMapping>>) executeFunction(function,
-        connectionName, targetMember);
   }
 
   private void fillResultData(ConnectorService.RegionMapping mapping, CompositeResultData resultData) {
@@ -102,11 +88,11 @@ public class DescribeMappingCommand extends InternalGfshCommand {
 
     TabularResultData tabularResultData = sectionResult.addTable(FIELD_TO_COLUMN_TABLE);
     tabularResultData.setHeader("Field to Column Mappings:");
-//    if (mapping.getFieldToColumnMap() != null) {
-//      mapping.getFieldToColumnMap().entrySet().forEach((entry) -> {
-//        tabularResultData.accumulate("Field", entry.getKey());
-//        tabularResultData.accumulate("Column", entry.getValue());
-//      });
-//    }
+    if (mapping.getFieldMapping() != null) {
+      mapping.getFieldMapping().forEach((entry) -> {
+        tabularResultData.accumulate("Field", entry.getFieldName());
+        tabularResultData.accumulate("Column", entry.getColumnName());
+      });
+    }
   }
 }

@@ -39,6 +39,9 @@ import org.apache.geode.test.junit.categories.DistributedTest;
 import org.apache.geode.test.junit.rules.GfshCommandRule;
 import org.apache.geode.test.junit.rules.serializable.SerializableTestName;
 
+import java.util.List;
+import java.util.function.Predicate;
+
 @Category(DistributedTest.class)
 public class CreateMappingCommandDUnitTest {
 
@@ -90,8 +93,12 @@ public class CreateMappingCommandDUnitTest {
       assertThat(mapping.getTableName()).isEqualTo("myTable");
       assertThat(mapping.getPdxClassName()).isEqualTo("myPdxClass");
       assertThat(mapping.isPrimaryKeyInValue()).isEqualTo(true);
-//      assertThat(mapping.getFieldToColumnMap()).containsEntry("field1", "column1")
-//          .containsEntry("field2", "column2");
+      List<ConnectorService.RegionMapping.FieldMapping> fieldMappings = mapping.getFieldMapping();
+      assertThat(fieldMappings).hasSize(2);
+      assertThat(fieldMappings.get(0).getFieldName()).isEqualTo("field1");
+      assertThat(fieldMappings.get(0).getColumnName()).isEqualTo("column1");
+      assertThat(fieldMappings.get(1).getFieldName()).isEqualTo("field2");
+      assertThat(fieldMappings.get(1).getColumnName()).isEqualTo("column2");
     });
   }
 
@@ -120,8 +127,12 @@ public class CreateMappingCommandDUnitTest {
       assertThat(mapping.getTableName()).isEqualTo("myTable");
       assertThat(mapping.getPdxClassName()).isEqualTo("myPdxClass");
       assertThat(mapping.isPrimaryKeyInValue()).isEqualTo(false);
-//      assertThat(mapping.getFieldToColumnMap()).containsEntry("field1", "column1")
-//          .containsEntry("field2", "column2");
+      List<ConnectorService.RegionMapping.FieldMapping> fieldMappings = mapping.getFieldMapping();
+      assertThat(fieldMappings).hasSize(2);
+      assertThat(fieldMappings.get(0).getFieldName()).isEqualTo("field1");
+      assertThat(fieldMappings.get(0).getColumnName()).isEqualTo("column1");
+      assertThat(fieldMappings.get(1).getFieldName()).isEqualTo("field2");
+      assertThat(fieldMappings.get(1).getColumnName()).isEqualTo("column2");
     });
   }
 

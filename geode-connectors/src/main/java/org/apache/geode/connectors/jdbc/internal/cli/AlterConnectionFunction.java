@@ -46,7 +46,7 @@ public class AlterConnectionFunction
     ConnectorService.Connection alteredConfig = alterConnectionConfig(connectionConfig, existingConfig);
     service.replaceConnectionConfig(alteredConfig);
 
-    return new CliFunctionResult(context.getMemberName(), true, "success");
+    return new CliFunctionResult(context.getMemberName(), alteredConfig);
   }
 
   /**

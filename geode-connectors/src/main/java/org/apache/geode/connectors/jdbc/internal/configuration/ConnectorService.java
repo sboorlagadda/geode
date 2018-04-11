@@ -26,6 +26,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.annotations.TestingOnly;
 import org.apache.geode.cache.configuration.CacheElement;
 import org.apache.geode.connectors.jdbc.JdbcConnectorException;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
@@ -463,6 +464,8 @@ public class ConnectorService implements CacheElement {
       "fieldMapping"
   })
   public static class RegionMapping implements CacheElement {
+    private static final String MAPPINGS_DELIMITER = ":";
+
     @XmlElement(name = "field-mapping", namespace = "http://geode.apache.org/schema/jdbc")
     protected List<ConnectorService.RegionMapping.FieldMapping> fieldMapping;
     @XmlAttribute(name = "connection-name")
@@ -481,6 +484,27 @@ public class ConnectorService implements CacheElement {
     }
 
     public RegionMapping(String regionName, String pdxClassName, String tableName,
+        String connectionConfigName, Boolean primaryKeyInValue) {
+      this.regionName = regionName;
+      this.pdxClassName = pdxClassName;
+      this.tableName = tableName;
+      this.connectionConfigName = connectionConfigName;
+      this.primaryKeyInValue = primaryKeyInValue;
+    }
+
+    public RegionMapping(String regionName, String pdxClassName, String tableName,
+        String connectionConfigName, Boolean primaryKeyInValue,
+        List<FieldMapping> fieldMappings) {
+      this.regionName = regionName;
+      this.pdxClassName = pdxClassName;
+      this.tableName = tableName;
+      this.connectionConfigName = connectionConfigName;
+      this.primaryKeyInValue = primaryKeyInValue;
+      this.fieldMapping = fieldMappings;
+    }
+
+    @TestingOnly
+    public RegionMapping(String regionName, String pdxClassName, String tableName,
         String connectionConfigName, Boolean primaryKeyInValue,
         Map<String, String> configuredFieldToColumnMap) {
       this.regionName = regionName;
@@ -490,6 +514,25 @@ public class ConnectorService implements CacheElement {
       this.primaryKeyInValue = primaryKeyInValue;
       if (configuredFieldToColumnMap != null) {
         this.fieldMapping = configuredFieldToColumnMap.keySet().stream().map(key -> new FieldMapping(key, configuredFieldToColumnMap.get(key))).collect(Collectors.toList());
+      }
+    }
+
+    public void setFieldMapping(String[] mappings) {
+      if (mappings != null){
+        this.fieldMapping = Arrays.stream(mappings).map(s->{
+          String[] keyValuePair = s.split(MAPPINGS_DELIMITER);
+          validateParam(keyValuePair, s);
+          return new ConnectorService.RegionMapping.FieldMapping(keyValuePair[0], keyValuePair[1]);
+        }).collect(Collectors.toList());
+      }
+    }
+
+    private void validateParam(String[] paramKeyValue, String mapping) {
+      // paramKeyValue is produced by split which will never give us
+      // an empty second element
+      if (paramKeyValue.length != 2 || paramKeyValue[0].isEmpty()) {
+        throw new IllegalArgumentException("Field to column mapping '" + mapping
+            + "' is not of the form 'Field" + MAPPINGS_DELIMITER + "Column'");
       }
     }
 
@@ -704,7 +747,7 @@ public class ConnectorService implements CacheElement {
     }
 
     @Override public String getId() {
-      return getConnectionConfigName();
+      return getRegionName();
     }
 
     @XmlAccessorType(XmlAccessType.FIELD)

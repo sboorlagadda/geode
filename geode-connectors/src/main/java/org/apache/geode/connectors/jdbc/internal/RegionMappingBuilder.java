@@ -14,8 +14,12 @@
  */
 package org.apache.geode.connectors.jdbc.internal;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
@@ -29,7 +33,7 @@ public class RegionMappingBuilder {
   private String tableName;
   private String connectionConfigName;
   private Boolean primaryKeyInValue;
-  private Map<String, String> fieldToColumnMap = new HashMap<>();
+  private List<ConnectorService.RegionMapping.FieldMapping> fieldMappingList = new ArrayList<>();
 
   public RegionMappingBuilder withRegionName(String regionName) {
     this.regionName = regionName;
@@ -64,22 +68,17 @@ public class RegionMappingBuilder {
   }
 
   public RegionMappingBuilder withFieldToColumnMapping(String fieldName, String columnMapping) {
-    this.fieldToColumnMap.put(fieldName, columnMapping);
+    this.fieldMappingList.add(new ConnectorService.RegionMapping.FieldMapping(fieldName, columnMapping));
     return this;
   }
 
   public RegionMappingBuilder withFieldToColumnMappings(String[] mappings) {
-    if (mappings == null) {
-      fieldToColumnMap = null;
-    } else {
-      for (String mapping : mappings) {
-        if (mapping.isEmpty()) {
-          continue;
-        }
-        String[] keyValuePair = mapping.split(MAPPINGS_DELIMITER);
-        validateParam(keyValuePair, mapping);
-        fieldToColumnMap.put(keyValuePair[0], keyValuePair[1]);
-      }
+    if (mappings != null){
+      this.fieldMappingList = Arrays.stream(mappings).map(s->{
+        String[] keyValuePair = s.split(MAPPINGS_DELIMITER);
+        validateParam(keyValuePair, s);
+        return new ConnectorService.RegionMapping.FieldMapping(keyValuePair[0], keyValuePair[1]);
+      }).collect(Collectors.toList());
     }
     return this;
   }
@@ -95,6 +94,6 @@ public class RegionMappingBuilder {
 
   public ConnectorService.RegionMapping build() {
     return new ConnectorService.RegionMapping(regionName, pdxClassName, tableName, connectionConfigName,
-        primaryKeyInValue, fieldToColumnMap);
+        primaryKeyInValue, fieldMappingList);
   }
 }

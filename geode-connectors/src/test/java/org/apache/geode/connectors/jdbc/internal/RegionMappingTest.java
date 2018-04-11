@@ -69,7 +69,7 @@ public class RegionMappingTest {
 
   @Test
   public void initiatedWithNullValues() {
-    mapping = new ConnectorService.RegionMapping(null, null, null, null, false, null);
+    mapping = new ConnectorService.RegionMapping(null, null, null, null, false);
 
     assertThat(mapping.getTableName()).isNull();
     assertThat(mapping.getRegionName()).isNull();
@@ -84,7 +84,7 @@ public class RegionMappingTest {
 
   @Test
   public void hasCorrectTableName() {
-    mapping = new ConnectorService.RegionMapping(null, null, name, null, false, null);
+    mapping = new ConnectorService.RegionMapping(null, null, name, null, false);
 
     assertThat(mapping.getTableName()).isEqualTo(name);
     assertThat(mapping.getRegionToTableName()).isEqualTo(name);
@@ -92,7 +92,7 @@ public class RegionMappingTest {
 
   @Test
   public void hasCorrectTableNameWhenRegionNameIsSet() {
-    mapping = new ConnectorService.RegionMapping("regionName", null, "tableName", null, false, null);
+    mapping = new ConnectorService.RegionMapping("regionName", null, "tableName", null, false);
 
     assertThat(mapping.getRegionName()).isEqualTo("regionName");
     assertThat(mapping.getTableName()).isEqualTo("tableName");
@@ -101,7 +101,7 @@ public class RegionMappingTest {
 
   @Test
   public void hasCorrectRegionName() {
-    mapping = new ConnectorService.RegionMapping(name, null, null, null, false, null);
+    mapping = new ConnectorService.RegionMapping(name, null, null, null, false);
 
     assertThat(mapping.getRegionName()).isEqualTo(name);
     assertThat(mapping.getRegionToTableName()).isEqualTo(name);
@@ -109,21 +109,21 @@ public class RegionMappingTest {
 
   @Test
   public void hasCorrectConfigName() {
-    mapping = new ConnectorService.RegionMapping(null, null, null, name, false, null);
+    mapping = new ConnectorService.RegionMapping(null, null, null, name, false);
 
     assertThat(mapping.getConnectionConfigName()).isEqualTo(name);
   }
 
   @Test
   public void hasCorrectPdxClassName() {
-    mapping = new ConnectorService.RegionMapping(null, name, null, null, false, null);
+    mapping = new ConnectorService.RegionMapping(null, name, null, null, false);
 
     assertThat(mapping.getPdxClassName()).isEqualTo(name);
   }
 
   @Test
   public void primaryKeyInValueSetCorrectly() {
-    mapping = new ConnectorService.RegionMapping(null, null, null, null, true, null);
+    mapping = new ConnectorService.RegionMapping(null, null, null, null, true);
 
     assertThat(mapping.isPrimaryKeyInValue()).isTrue();
   }
@@ -223,7 +223,7 @@ public class RegionMappingTest {
 
   @Test
   public void throwsIfColumnNotMappedAndPdxClassNameDoesNotExist() {
-    mapping = new ConnectorService.RegionMapping(null, "pdxClassName", null, null, true, null);
+    mapping = new ConnectorService.RegionMapping(null, "pdxClassName", null, null, true);
     TypeRegistry typeRegistry = mock(TypeRegistry.class);
     when(typeRegistry.getPdxTypesForClassName("pdxClassName")).thenReturn(Collections.emptySet());
     expectedException.expect(JdbcConnectorException.class);
@@ -236,7 +236,7 @@ public class RegionMappingTest {
   public void throwsIfColumnNotMappedAndPdxClassNameDoesExistButHasNoMatchingFields() {
     String pdxClassName = "pdxClassName";
     String columnName = "columnName";
-    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true, null);
+    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true);
     TypeRegistry typeRegistry = mock(TypeRegistry.class);
     HashSet<PdxType> pdxTypes = new HashSet<>(Arrays.asList(mock(PdxType.class)));
     when(typeRegistry.getPdxTypesForClassName(pdxClassName)).thenReturn(pdxTypes);
@@ -251,7 +251,7 @@ public class RegionMappingTest {
   public void throwsIfColumnNotMappedAndPdxClassNameDoesExistButHasMoreThanOneMatchingFields() {
     String pdxClassName = "pdxClassName";
     String columnName = "columnName";
-    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true, null);
+    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true);
     TypeRegistry typeRegistry = mock(TypeRegistry.class);
     PdxType pdxType = mock(PdxType.class);
     when(pdxType.getFieldNames())
@@ -269,7 +269,7 @@ public class RegionMappingTest {
   public void returnsIfColumnNotMappedAndPdxClassNameDoesExistAndHasOneFieldThatInexactlyMatches() {
     String pdxClassName = "pdxClassName";
     String columnName = "columnName";
-    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true, null);
+    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true);
     TypeRegistry typeRegistry = mock(TypeRegistry.class);
     PdxType pdxType = mock(PdxType.class);
     when(pdxType.getFieldNames())
@@ -285,7 +285,7 @@ public class RegionMappingTest {
   public void returnsIfColumnNotMappedAndPdxClassNameDoesExistAndHasOneFieldThatExactlyMatches() {
     String pdxClassName = "pdxClassName";
     String columnName = "columnName";
-    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true, null);
+    mapping = new ConnectorService.RegionMapping(null, pdxClassName, null, null, true);
     TypeRegistry typeRegistry = mock(TypeRegistry.class);
     PdxType pdxType = mock(PdxType.class);
     when(pdxType.getPdxField(columnName)).thenReturn(mock(PdxField.class));
@@ -373,9 +373,9 @@ public class RegionMappingTest {
   @Test
   public void verifyTwoDefaultInstancesAreEqual() {
     ConnectorService.RegionMapping
-        rm1 = new ConnectorService.RegionMapping("regionName", null, null, "connectionName", false, null);
+        rm1 = new ConnectorService.RegionMapping("regionName", null, null, "connectionName", false);
     ConnectorService.RegionMapping
-        rm2 = new ConnectorService.RegionMapping("regionName", null, null, "connectionName", false, null);
+        rm2 = new ConnectorService.RegionMapping("regionName", null, null, "connectionName", false);
     assertThat(rm1).isEqualTo(rm2);
   }
 
@@ -395,7 +395,7 @@ public class RegionMappingTest {
 
   @Test
   public void verifyThatMappingIsEqualToItself() {
-    mapping = new ConnectorService.RegionMapping(null, null, null, null, false, null);
+    mapping = new ConnectorService.RegionMapping(null, null, null, null, false);
     boolean result = mapping.equals(mapping);
     assertThat(mapping.hashCode()).isEqualTo(mapping.hashCode());
     assertThat(result).isTrue();
@@ -403,14 +403,14 @@ public class RegionMappingTest {
 
   @Test
   public void verifyThatNullIsNotEqual() {
-    mapping = new ConnectorService.RegionMapping(null, null, null, null, false, null);
+    mapping = new ConnectorService.RegionMapping(null, null, null, null, false);
     boolean result = mapping.equals(null);
     assertThat(result).isFalse();
   }
 
   @Test
   public void verifyOtherClassIsNotEqual() {
-    mapping = new ConnectorService.RegionMapping(null, null, null, null, false, null);
+    mapping = new ConnectorService.RegionMapping(null, null, null, null, false);
     boolean result = mapping.equals("not equal");
     assertThat(result).isFalse();
   }
@@ -418,9 +418,9 @@ public class RegionMappingTest {
   @Test
   public void verifyMappingWithDifferentRegionNamesAreNotEqual() {
     ConnectorService.RegionMapping
-        rm1 = new ConnectorService.RegionMapping(null, null, null, null, false, null);
+        rm1 = new ConnectorService.RegionMapping(null, null, null, null, false);
     ConnectorService.RegionMapping
-        rm2 = new ConnectorService.RegionMapping("name", null, null, null, false, null);
+        rm2 = new ConnectorService.RegionMapping("name", null, null, null, false);
     boolean result = rm1.equals(rm2);
     assertThat(result).isFalse();
   }
@@ -428,9 +428,9 @@ public class RegionMappingTest {
   @Test
   public void verifyMappingWithDifferentPdxClassNameAreNotEqual() {
     ConnectorService.RegionMapping
-        rm1 = new ConnectorService.RegionMapping(null, null, null, null, false, null);
+        rm1 = new ConnectorService.RegionMapping(null, null, null, null, false);
     ConnectorService.RegionMapping
-        rm2 = new ConnectorService.RegionMapping(null, "pdxClass", null, null, false, null);
+        rm2 = new ConnectorService.RegionMapping(null, "pdxClass", null, null, false);
     boolean result = rm1.equals(rm2);
     assertThat(result).isFalse();
   }

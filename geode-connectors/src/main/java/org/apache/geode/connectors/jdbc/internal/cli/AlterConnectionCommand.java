@@ -74,27 +74,44 @@ public class AlterConnectionCommand extends GfshCommand {
           help = ALTER_CONNECTION__PARAMS__HELP) String[] params) {
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
-    ConnectorService.Connection connection = new ConnectorService.Connection();
-    connection.setUser(user);
-    connection.setPassword(password);
-    connection.setUrl(url);
-    connection.setName(name);
-    connection.setParameters(params);
+    ConnectorService.Connection newConnection = new ConnectorService.Connection();
+    newConnection.setUser(user);
+    newConnection.setPassword(password);
+    newConnection.setUrl(url);
+    newConnection.setName(name);
+    newConnection.setParameters(params);
 
-    // action
-    List<CliFunctionResult> results = executeAndGetFunctionResult(new AlterConnectionFunction(), connection, targetMembers);
-
-    boolean persisted = false;
     ClusterConfigurationService ccService = getConfigurationService();
 
+    // if cc is running, you can only alter connection available in cc service.
+    if(ccService != null){
+      // search for the connection that has this id to see if it exists
+      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      if(service == null){
+        throw new EntityNotFoundException("connection with name "+ name + "does not exist.");
+      }
+      ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
+      if(conn == null){
+        throw new EntityNotFoundException("connection with name "+ name + "does not exist.");
+      }
+    }
+
+    // action
+    List<CliFunctionResult> results = executeAndGetFunctionResult(new AlterConnectionFunction(), newConnection, targetMembers);
+
+    // update the cc with the merged connection returned from the server
+    boolean persisted = false;
     if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
       ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
       if (service == null) {
         service = new ConnectorService();
       }
-      ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
-      service.getConnection().remove(conn);
-      service.getConnection().add(connection);
+      CliFunctionResult
+          successResult = results.stream().filter(CliFunctionResult::isSuccessful).findAny().get();
+      ConnectorService.Connection mergedConnection =
+          (ConnectorService.Connection) successResult.getSingleSerializable();
+      ccService.removeFromList(service.getConnection(), name);
+      service.getConnection().add(mergedConnection);
       ccService.saveCustomCacheElement("cluster", service);
       persisted = true;
     }

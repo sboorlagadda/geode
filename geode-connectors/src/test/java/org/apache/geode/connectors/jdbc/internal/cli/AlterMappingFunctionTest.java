@@ -145,7 +145,7 @@ public class AlterMappingFunctionTest {
   @Test
   public void alterMappingPdxClassName() {
     ConnectorService.RegionMapping newConfigValues =
-        new ConnectorService.RegionMapping(REGION_NAME, "newClassName", null, null, null, null);
+        new ConnectorService.RegionMapping(REGION_NAME, "newClassName", null, null, null);
 
     ConnectorService.RegionMapping
         alteredConfig = function.alterRegionMapping(newConfigValues, mappingToAlter);
@@ -162,7 +162,7 @@ public class AlterMappingFunctionTest {
   @Test
   public void alterRegionMappingTable() {
     ConnectorService.RegionMapping newConfigValues =
-        new ConnectorService.RegionMapping(REGION_NAME, null, "newTable", null, null, null);
+        new ConnectorService.RegionMapping(REGION_NAME, null, "newTable", null, null);
 
     ConnectorService.RegionMapping
         alteredConfig = function.alterRegionMapping(newConfigValues, mappingToAlter);
@@ -179,7 +179,7 @@ public class AlterMappingFunctionTest {
   @Test
   public void alterRegionMappingPrimaryKeyInValue() {
     ConnectorService.RegionMapping
-        newConfigValues = new ConnectorService.RegionMapping(REGION_NAME, null, null, null, false, null);
+        newConfigValues = new ConnectorService.RegionMapping(REGION_NAME, null, null, null, false);
 
     ConnectorService.RegionMapping
         alteredConfig = function.alterRegionMapping(newConfigValues, mappingToAlter);
@@ -196,7 +196,7 @@ public class AlterMappingFunctionTest {
   @Test
   public void alterRegionMappingConnectionName() {
     ConnectorService.RegionMapping newConfigValues =
-        new ConnectorService.RegionMapping(REGION_NAME, null, null, "newConnection", null, null);
+        new ConnectorService.RegionMapping(REGION_NAME, null, null, "newConnection", null);
 
     ConnectorService.RegionMapping
         alteredConfig = function.alterRegionMapping(newConfigValues, mappingToAlter);
@@ -233,7 +233,7 @@ public class AlterMappingFunctionTest {
   @Test
   public void alterRegionMappingWithNothingToAlter() {
     ConnectorService.RegionMapping
-        newConfigValues = new ConnectorService.RegionMapping(REGION_NAME, null, null, null, null, null);
+        newConfigValues = new ConnectorService.RegionMapping(REGION_NAME, null, null, null, null);
 
     ConnectorService.RegionMapping
         alteredConfig = function.alterRegionMapping(newConfigValues, mappingToAlter);

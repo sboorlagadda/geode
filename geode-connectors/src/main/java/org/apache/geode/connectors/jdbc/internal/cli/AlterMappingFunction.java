@@ -14,6 +14,7 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.geode.annotations.Experimental;
@@ -46,10 +47,7 @@ public class AlterMappingFunction extends JdbcCliFunction<ConnectorService.Regio
     service.replaceRegionMapping(alteredMapping);
 
     // output
-    String member = getMember(context);
-    XmlEntity xmlEntity = createXmlEntity(context);
-    CliFunctionResult result = createSuccessResult(mapping.getRegionName(), member, xmlEntity);
-    return result;
+    return new CliFunctionResult(context.getMemberName(), alteredMapping);
   }
 
   ConnectorService.RegionMapping alterRegionMapping(ConnectorService.RegionMapping regionMapping, ConnectorService.RegionMapping existingMapping) {
@@ -61,12 +59,12 @@ public class AlterMappingFunction extends JdbcCliFunction<ConnectorService.Regio
     Boolean keyInValue = regionMapping.isPrimaryKeyInValue() == null
         ? existingMapping.isPrimaryKeyInValue() : regionMapping.isPrimaryKeyInValue();
 
-//    Map<String, String> fieldMappings = regionMapping.getFieldToColumnMap();
-//    if (fieldMappings == null) {
-//      fieldMappings = existingMapping.getFieldToColumnMap();
-//    }
+    List<ConnectorService.RegionMapping.FieldMapping> fieldMappings = regionMapping.getFieldMapping();
+    if (fieldMappings.isEmpty()) {
+      fieldMappings = existingMapping.getFieldMapping();
+    }
     ConnectorService.RegionMapping alteredMapping = new ConnectorService.RegionMapping(existingMapping.getRegionName(), pdxClassName,
-        table, connectionName, keyInValue, null);
+        table, connectionName, keyInValue, fieldMappings);
     return alteredMapping;
   }
 
@@ -77,11 +75,5 @@ public class AlterMappingFunction extends JdbcCliFunction<ConnectorService.Regio
       return existingValue;
     }
     return newValue.isEmpty() ? null : newValue;
-  }
-
-  private CliFunctionResult createSuccessResult(String connectionName, String member,
-      XmlEntity xmlEntity) {
-    String message = "Altered JDBC connection " + connectionName + " on " + member;
-    return new CliFunctionResult(member, xmlEntity, message);
   }
 }

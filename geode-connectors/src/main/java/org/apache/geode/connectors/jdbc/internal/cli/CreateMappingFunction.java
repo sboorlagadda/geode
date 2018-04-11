@@ -40,8 +40,8 @@ public class CreateMappingFunction extends JdbcCliFunction<ConnectorService.Regi
 
     // output
     String member = getMember(context);
-    XmlEntity xmlEntity = createXmlEntity(context);
-    return createSuccessResult(regionMapping.getRegionName(), member, xmlEntity);
+    String message = "Created JDBC mapping for region " + regionMapping.getRegionName() + " on " + member;
+    return new CliFunctionResult(member, true, message);
   }
 
   /**
@@ -50,11 +50,5 @@ public class CreateMappingFunction extends JdbcCliFunction<ConnectorService.Regi
   void createRegionMapping(JdbcConnectorService service, ConnectorService.RegionMapping regionMapping)
       throws RegionMappingExistsException {
     service.createRegionMapping(regionMapping);
-  }
-
-  private CliFunctionResult createSuccessResult(String regionName, String member,
-      XmlEntity xmlEntity) {
-    String message = "Created JDBC mapping for region " + regionName + " on " + member;
-    return new CliFunctionResult(member, xmlEntity, message);
   }
 }
