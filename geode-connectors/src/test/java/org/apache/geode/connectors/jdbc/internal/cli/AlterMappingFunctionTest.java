@@ -41,7 +41,6 @@ import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigNotFoundException;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingNotFoundException;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
@@ -73,8 +72,8 @@ public class AlterMappingFunctionTest {
     DistributedMember distributedMember = mock(DistributedMember.class);
     service = mock(JdbcConnectorService.class);
 
-    regionMapping = new RegionMappingBuilder().withRegionName(REGION_NAME).build();
-    existingMapping = new RegionMappingBuilder().withRegionName(REGION_NAME).build();
+    regionMapping = new ConnectorService.RegionMapping(REGION_NAME, null, null, null, null);
+    existingMapping = new ConnectorService.RegionMapping(REGION_NAME, null, null, null, null);
     Map<String, String> mappings = new HashMap<>();
     mappings.put("field1", "column1");
     mappings.put("field2", "column2");

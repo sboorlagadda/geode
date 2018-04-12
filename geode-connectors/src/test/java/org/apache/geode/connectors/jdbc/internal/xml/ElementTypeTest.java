@@ -43,7 +43,6 @@ import org.xml.sax.Attributes;
 
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheXmlException;
-import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.extension.ExtensionPoint;
@@ -189,7 +188,7 @@ public class ElementTypeTest {
 
     ElementType.REGION_MAPPING.startElement(stack, attributes);
 
-    ConnectorService.RegionMapping regionMapping = ((RegionMappingBuilder) stack.pop()).build();
+    ConnectorService.RegionMapping regionMapping = (ConnectorService.RegionMapping) stack.pop();
     assertThat(regionMapping.getRegionName()).isEqualTo("region");
     assertThat(regionMapping.getConnectionConfigName()).isEqualTo("connectionName");
     assertThat(regionMapping.getTableName()).isEqualTo("table");
@@ -199,10 +198,10 @@ public class ElementTypeTest {
 
   @Test
   public void endElementRegionMapping() {
-    RegionMappingBuilder builder = mock(RegionMappingBuilder.class);
+    ConnectorService.RegionMapping mapping = mock(ConnectorService.RegionMapping.class);
     JdbcServiceConfiguration serviceConfiguration = mock(JdbcServiceConfiguration.class);
     stack.push(serviceConfiguration);
-    stack.push(builder);
+    stack.push(mapping);
 
     ElementType.REGION_MAPPING.endElement(stack);
 
@@ -220,28 +219,32 @@ public class ElementTypeTest {
 
   @Test
   public void startElementFieldMapping() {
-    RegionMappingBuilder builder = new RegionMappingBuilder();
-    stack.push(builder);
+    ConnectorService.RegionMapping.FieldMapping fieldMapping =
+        new ConnectorService.RegionMapping.FieldMapping();
+    stack.push(fieldMapping);
     when(attributes.getValue(FIELD_NAME)).thenReturn("fieldName");
     when(attributes.getValue(COLUMN_NAME)).thenReturn("columnName");
 
     ElementType.FIELD_MAPPING.startElement(stack, attributes);
 
-    ConnectorService.RegionMapping regionMapping = ((RegionMappingBuilder) stack.pop()).build();
+    ConnectorService.RegionMapping.FieldMapping fieldMapping1 =
+        (ConnectorService.RegionMapping.FieldMapping) stack.pop();
+    ConnectorService.RegionMapping regionMapping = new ConnectorService.RegionMapping();
+    regionMapping.getFieldMapping().add(fieldMapping);
     assertThat(regionMapping.getColumnNameForField("fieldName", mock(TableMetaDataView.class)))
         .isEqualTo("columnName");
   }
 
   @Test
   public void endElementFieldMapping() {
-    RegionMappingBuilder builder = mock(RegionMappingBuilder.class);
+    ConnectorService.RegionMapping mapping = mock(ConnectorService.RegionMapping.class);
     JdbcServiceConfiguration serviceConfiguration = mock(JdbcServiceConfiguration.class);
     stack.push(serviceConfiguration);
-    stack.push(builder);
+    stack.push(mapping);
 
     ElementType.FIELD_MAPPING.endElement(stack);
 
     assertThat(stack.size()).isEqualTo(2);
-    verifyZeroInteractions(builder);
+    verifyZeroInteractions(mapping);
   }
 }
