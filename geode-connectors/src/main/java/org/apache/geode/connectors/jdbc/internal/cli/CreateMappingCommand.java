@@ -17,25 +17,20 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.apache.geode.distributed.ClusterConfigurationService;
-import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
-import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
+import org.apache.geode.distributed.ClusterConfigurationService;
 import org.apache.geode.distributed.DistributedMember;
-import org.apache.geode.distributed.internal.InternalClusterConfigurationService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
+import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
-import org.apache.geode.management.internal.cli.result.TabularResultData;
-import org.apache.geode.management.internal.configuration.domain.XmlEntity;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
@@ -85,7 +80,8 @@ public class CreateMappingCommand extends InternalGfshCommand {
 
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
-    ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping(regionName, pdxClassName, table, connectionName, keyInValue);
+    ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping(regionName,
+        pdxClassName, table, connectionName, keyInValue);
     mapping.setFieldMapping(fieldMappings);
 
     // action
@@ -95,9 +91,10 @@ public class CreateMappingCommand extends InternalGfshCommand {
     boolean persisted = false;
     ClusterConfigurationService ccService = getConfigurationService();
 
-    if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-      if(service == null) {
+    if (ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
+      ConnectorService service =
+          ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      if (service == null) {
         service = new ConnectorService();
       }
       service.getRegionMapping().add(mapping);

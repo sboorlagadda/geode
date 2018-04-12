@@ -17,20 +17,20 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.apache.geode.distributed.ClusterConfigurationService;
-import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
-import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
+import org.apache.geode.distributed.ClusterConfigurationService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
+import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
+import org.apache.geode.management.internal.cli.functions.CliFunctionExecutionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
+import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
@@ -68,7 +68,7 @@ public class AlterMappingCommand extends InternalGfshCommand {
   public Result alterMapping(
       @CliOption(key = ALTER_MAPPING__REGION_NAME, mandatory = true,
           help = ALTER_MAPPING__REGION_NAME__HELP) String regionName,
-      @CliOption(key = ALTER_MAPPING__CONNECTION_NAME,
+      @CliOption(key = ALTER_MAPPING__CONNECTION_NAME, specifiedDefaultValue = "",
           help = ALTER_MAPPING__CONNECTION_NAME__HELP) String connectionName,
       @CliOption(key = ALTER_MAPPING__TABLE_NAME, help = ALTER_MAPPING__TABLE_NAME__HELP,
           specifiedDefaultValue = "") String table,
@@ -81,46 +81,50 @@ public class AlterMappingCommand extends InternalGfshCommand {
           specifiedDefaultValue = "") String[] fieldMappings) {
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
-    ConnectorService.RegionMapping newMapping =
-        new ConnectorService.RegionMapping(regionName, connectionName, table, pdxClassName, keyInValue);
+    ConnectorService.RegionMapping newMapping = new ConnectorService.RegionMapping(regionName,
+        pdxClassName, table, connectionName, keyInValue);
     newMapping.setFieldMapping(fieldMappings);
 
     ClusterConfigurationService ccService = getConfigurationService();
     // if cc is running, you can only alter connection available in cc service.
-    if(ccService != null){
+    if (ccService != null) {
       // search for the connection that has this id to see if it exists
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-      if(service == null){
-        throw new EntityNotFoundException("mapping with name "+ regionName + "does not exist.");
+      ConnectorService service =
+          ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      if (service == null) {
+        throw new EntityNotFoundException("mapping with name '" + regionName + "' does not exist.");
       }
-      ConnectorService.RegionMapping mapping = ccService.findIdentifiable(service.getRegionMapping(), regionName);
-      if(mapping == null){
-        throw new EntityNotFoundException("mapping with name "+ regionName + "does not exist.");
+      ConnectorService.RegionMapping mapping =
+          ccService.findIdentifiable(service.getRegionMapping(), regionName);
+      if (mapping == null) {
+        throw new EntityNotFoundException("mapping with name '" + regionName + "' does not exist.");
       }
     }
 
     // action
-    List<CliFunctionResult> results =
-        executeAndGetFunctionResult(new AlterMappingFunction(), newMapping, targetMembers);
+    List<CliFunctionExecutionResult> results =
+        executeAndGetFunctionExecutionResult(new AlterMappingFunction(), newMapping, targetMembers);
 
     boolean persisted = false;
     // update the cc with the merged connection returned from the server
-    if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+    if (ccService != null
+        && results.stream().filter(CliFunctionExecutionResult::isSuccessful).count() > 0) {
+      ConnectorService service =
+          ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
       if (service == null) {
         service = new ConnectorService();
       }
-      CliFunctionResult
-          successResult = results.stream().filter(CliFunctionResult::isSuccessful).findAny().get();
+      CliFunctionExecutionResult successResult =
+          results.stream().filter(CliFunctionExecutionResult::isSuccessful).findAny().get();
       ConnectorService.RegionMapping mergedMapping =
-          (ConnectorService.RegionMapping) successResult.getSingleSerializable();
+          (ConnectorService.RegionMapping) successResult.getResultObject();
       ccService.removeFromList(service.getRegionMapping(), connectionName);
       service.getRegionMapping().add(mergedMapping);
       ccService.saveCustomCacheElement("cluster", service);
       persisted = true;
     }
 
-    CommandResult commandResult = ResultBuilder.buildResult(results, EXPERIMENTAL, null);
+    CommandResult commandResult = ResultBuilder.buildExecutionResult(results, EXPERIMENTAL, null);
     commandResult.setCommandPersisted(persisted);
     return commandResult;
   }

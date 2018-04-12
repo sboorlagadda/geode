@@ -29,15 +29,16 @@ import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand
 import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__TABLE_NAME;
 import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__VALUE_CONTAINS_PRIMARY_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
@@ -105,8 +106,12 @@ public class AlterMappingCommandDUnitTest {
       assertThat(mapping.getTableName()).isEqualTo("newTable");
       assertThat(mapping.getPdxClassName()).isEqualTo("newPdxClass");
       assertThat(mapping.isPrimaryKeyInValue()).isEqualTo(false);
-     // assertThat(mapping.getFieldToColumnMap()).containsExactly(entry("field3", "column3"),
-       //   entry("field4", "column4"));
+      List<ConnectorService.RegionMapping.FieldMapping> fieldMappings = mapping.getFieldMapping();
+      assertThat(fieldMappings).hasSize(2);
+      assertThat(fieldMappings.get(0).getFieldName()).isEqualTo("field3");
+      assertThat(fieldMappings.get(0).getColumnName()).isEqualTo("column3");
+      assertThat(fieldMappings.get(1).getFieldName()).isEqualTo("field4");
+      assertThat(fieldMappings.get(1).getColumnName()).isEqualTo("column4");
     });
   }
 
@@ -133,7 +138,7 @@ public class AlterMappingCommandDUnitTest {
       assertThat(mapping.getConnectionConfigName()).isEqualTo("connection");
       assertThat(mapping.getTableName()).isNull();
       assertThat(mapping.getPdxClassName()).isNull();
-     // assertThat(mapping.getFieldToColumnMap()).isEmpty();
+      assertThat(mapping.getFieldMapping()).isEmpty();
     });
   }
 }

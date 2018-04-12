@@ -37,7 +37,6 @@ import org.mockito.ArgumentCaptor;
 
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigNotFoundException;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
@@ -70,8 +69,10 @@ public class AlterConnectionFunctionTest {
     DistributedMember distributedMember = mock(DistributedMember.class);
     service = mock(JdbcConnectorService.class);
 
-    connectionConfig = new ConnectionConfigBuilder().withName(CONNECTION_NAME).build();
-    existingConfig = new ConnectionConfigBuilder().withName(CONNECTION_NAME).build();
+    connectionConfig =
+        new ConnectorService.Connection(CONNECTION_NAME, null, null, null, (String) null);
+    existingConfig =
+        new ConnectorService.Connection(CONNECTION_NAME, null, null, null, (String) null);
     Map<String, String> parameters = new HashMap<>();
     parameters.put("key1", "value1");
     parameters.put("key2", "value2");
@@ -171,8 +172,8 @@ public class AlterConnectionFunctionTest {
 
   @Test
   public void alterConnectionConfigPassword() {
-    ConnectorService.Connection newConfigValues =
-        new ConnectorService.Connection(CONNECTION_NAME, null, null, "newPassword", (String[]) null);
+    ConnectorService.Connection newConfigValues = new ConnectorService.Connection(CONNECTION_NAME,
+        null, null, "newPassword", (String[]) null);
 
     ConnectorService.Connection alteredConfig =
         function.alterConnectionConfig(newConfigValues, configToAlter);
@@ -218,5 +219,33 @@ public class AlterConnectionFunctionTest {
     assertThat(alteredConfig.getPassword()).isEqualTo("originalPassword");
     assertThat(alteredConfig.getParameterMap()).containsOnly(entry("key1", "value1"),
         entry("key2", "value2"));
+  }
+
+  @Test
+  public void alterConnectionRemoveParameters() {
+    ConnectorService.Connection newConfigValues =
+        new ConnectorService.Connection(CONNECTION_NAME, null, null, null, new String[0]);
+
+    ConnectorService.Connection alteredConfig =
+        function.alterConnectionConfig(newConfigValues, configToAlter);
+    assertThat(alteredConfig.getName()).isEqualTo(CONNECTION_NAME);
+    assertThat(alteredConfig.getUrl()).isEqualTo("originalUrl");
+    assertThat(alteredConfig.getUser()).isEqualTo("originalUser");
+    assertThat(alteredConfig.getPassword()).isEqualTo("originalPassword");
+    assertThat(alteredConfig.getParameterMap()).isEmpty();
+  }
+
+  @Test
+  public void alterConnectionRemoveParametersWithEmptyString() {
+    ConnectorService.Connection newConfigValues =
+        new ConnectorService.Connection(CONNECTION_NAME, null, null, null, new String[] {""});
+
+    ConnectorService.Connection alteredConfig =
+        function.alterConnectionConfig(newConfigValues, configToAlter);
+    assertThat(alteredConfig.getName()).isEqualTo(CONNECTION_NAME);
+    assertThat(alteredConfig.getUrl()).isEqualTo("originalUrl");
+    assertThat(alteredConfig.getUser()).isEqualTo("originalUser");
+    assertThat(alteredConfig.getPassword()).isEqualTo("originalPassword");
+    assertThat(alteredConfig.getParameterMap()).isEmpty();
   }
 }

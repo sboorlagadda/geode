@@ -14,6 +14,15 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__CONNECTION_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__PDX_CLASS_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__REGION_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__TABLE_NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__VALUE_CONTAINS_PRIMARY_KEY;
+
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.ClusterConfigurationService;
@@ -27,14 +36,6 @@ import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
-import org.springframework.shell.core.annotation.CliCommand;
-import org.springframework.shell.core.annotation.CliOption;
-
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__CONNECTION_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__PDX_CLASS_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__REGION_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__TABLE_NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__VALUE_CONTAINS_PRIMARY_KEY;
 
 @Experimental
 public class DescribeMappingCommand extends InternalGfshCommand {
@@ -56,17 +57,21 @@ public class DescribeMappingCommand extends InternalGfshCommand {
       help = DESCRIBE_MAPPING__REGION_NAME__HELP) String regionName) {
 
     ClusterConfigurationService ccService = getConfigurationService();
-    if(ccService == null){
-      return ResultBuilder.createUserErrorResult("cluster configuration service is not running");
+    if (ccService == null) {
+      return ResultBuilder.createInfoResult("cluster configuration service is not running");
     }
     // search for the connection that has this id to see if it exists
-    ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-    if(service == null){
-      throw new EntityNotFoundException("Mapping for region '"+ regionName + "' not found");
+    ConnectorService service =
+        ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+    if (service == null) {
+      throw new EntityNotFoundException(
+          EXPERIMENTAL + "\n" + "mapping for region '" + regionName + "' not found");
     }
-    ConnectorService.RegionMapping mapping = ccService.findIdentifiable(service.getRegionMapping(), regionName);
-    if(mapping == null){
-      throw new EntityNotFoundException("Mapping for region '"+ regionName + "' not found");
+    ConnectorService.RegionMapping mapping =
+        ccService.findIdentifiable(service.getRegionMapping(), regionName);
+    if (mapping == null) {
+      throw new EntityNotFoundException(
+          EXPERIMENTAL + "\n" + "mapping for region '" + regionName + "' not found");
     }
 
     CompositeResultData resultData = ResultBuilder.createCompositeResultData();
@@ -75,7 +80,8 @@ public class DescribeMappingCommand extends InternalGfshCommand {
     return ResultBuilder.buildResult(resultData);
   }
 
-  private void fillResultData(ConnectorService.RegionMapping mapping, CompositeResultData resultData) {
+  private void fillResultData(ConnectorService.RegionMapping mapping,
+      CompositeResultData resultData) {
     CompositeResultData.SectionResultData sectionResult =
         resultData.addSection(RESULT_SECTION_NAME);
     sectionResult.addSeparator('-');

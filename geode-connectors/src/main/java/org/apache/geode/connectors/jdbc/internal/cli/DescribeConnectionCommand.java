@@ -14,6 +14,15 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__NAME;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PARAMS;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PASSWORD;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__URL;
+import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__USER;
+
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.ClusterConfigurationService;
@@ -27,14 +36,6 @@ import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
-import org.springframework.shell.core.annotation.CliCommand;
-import org.springframework.shell.core.annotation.CliOption;
-
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__NAME;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PARAMS;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__PASSWORD;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__URL;
-import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__USER;
 
 @Experimental
 public class DescribeConnectionCommand extends InternalGfshCommand {
@@ -56,17 +57,21 @@ public class DescribeConnectionCommand extends InternalGfshCommand {
       help = DESCRIBE_CONNECTION__NAME__HELP) String name) {
 
     ClusterConfigurationService ccService = getConfigurationService();
-    if(ccService == null){
-      return ResultBuilder.createUserErrorResult("cluster configuration service is not running");
+    if (ccService == null) {
+      return ResultBuilder.createInfoResult("cluster configuration service is not running");
     }
     // search for the connection that has this id to see if it exists
-    ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-    if(service == null){
-      throw new EntityNotFoundException("Connection named '" + name + "' not found");
+    ConnectorService service =
+        ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+    if (service == null) {
+      throw new EntityNotFoundException(
+          EXPERIMENTAL + "\n" + "connection named '" + name + "' not found");
     }
-    ConnectorService.Connection connection = ccService.findIdentifiable(service.getConnection(), name);
-    if(connection == null){
-      throw new EntityNotFoundException("Connection named '" + name + "' not found");
+    ConnectorService.Connection connection =
+        ccService.findIdentifiable(service.getConnection(), name);
+    if (connection == null) {
+      throw new EntityNotFoundException(
+          EXPERIMENTAL + "\n" + "connection named '" + name + "' not found");
     }
 
     CompositeResultData resultData = ResultBuilder.createCompositeResultData();

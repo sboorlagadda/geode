@@ -89,7 +89,8 @@ public class SqlHandler {
   }
 
   private ConnectorService.RegionMapping getMappingForRegion(String regionName) {
-    ConnectorService.RegionMapping regionMapping = this.configService.getMappingForRegion(regionName);
+    ConnectorService.RegionMapping regionMapping =
+        this.configService.getMappingForRegion(regionName);
     if (regionMapping == null) {
       throw new JdbcConnectorException("JDBC mapping for region " + regionName
           + " not found. Create the mapping with the gfsh command 'create jdbc-mapping'.");

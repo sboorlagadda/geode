@@ -28,7 +28,7 @@ import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
+import org.apache.geode.management.internal.cli.functions.CliFunctionExecutionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -84,39 +84,43 @@ public class AlterConnectionCommand extends GfshCommand {
     ClusterConfigurationService ccService = getConfigurationService();
 
     // if cc is running, you can only alter connection available in cc service.
-    if(ccService != null){
+    if (ccService != null) {
       // search for the connection that has this id to see if it exists
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-      if(service == null){
-        throw new EntityNotFoundException("connection with name "+ name + "does not exist.");
+      ConnectorService service =
+          ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      if (service == null) {
+        throw new EntityNotFoundException("connection with name '" + name + "' does not exist.");
       }
       ConnectorService.Connection conn = ccService.findIdentifiable(service.getConnection(), name);
-      if(conn == null){
-        throw new EntityNotFoundException("connection with name "+ name + "does not exist.");
+      if (conn == null) {
+        throw new EntityNotFoundException("connection with name '" + name + "' does not exist.");
       }
     }
 
     // action
-    List<CliFunctionResult> results = executeAndGetFunctionResult(new AlterConnectionFunction(), newConnection, targetMembers);
+    List<CliFunctionExecutionResult> results = executeAndGetFunctionExecutionResult(
+        new AlterConnectionFunction(), newConnection, targetMembers);
 
     // update the cc with the merged connection returned from the server
     boolean persisted = false;
-    if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+    if (ccService != null
+        && results.stream().filter(CliFunctionExecutionResult::isSuccessful).count() > 0) {
+      ConnectorService service =
+          ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
       if (service == null) {
         service = new ConnectorService();
       }
-      CliFunctionResult
-          successResult = results.stream().filter(CliFunctionResult::isSuccessful).findAny().get();
+      CliFunctionExecutionResult successResult =
+          results.stream().filter(CliFunctionExecutionResult::isSuccessful).findAny().get();
       ConnectorService.Connection mergedConnection =
-          (ConnectorService.Connection) successResult.getSingleSerializable();
+          (ConnectorService.Connection) successResult.getResultObject();
       ccService.removeFromList(service.getConnection(), name);
       service.getConnection().add(mergedConnection);
       ccService.saveCustomCacheElement("cluster", service);
       persisted = true;
     }
 
-    CommandResult commandResult = ResultBuilder.buildResult(results, EXPERIMENTAL, null);
+    CommandResult commandResult = ResultBuilder.buildExecutionResult(results, EXPERIMENTAL, null);
     commandResult.setCommandPersisted(persisted);
     return commandResult;
   }

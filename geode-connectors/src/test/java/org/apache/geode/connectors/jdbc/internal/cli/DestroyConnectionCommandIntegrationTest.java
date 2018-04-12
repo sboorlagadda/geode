@@ -43,7 +43,8 @@ public class DestroyConnectionCommandIntegrationTest {
     connectionName = "connectionName";
 
     String[] params = new String[] {"param1:value1", "param2:value2"};
-    connectionConfig = new ConnectorService.Connection(connectionName, "url", "user", "password", params);
+    connectionConfig =
+        new ConnectorService.Connection(connectionName, "url", "user", "password", params);
 
     cache = (InternalCache) new CacheFactory().set("locators", "").set("mcast-port", "0")
         .set(ENABLE_CLUSTER_CONFIGURATION, "true").create();

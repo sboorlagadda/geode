@@ -22,7 +22,6 @@ import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionComm
 import static org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand.CREATE_CONNECTION__USER;
 import static org.apache.geode.connectors.jdbc.internal.cli.DescribeConnectionCommand.DESCRIBE_CONNECTION;
 import static org.apache.geode.connectors.jdbc.internal.cli.DescribeConnectionCommand.DESCRIBE_CONNECTION__NAME;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 
@@ -31,10 +30,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException;
-import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
@@ -78,8 +73,8 @@ public class DescribeConnectionCommandDUnitTest implements Serializable {
 
     gfsh.executeAndAssertThat(csb.toString()).statusIsSuccess();
 
-    csb = new CommandStringBuilder(DESCRIBE_CONNECTION)
-        .addOption(DESCRIBE_CONNECTION__NAME, CONNECTION_NAME);
+    csb = new CommandStringBuilder(DESCRIBE_CONNECTION).addOption(DESCRIBE_CONNECTION__NAME,
+        CONNECTION_NAME);
 
     CommandResultAssert commandResultAssert = gfsh.executeAndAssertThat(csb.toString());
 
@@ -103,7 +98,7 @@ public class DescribeConnectionCommandDUnitTest implements Serializable {
     CommandResultAssert commandResultAssert = gfsh.executeAndAssertThat(csb.toString());
 
     commandResultAssert.statusIsError();
-    commandResultAssert
-        .containsOutput(String.format("Connection named '%s' not found", "nonExisting"));
+    commandResultAssert.containsOutput(
+        String.format("(Experimental) \n" + "connection named 'nonExisting' not found"));
   }
 }

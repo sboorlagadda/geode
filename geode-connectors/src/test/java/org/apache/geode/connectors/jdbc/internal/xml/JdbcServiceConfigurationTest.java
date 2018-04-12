@@ -14,8 +14,6 @@
  */
 package org.apache.geode.connectors.jdbc.internal.xml;
 
-import static org.apache.geode.connectors.jdbc.internal.xml.JdbcConnectorServiceXmlParser.NAMESPACE;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,11 +24,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
-import org.apache.geode.internal.cache.xmlcache.XmlGenerator;
 import org.apache.geode.test.junit.categories.UnitTest;
 
 @Category(UnitTest.class)
@@ -57,13 +53,6 @@ public class JdbcServiceConfigurationTest {
     when(cache.getService(JdbcConnectorService.class)).thenReturn(service);
 
     configuration = new JdbcServiceConfiguration();
-  }
-
-  @Test
-  public void getXmlGeneratorReturnsGeneratorWithJdbcConnectorNamespace() throws Exception {
-    XmlGenerator<Cache> generator = configuration.getXmlGenerator();
-
-    assertThat(generator.getNamespaceUri()).isEqualTo(NAMESPACE);
   }
 
   @Test

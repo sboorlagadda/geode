@@ -86,7 +86,6 @@ public class AlterConnectionCommandDUnitTest {
     csb.addOption(ALTER_CONNECTION__PARAMS, "Key1:Value1,Key22:Value22");
     gfsh.executeAndAssertThat(csb.toString()).statusIsSuccess();
 
-
     locator.invoke(() -> {
       String xml = InternalLocator.getLocator().getSharedConfiguration().getConfiguration("cluster")
           .getCacheXmlContent();

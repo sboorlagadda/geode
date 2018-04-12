@@ -14,25 +14,23 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
-import java.util.Map;
-
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigNotFoundException;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
+import org.apache.geode.management.internal.cli.functions.CliFunctionExecutionResult;
 
 @Experimental
 public class AlterConnectionFunction
-    extends JdbcCliFunction<ConnectorService.Connection, CliFunctionResult> {
+    extends JdbcCliFunction<ConnectorService.Connection, CliFunctionExecutionResult> {
 
   AlterConnectionFunction() {
     super();
   }
 
   @Override
-  CliFunctionResult getFunctionResult(JdbcConnectorService service,
+  CliFunctionExecutionResult getFunctionResult(JdbcConnectorService service,
       FunctionContext<ConnectorService.Connection> context) throws Exception {
     ConnectorService.Connection connectionConfig = context.getArguments();
     ConnectorService.Connection existingConfig =
@@ -43,24 +41,25 @@ public class AlterConnectionFunction
     }
 
     // action
-    ConnectorService.Connection alteredConfig = alterConnectionConfig(connectionConfig, existingConfig);
+    ConnectorService.Connection alteredConfig =
+        alterConnectionConfig(connectionConfig, existingConfig);
     service.replaceConnectionConfig(alteredConfig);
 
-    return new CliFunctionResult(context.getMemberName(), alteredConfig);
+    return new CliFunctionExecutionResult(context.getMemberName(), alteredConfig, null);
   }
 
   /**
    * Creates the named connection configuration
    */
   ConnectorService.Connection alterConnectionConfig(ConnectorService.Connection connectionConfig,
-                                                    ConnectorService.Connection existingConfig) {
+      ConnectorService.Connection existingConfig) {
     String url = getValue(connectionConfig.getUrl(), existingConfig.getUrl());
     String user = getValue(connectionConfig.getUser(), existingConfig.getUser());
     String password = getValue(connectionConfig.getPassword(), existingConfig.getPassword());
 
-    Map<String, String> parameters = connectionConfig.getParameterMap();
-    if (parameters.keySet().isEmpty()) {
-      parameters = existingConfig.getParameterMap();
+    String parameters = connectionConfig.getParameters();
+    if (parameters == null) {
+      parameters = existingConfig.getParameters();
     }
     ConnectorService.Connection alteredConfig =
         new ConnectorService.Connection(existingConfig.getName(), url, user, password, parameters);

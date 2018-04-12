@@ -34,8 +34,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Stack;
 
 import org.junit.Before;
@@ -45,7 +43,6 @@ import org.xml.sax.Attributes;
 
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheXmlException;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
@@ -157,18 +154,15 @@ public class ElementTypeTest {
     assertThat(config.getUrl()).isEqualTo("url");
     assertThat(config.getUser()).isNull();
     assertThat(config.getPassword()).isNull();
-    Map<String, String> expectedParams = new HashMap<>();
-    expectedParams.put("key1", "value1");
-    expectedParams.put("key2", "value2");
-    assertThat(config.getParameters()).isEqualTo(expectedParams);
+    assertThat(config.getParameters()).isEqualTo("key1:value1,key2:value2");
   }
 
   @Test
   public void endElementConnection() {
-    ConnectionConfigBuilder builder = mock(ConnectionConfigBuilder.class);
+    ConnectorService.Connection connection = mock(ConnectorService.Connection.class);
     JdbcServiceConfiguration serviceConfiguration = mock(JdbcServiceConfiguration.class);
     stack.push(serviceConfiguration);
-    stack.push(builder);
+    stack.push(connection);
 
     CONNECTION.endElement(stack);
 

@@ -68,7 +68,8 @@ public class JdbcServiceConfiguration implements Extension<Cache> {
     }
   }
 
-  private void createRegionMapping(JdbcConnectorService service, ConnectorService.RegionMapping regionMapping) {
+  private void createRegionMapping(JdbcConnectorService service,
+      ConnectorService.RegionMapping regionMapping) {
     try {
       service.createRegionMapping(regionMapping);
     } catch (RegionMappingExistsException e) {

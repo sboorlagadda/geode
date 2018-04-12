@@ -33,7 +33,6 @@ import org.mockito.ArgumentCaptor;
 
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.execute.ResultSender;
-import org.apache.geode.connectors.jdbc.internal.ConnectionConfigBuilder;
 import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
@@ -64,7 +63,8 @@ public class CreateConnectionFunctionTest {
     DistributedMember distributedMember = mock(DistributedMember.class);
     service = mock(JdbcConnectorService.class);
 
-    connectionConfig = new ConnectionConfigBuilder().withName(CONNECTION_NAME).build();
+    connectionConfig =
+        new ConnectorService.Connection(CONNECTION_NAME, null, null, null, (String) null);;
 
     when(context.getResultSender()).thenReturn(resultSender);
     when(context.getCache()).thenReturn(cache);

@@ -51,11 +51,6 @@ public class CliFunctionResult implements Comparable<CliFunctionResult>, DataSer
     this.successful = true;
   }
 
-  public CliFunctionResult(String memberIdOrName, Serializable serializable){
-    this.memberIdOrName = memberIdOrName;
-    this.serializables = new Serializable[]{serializable};
-  }
-
   public CliFunctionResult(final String memberIdOrName, final XmlEntity xmlEntity) {
     this.memberIdOrName = memberIdOrName;
     this.xmlEntity = xmlEntity;
@@ -137,10 +132,6 @@ public class CliFunctionResult implements Comparable<CliFunctionResult>, DataSer
 
   public Serializable[] getSerializables() {
     return this.serializables;
-  }
-
-  public Serializable getSingleSerializable() {
-    return this.serializables[0];
   }
 
   public Throwable getThrowable() {

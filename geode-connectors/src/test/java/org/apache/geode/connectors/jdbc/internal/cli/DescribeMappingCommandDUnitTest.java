@@ -23,20 +23,14 @@ import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand
 import static org.apache.geode.connectors.jdbc.internal.cli.CreateMappingCommand.CREATE_MAPPING__VALUE_CONTAINS_PRIMARY_KEY;
 import static org.apache.geode.connectors.jdbc.internal.cli.DescribeMappingCommand.DESCRIBE_MAPPING;
 import static org.apache.geode.connectors.jdbc.internal.cli.DescribeMappingCommand.DESCRIBE_MAPPING__REGION_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
-import org.apache.geode.connectors.jdbc.internal.RegionMappingExistsException;
-import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
@@ -81,8 +75,8 @@ public class DescribeMappingCommandDUnitTest implements Serializable {
 
     gfsh.executeAndAssertThat(csb.toString()).statusIsSuccess();
 
-    csb = new CommandStringBuilder(DESCRIBE_MAPPING)
-        .addOption(DESCRIBE_MAPPING__REGION_NAME, REGION_NAME);
+    csb = new CommandStringBuilder(DESCRIBE_MAPPING).addOption(DESCRIBE_MAPPING__REGION_NAME,
+        REGION_NAME);
 
     CommandResultAssert commandResultAssert = gfsh.executeAndAssertThat(csb.toString());
 
@@ -106,7 +100,7 @@ public class DescribeMappingCommandDUnitTest implements Serializable {
     CommandResultAssert commandResultAssert = gfsh.executeAndAssertThat(csb.toString());
 
     commandResultAssert.statusIsError();
-    commandResultAssert
-        .containsOutput(String.format("Mapping for region '%s' not found", "nonExisting"));
+    commandResultAssert.containsOutput(
+        String.format("(Experimental) \n" + "mapping for region 'nonExisting' not found"));
   }
 }

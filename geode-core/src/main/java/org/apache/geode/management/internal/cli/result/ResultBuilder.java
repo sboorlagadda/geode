@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 import org.apache.geode.management.cli.Result;
+import org.apache.geode.management.internal.cli.functions.CliFunctionExecutionResult;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.json.GfJsonException;
 import org.apache.geode.management.internal.cli.json.GfJsonObject;
@@ -193,7 +194,8 @@ public class ResultBuilder {
     return buildResult(functionResults, null, null);
   }
 
-  public static CommandResult buildResult(List<CliFunctionResult> functionResults, String header, String footer) {
+  public static CommandResult buildResult(List<CliFunctionResult> functionResults, String header,
+      String footer) {
     TabularResultData tabularData = ResultBuilder.createTabularResultData();
     boolean success = false;
     for (CliFunctionResult result : functionResults) {
@@ -205,10 +207,34 @@ public class ResultBuilder {
       }
     }
 
-    if(header != null) {
+    if (header != null) {
       tabularData.setHeader(header);
     }
-    if(footer != null) {
+    if (footer != null) {
+      tabularData.setFooter(footer);
+    }
+
+    tabularData.setStatus(success ? Result.Status.OK : Result.Status.ERROR);
+    return ResultBuilder.buildResult(tabularData);
+  }
+
+  public static CommandResult buildExecutionResult(List<CliFunctionExecutionResult> functionResults,
+      String header, String footer) {
+    TabularResultData tabularData = ResultBuilder.createTabularResultData();
+    boolean success = false;
+    for (CliFunctionExecutionResult result : functionResults) {
+      tabularData.accumulate("Member", result.getMemberName());
+      tabularData.accumulate("Status", result.getMessage());
+      // if one member returns back successful results, the command results in success
+      if (result.isSuccessful()) {
+        success = true;
+      }
+    }
+
+    if (header != null) {
+      tabularData.setHeader(header);
+    }
+    if (footer != null) {
       tabularData.setFooter(footer);
     }
 

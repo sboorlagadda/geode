@@ -27,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import java.io.Serializable;
 import java.util.Properties;
 
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -38,6 +37,7 @@ import org.junit.experimental.categories.Category;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.Locator;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.internal.cache.InternalCache;

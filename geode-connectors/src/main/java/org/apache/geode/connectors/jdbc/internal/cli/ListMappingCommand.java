@@ -14,21 +14,21 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
+import java.util.List;
+
+import org.springframework.shell.core.annotation.CliCommand;
+
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.ClusterConfigurationService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.commands.InternalGfshCommand;
-import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
-import org.springframework.shell.core.annotation.CliCommand;
-
-import java.util.List;
 
 @Experimental
 public class ListMappingCommand extends InternalGfshCommand {
@@ -45,13 +45,14 @@ public class ListMappingCommand extends InternalGfshCommand {
   public Result listMapping() {
 
     ClusterConfigurationService ccService = getConfigurationService();
-    if(ccService == null){
-      return ResultBuilder.createUserErrorResult("cluster configuration service is not running");
+    if (ccService == null) {
+      return ResultBuilder.createInfoResult("cluster configuration service is not running");
     }
 
-    ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-    if(service == null){
-      throw new EntityNotFoundException(EXPERIMENTAL + "\n" + NO_MAPPINGS_FOUND);
+    ConnectorService service =
+        ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+    if (service == null) {
+      return ResultBuilder.createInfoResult(EXPERIMENTAL + "\n" + NO_MAPPINGS_FOUND);
     }
 
     // output
@@ -72,8 +73,7 @@ public class ListMappingCommand extends InternalGfshCommand {
   /**
    * Returns true if any connections exist
    */
-  private boolean fillTabularResultData(
-      List<ConnectorService.RegionMapping> mappings,
+  private boolean fillTabularResultData(List<ConnectorService.RegionMapping> mappings,
       TabularResultData tabularResultData) {
     for (ConnectorService.RegionMapping mapping : mappings) {
       tabularResultData.accumulate(LIST_OF_MAPPINGS, mapping.getRegionName());

@@ -53,12 +53,14 @@ public class TestConfigService {
     return cache;
   }
 
-  private static ConnectorService.RegionMapping createRegionMapping(String pdxClassName, boolean primaryKeyInValue) {
-    return new ConnectorService.RegionMapping(REGION_NAME, pdxClassName, REGION_TABLE_NAME, CONNECTION_CONFIG_NAME,
-        primaryKeyInValue, Collections.emptyMap());
+  private static ConnectorService.RegionMapping createRegionMapping(String pdxClassName,
+      boolean primaryKeyInValue) {
+    return new ConnectorService.RegionMapping(REGION_NAME, pdxClassName, REGION_TABLE_NAME,
+        CONNECTION_CONFIG_NAME, primaryKeyInValue, Collections.emptyMap());
   }
 
   private static ConnectorService.Connection createConnectionConfig(String connectionUrl) {
-    return new ConnectorService.Connection(CONNECTION_CONFIG_NAME, connectionUrl, null, null, (String[]) null);
+    return new ConnectorService.Connection(CONNECTION_CONFIG_NAME, connectionUrl, null, null,
+        (String[]) null);
   }
 }

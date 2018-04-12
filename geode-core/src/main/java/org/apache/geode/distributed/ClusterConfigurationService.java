@@ -145,7 +145,7 @@ public interface ClusterConfigurationService {
   }
 
   default <T extends Identifiable<String>> void removeFromList(List<T> list, String id) {
-    for (Iterator<T> iter = list.listIterator(); iter.hasNext(); ) {
+    for (Iterator<T> iter = list.listIterator(); iter.hasNext();) {
       if (iter.next().getId().equals(id)) {
         iter.remove();
       }

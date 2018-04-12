@@ -29,8 +29,10 @@ import org.apache.geode.management.internal.beans.CacheServiceMBeanBase;
 @Experimental
 public class JdbcConnectorServiceImpl implements JdbcConnectorService {
 
-  private final Map<String, ConnectorService.Connection> connectionsByName = new ConcurrentHashMap<>();
-  private final Map<String, ConnectorService.RegionMapping> mappingsByRegion = new ConcurrentHashMap<>();
+  private final Map<String, ConnectorService.Connection> connectionsByName =
+      new ConcurrentHashMap<>();
+  private final Map<String, ConnectorService.RegionMapping> mappingsByRegion =
+      new ConcurrentHashMap<>();
   private final DataSourceManager manager =
       new DataSourceManager(new HikariJdbcDataSourceFactory());
   private volatile InternalCache cache;
@@ -41,8 +43,7 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
       throws ConnectionConfigExistsException {
     ConnectorService.Connection existing = connectionsByName.putIfAbsent(config.getName(), config);
     if (existing != null) {
-      throw new ConnectionConfigExistsException(
-          "Connection " + config.getName() + " exists");
+      throw new ConnectionConfigExistsException("Connection " + config.getName() + " exists");
     }
   }
 
@@ -88,9 +89,10 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
   }
 
   @Override
-  public void createRegionMapping(ConnectorService.RegionMapping mapping) throws RegionMappingExistsException {
-    ConnectorService.RegionMapping
-        existing = mappingsByRegion.putIfAbsent(mapping.getRegionName(), mapping);
+  public void createRegionMapping(ConnectorService.RegionMapping mapping)
+      throws RegionMappingExistsException {
+    ConnectorService.RegionMapping existing =
+        mappingsByRegion.putIfAbsent(mapping.getRegionName(), mapping);
     if (existing != null) {
       throw new RegionMappingExistsException(
           "RegionMapping for region " + mapping.getRegionName() + " exists");
@@ -100,7 +102,8 @@ public class JdbcConnectorServiceImpl implements JdbcConnectorService {
   @Override
   public void replaceRegionMapping(ConnectorService.RegionMapping alteredMapping)
       throws RegionMappingNotFoundException {
-    ConnectorService.RegionMapping existingMapping = mappingsByRegion.get(alteredMapping.getRegionName());
+    ConnectorService.RegionMapping existingMapping =
+        mappingsByRegion.get(alteredMapping.getRegionName());
     if (existingMapping == null) {
       throw new RegionMappingNotFoundException(
           "RegionMapping for region " + existingMapping.getRegionName() + " was not found");

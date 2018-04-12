@@ -1,10 +1,10 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
+ * contributor license agreements. See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,7 +20,6 @@ package org.apache.geode.connectors.jdbc.internal.configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
@@ -36,6 +35,7 @@ import org.apache.geode.test.junit.categories.UnitTest;
 public class ConnectorServiceTest {
 
   private JAXBService jaxbService;
+
   @Before
   public void setUp() throws Exception {
     jaxbService = new JAXBService();
@@ -49,7 +49,8 @@ public class ConnectorServiceTest {
   @Test
   public void connectorServiceCanBeCorrectlyMarshalled() {
     ConnectorService service = new ConnectorService();
-    ConnectorService.Connection connection = new ConnectorService.Connection("name", "url", "user", "password", (String[])null);
+    ConnectorService.Connection connection =
+        new ConnectorService.Connection("name", "url", "user", "password", (String[]) null);
     connection.setParameters("key:value,key1:value1");
     service.getConnection().add(connection);
 
@@ -60,11 +61,8 @@ public class ConnectorServiceTest {
     String xml = jaxbService.marshall(service);
     System.out.println(xml);
 
-    assertThat(xml).contains("name=\"name\"")
-        .contains("url=\"url\"")
-        .contains("user=\"user\"")
-        .contains("password=\"password\"")
-        .contains("parameters=\"key:value,key1:value1\"");
+    assertThat(xml).contains("name=\"name\"").contains("url=\"url\"").contains("user=\"user\"")
+        .contains("password=\"password\"").contains("parameters=\"key:value,key1:value1\"");
 
     assertThat(xml).contains("xmlns:jdbc=\"http://geode.apache.org/schema/jdbc\"");
     assertThat(xml).contains("<jdbc:connection");
@@ -78,14 +76,15 @@ public class ConnectorServiceTest {
     mapping.setPdxClassName("pdxClassName");
     mapping.setRegionName("regionA");
     mapping.setTableName("tableName");
-    mapping.getFieldMapping().add(new ConnectorService.RegionMapping.FieldMapping("field1", "column1"));
-    mapping.getFieldMapping().add(new ConnectorService.RegionMapping.FieldMapping("field2", "column2"));
+    mapping.getFieldMapping()
+        .add(new ConnectorService.RegionMapping.FieldMapping("field1", "column1"));
+    mapping.getFieldMapping()
+        .add(new ConnectorService.RegionMapping.FieldMapping("field2", "column2"));
 
     service.getRegionMapping().add(mapping);
     String xml = jaxbService.marshall(service);
 
-    assertThat(xml).contains("jdbc:connector-service")
-        .contains("connection-name=\"configName\" ")
+    assertThat(xml).contains("jdbc:connector-service").contains("connection-name=\"configName\" ")
         .contains("pdx-class=\"pdxClassName\"")
         .contains("<jdbc:field-mapping field-name=\"field1\" column-name=\"column1\"/>");
     System.out.println(xml);

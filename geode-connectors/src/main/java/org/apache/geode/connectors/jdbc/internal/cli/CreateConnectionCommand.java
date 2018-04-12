@@ -80,7 +80,8 @@ public class CreateConnectionCommand extends InternalGfshCommand {
 
     // input
     Set<DistributedMember> targetMembers = getMembers(null, null);
-    ConnectorService.Connection connection = new ConnectorService.Connection(name, url, user, password, params);
+    ConnectorService.Connection connection =
+        new ConnectorService.Connection(name, url, user, password, params);
 
     // action
     List<CliFunctionResult> results =
@@ -89,9 +90,10 @@ public class CreateConnectionCommand extends InternalGfshCommand {
     boolean persisted = false;
     ClusterConfigurationService ccService = getConfigurationService();
 
-    if(ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
-      ConnectorService service = ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
-      if(service == null) {
+    if (ccService != null && results.stream().filter(CliFunctionResult::isSuccessful).count() > 0) {
+      ConnectorService service =
+          ccService.getCustomCacheElement("cluster", "connector-service", ConnectorService.class);
+      if (service == null) {
         service = new ConnectorService();
       }
       service.getConnection().add(connection);

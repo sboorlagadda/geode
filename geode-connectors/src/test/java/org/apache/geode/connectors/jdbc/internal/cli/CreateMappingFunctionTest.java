@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import java.io.Serializable;
 
 import org.apache.commons.lang.SerializationUtils;
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +37,7 @@ import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingBuilder;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingExistsException;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.cache.InternalCache;

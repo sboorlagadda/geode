@@ -16,9 +16,7 @@ package org.apache.geode.connectors.jdbc.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.geode.annotations.Experimental;
@@ -68,13 +66,14 @@ public class RegionMappingBuilder {
   }
 
   public RegionMappingBuilder withFieldToColumnMapping(String fieldName, String columnMapping) {
-    this.fieldMappingList.add(new ConnectorService.RegionMapping.FieldMapping(fieldName, columnMapping));
+    this.fieldMappingList
+        .add(new ConnectorService.RegionMapping.FieldMapping(fieldName, columnMapping));
     return this;
   }
 
   public RegionMappingBuilder withFieldToColumnMappings(String[] mappings) {
-    if (mappings != null){
-      this.fieldMappingList = Arrays.stream(mappings).map(s->{
+    if (mappings != null) {
+      this.fieldMappingList = Arrays.stream(mappings).map(s -> {
         String[] keyValuePair = s.split(MAPPINGS_DELIMITER);
         validateParam(keyValuePair, s);
         return new ConnectorService.RegionMapping.FieldMapping(keyValuePair[0], keyValuePair[1]);
@@ -93,7 +92,7 @@ public class RegionMappingBuilder {
   }
 
   public ConnectorService.RegionMapping build() {
-    return new ConnectorService.RegionMapping(regionName, pdxClassName, tableName, connectionConfigName,
-        primaryKeyInValue, fieldMappingList);
+    return new ConnectorService.RegionMapping(regionName, pdxClassName, tableName,
+        connectionConfigName, primaryKeyInValue, fieldMappingList);
   }
 }

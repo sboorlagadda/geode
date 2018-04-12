@@ -17,13 +17,13 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingExistsException;
+import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
-import org.apache.geode.management.internal.configuration.domain.XmlEntity;
 
 @Experimental
-public class CreateMappingFunction extends JdbcCliFunction<ConnectorService.RegionMapping, CliFunctionResult> {
+public class CreateMappingFunction
+    extends JdbcCliFunction<ConnectorService.RegionMapping, CliFunctionResult> {
 
   CreateMappingFunction() {
     super();
@@ -40,15 +40,16 @@ public class CreateMappingFunction extends JdbcCliFunction<ConnectorService.Regi
 
     // output
     String member = getMember(context);
-    String message = "Created JDBC mapping for region " + regionMapping.getRegionName() + " on " + member;
+    String message =
+        "Created JDBC mapping for region " + regionMapping.getRegionName() + " on " + member;
     return new CliFunctionResult(member, true, message);
   }
 
   /**
    * Creates the named connection configuration
    */
-  void createRegionMapping(JdbcConnectorService service, ConnectorService.RegionMapping regionMapping)
-      throws RegionMappingExistsException {
+  void createRegionMapping(JdbcConnectorService service,
+      ConnectorService.RegionMapping regionMapping) throws RegionMappingExistsException {
     service.createRegionMapping(regionMapping);
   }
 }
