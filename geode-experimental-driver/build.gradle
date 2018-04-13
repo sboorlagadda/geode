@@ -23,5 +23,5 @@ dependencies {
     testCompile project(':geode-core')
     testCompile project(':geode-test')
     testCompile project(':geode-protobuf')
-    testCompile files(project(':geode-core').sourceSets.test.output)
+    testCompile project(path: ':geode-core', configuration: 'testClassesOutput')
 }

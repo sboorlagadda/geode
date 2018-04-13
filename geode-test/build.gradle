@@ -18,7 +18,7 @@
 project.ext.installs = new Properties();
 
 dependencies {
-  compile files(project(':geode-core').sourceSets.main.output)
+  compile project(path: ':geode-core', configuration: 'runtime')
   compile project(':geode-json')
 
   compile 'com.jayway.jsonpath:json-path:' + project.'json-path.version'

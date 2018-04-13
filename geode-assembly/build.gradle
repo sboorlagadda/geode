@@ -70,9 +70,9 @@ dependencies {
   archives project(':geode-rebalancer')
 
   testCompile project(':geode-pulse')
-  testCompile files(project(':geode-core').sourceSets.test.output)
-  testCompile files(project(':geode-test').sourceSets.main.output)
-  testCompile files(project(':geode-pulse').sourceSets.test.output)
+  testCompile project(path: ':geode-core', configuration: 'testClassesOutput')
+  testCompile project(path: ':geode-test', configuration: 'runtime')
+  testCompile project(path: ':geode-pulse', configuration: 'testClassesOutput')
   testCompile ('org.springframework:spring-web:' + project.'springframework.version') {
     exclude module: 'aopalliance'
     exclude module: 'spring-aop'
@@ -131,7 +131,7 @@ task defaultDistributionConfig(type: JavaExec, dependsOn: classes) {
   main 'org.apache.geode.distributed.internal.DefaultPropertiesGenerator'
   classpath project(':geode-core').sourceSets.main.runtimeClasspath
   workingDir buildDir
-  
+
   doFirst {
     buildDir.mkdirs()
   }
