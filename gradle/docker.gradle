@@ -45,16 +45,12 @@ def dockerConfig = {
     // base image for creating docker containers that execute the tests
     image = dunitDockerImage
 
-    // volumes mounted to the containers
-    // in a form: host_dir : container_dir
-    def gradleHome = System.getenv('GRADLE_USER_HOME') ?: "${System.getenv('HOME')}/.gradle"
-    volumes = ["${gradleHome}":gradleHome]
-
-    // Add volumes configured by top-level build script
-    volumes << project.dunitDockerVolumes
+    volumes = [:]
 
     // specify the user for starting Gradle test worker within the container.
     user = dunitDockerUser
+
+    client = DefaultDockerClientConfig.getInstance("tcp://35.162.128.163:2377").withDockerCmdExecFactory(new NettyDockerCmdExecFactory()).build()
 
     beforeContainerCreate = { cmd, client ->
       def javaHomeIdx = -1
@@ -79,16 +75,6 @@ def dockerConfig = {
         tmpEnv[pathIdx] = 'PATH_REMOVED='
       }
 
-      // Unfortunately this snippet of code is here and is required by dev-tools/docker/base/entrypoint.sh.
-      // This allows preserving the outer user inside the running container. Required for Jenkins
-      // and other environments. There doesn't seem to be a way to pass this environment variable
-      // in from a Jenkins Gradle job.
-      if (System.env['LOCAL_USER_ID'] == null) {
-        def username = System.getProperty("user.name")
-        def uid = ['id', '-u', username].execute().text.trim()
-        tmpEnv << ("LOCAL_USER_ID=${uid}" as String)
-      }
-
       cmd.withEnv(tmpEnv)
 
       // Infer the index of this invocation
@@ -100,6 +86,9 @@ def dockerConfig = {
       cmd.withWorkingDir(workdir.toString())
 
       //println cmd
+    }
+    afterContainerStop = { containerId, client ->
+       // you can here copy some file from the container to a central place
     }
   }
 }
