@@ -37,6 +37,16 @@
  *  dunitDockerUser    - The user used within the docker container to run tests.
  *                       The default is 'root'.
  */
+import com.github.dockerjava.netty.NettyDockerCmdExecFactory
+
+ buildscript {
+   repositories {
+     mavenCentral()
+   }
+   dependencies {
+    classpath group: 'com.github.docker-java', name: 'docker-java', version: '3.0.14'
+   }
+ }
 
 def dockerConfig = {
   maxParallelForks = dunitParallelForks.toInteger()
@@ -50,7 +60,12 @@ def dockerConfig = {
     // specify the user for starting Gradle test worker within the container.
     user = dunitDockerUser
 
-    client = DefaultDockerClientConfig.getInstance("tcp://35.162.128.163:2377").withDockerCmdExecFactory(new NettyDockerCmdExecFactory()).build()
+    client = {
+       DefaultDockerClientConfig
+            .getInstance("tcp://35.162.128.163:2377")
+            .withDockerCmdExecFactory(new NettyDockerCmdExecFactory())
+            .build()
+    }
 
     beforeContainerCreate = { cmd, client ->
       def javaHomeIdx = -1
