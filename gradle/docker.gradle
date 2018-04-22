@@ -38,6 +38,8 @@
  *                       The default is 'root'.
  */
 import com.github.dockerjava.netty.NettyDockerCmdExecFactory
+import com.github.dockerjava.core.DefaultDockerClientConfig
+import com.github.dockerjava.core.DockerClientBuilder
 
  buildscript {
    repositories {
@@ -61,10 +63,14 @@ def dockerConfig = {
     user = dunitDockerUser
 
     client = {
-       DefaultDockerClientConfig
-            .getInstance("tcp://35.162.128.163:2377")
-            .withDockerCmdExecFactory(new NettyDockerCmdExecFactory())
-            .build()
+      client = DockerClientBuilder
+                .getInstance(DefaultDockerClientConfig
+                  .createDefaultConfigBuilder()
+                  .withDockerHost("tcp://35.162.128.163:2377"))
+                .withDockerCmdExecFactory(new NettyDockerCmdExecFactory())
+                .build()
+
+      return client
     }
 
     beforeContainerCreate = { cmd, client ->
