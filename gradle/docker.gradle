@@ -63,14 +63,13 @@ def dockerConfig = {
     user = dunitDockerUser
 
     client = {
-      client = DockerClientBuilder
+      DockerClient temp = DockerClientBuilder
                 .getInstance(DefaultDockerClientConfig
                   .createDefaultConfigBuilder()
                   .withDockerHost("tcp://35.162.128.163:2377"))
                 .withDockerCmdExecFactory(new NettyDockerCmdExecFactory())
                 .build()
-
-      return client
+      return temp
     }
 
     beforeContainerCreate = { cmd, client ->
