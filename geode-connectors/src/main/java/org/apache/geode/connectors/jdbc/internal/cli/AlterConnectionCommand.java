@@ -24,10 +24,12 @@ import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.cache.configuration.CacheConfig;
 import org.apache.geode.cache.configuration.CacheElement;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.ClusterConfigurationService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
+import org.apache.geode.management.cli.CommandContext;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
@@ -61,7 +63,7 @@ public class AlterConnectionCommand extends SingleGfshCommand {
   @CliMetaData(relatedTopic = CliStrings.DEFAULT_TOPIC_GEODE)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Result alterConnection(
+  public Object alterConnection(
       @CliOption(key = ALTER_CONNECTION__NAME, mandatory = true,
           help = ALTER_CONNECTION__NAME__HELP) String name,
       @CliOption(key = ALTER_CONNECTION__URL, specifiedDefaultValue = "",
@@ -73,7 +75,6 @@ public class AlterConnectionCommand extends SingleGfshCommand {
       @CliOption(key = ALTER_CONNECTION__PARAMS, specifiedDefaultValue = "",
           help = ALTER_CONNECTION__PARAMS__HELP) String[] params) {
     // input
-    Set<DistributedMember> targetMembers = getMembers(null, null);
     ConnectorService.Connection newConnection =
         new ConnectorService.Connection(name, url, user, password, params);
 
@@ -93,19 +94,7 @@ public class AlterConnectionCommand extends SingleGfshCommand {
         throw new EntityNotFoundException("connection with name '" + name + "' does not exist.");
       }
     }
-
-    // action
-    List<CliFunctionResult> results =
-        executeAndGetFunctionResult(new AlterConnectionFunction(), newConnection, targetMembers);
-
-    CliFunctionResult successResult =
-        results.stream().filter(CliFunctionResult::isSuccessful).findAny().get();
-    ConnectorService.Connection mergedConnection =
-        (ConnectorService.Connection) successResult.getResultObject();
-
-    CommandResult commandResult = ResultBuilder.buildResult(results);
-    commandResult.setConfigObject(mergedConnection);
-    return commandResult;
+    return new CommandContext(newConnection, true, new AlterConnectionFunction(), false);
   }
 
   @Override

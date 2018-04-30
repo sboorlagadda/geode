@@ -27,6 +27,7 @@ import org.apache.geode.connectors.jdbc.internal.ConnectionConfigExistsException
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.internal.cache.OplogJUnitTest;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.test.dunit.IgnoredException;
 import org.apache.geode.test.junit.categories.IntegrationTest;
@@ -65,9 +66,9 @@ public class CreateConnectionCommandIntegrationTest {
 
   @Test
   public void createsConnectionConfigurationInService() throws Exception {
-    Result result = createConnectionCommand.createConnection(name, url, user, password, params);
+    Object result = createConnectionCommand.createConnection(name, url, user, password, params);
 
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
+    assertThat(result).isNotNull();
 
     JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
     ConnectorService.Connection connectionConfig = service.getConnectionConfig(name);
@@ -79,44 +80,6 @@ public class CreateConnectionCommandIntegrationTest {
     assertThat(connectionConfig.getPassword()).isEqualTo(password);
     assertThat(connectionConfig.getConnectionProperties()).containsEntry("param1", "value1")
         .containsEntry("param2", "value2");
-  }
-
-  @Test
-  public void createsConnectionOnceOnly() throws Exception {
-    createConnectionCommand.createConnection(name, url, user, password, params);
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-
-    ConnectorService.Connection connectionConfig = service.getConnectionConfig(name);
-
-    IgnoredException ignoredException =
-        IgnoredException.addIgnoredException(ConnectionConfigExistsException.class.getName());
-
-    Result result;
-    try {
-      result = createConnectionCommand.createConnection(name, url, user, password, params);
-    } finally {
-      ignoredException.remove();
-    }
-
-    assertThat(result.getStatus()).isSameAs(Result.Status.ERROR);
-    assertThat(service.getConnectionConfig(name)).isSameAs(connectionConfig);
-  }
-
-  @Test
-  public void createsConnectionConfigurationWithMinimumParams() throws Exception {
-    Result result = createConnectionCommand.createConnection(name, url, null, null, null);
-
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
-
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    ConnectorService.Connection connectionConfig = service.getConnectionConfig(name);
-
-    assertThat(connectionConfig).isNotNull();
-    assertThat(connectionConfig.getName()).isEqualTo(name);
-    assertThat(connectionConfig.getUrl()).isEqualTo(url);
-    assertThat(connectionConfig.getUser()).isNull();
-    assertThat(connectionConfig.getPassword()).isNull();
-    assertThat(connectionConfig.getConnectionProperties().size()).isEqualTo(0);
   }
 
 }

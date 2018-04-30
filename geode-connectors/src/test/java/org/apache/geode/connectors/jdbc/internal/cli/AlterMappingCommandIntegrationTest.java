@@ -62,24 +62,4 @@ public class AlterMappingCommandIntegrationTest {
     cache.close();
   }
 
-  @Test
-  public void altersRegionMappingInService() {
-    String[] newMappings = new String[] {"field3:column3", "field4:column4"};
-    Result result = alterRegionMappingCommand.alterMapping(regionName, "newConnection", "newTable",
-        "newPdxClass", false, newMappings);
-
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
-
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    ConnectorService.RegionMapping regionMapping = service.getMappingForRegion(regionName);
-
-    assertThat(regionMapping).isNotNull();
-    assertThat(regionMapping.getConnectionConfigName()).isEqualTo("newConnection");
-    assertThat(regionMapping.getTableName()).isEqualTo("newTable");
-    assertThat(regionMapping.getPdxClassName()).isEqualTo("newPdxClass");
-    assertThat(regionMapping.isPrimaryKeyInValue()).isFalse();
-    // assertThat(regionMapping.getFieldToColumnMap()).containsEntry("field3", "column3")
-    // .containsEntry("field4", "column4");
-  }
-
 }

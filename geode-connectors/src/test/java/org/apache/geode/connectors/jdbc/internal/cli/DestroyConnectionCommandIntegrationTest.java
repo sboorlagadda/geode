@@ -57,27 +57,4 @@ public class DestroyConnectionCommandIntegrationTest {
   public void tearDown() {
     cache.close();
   }
-
-  @Test
-  public void destroysNamedConnection() throws Exception {
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    service.createConnectionConfig(connectionConfig);
-    assertThat(service.getConnectionConfig(connectionName)).isSameAs(connectionConfig);
-
-    Result result = command.destroyConnection(connectionName);
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
-
-    assertThat(service.getConnectionConfig(connectionName)).isNull();
-  }
-
-  @Test
-  public void returnsErrorIfNamedConnectionNotFound() throws Exception {
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    assertThat(service.getConnectionConfig(connectionName)).isNull();
-
-    Result result = command.destroyConnection(connectionName);
-    assertThat(result.getStatus()).isSameAs(Result.Status.ERROR);
-
-    assertThat(service.getConnectionConfig(connectionName)).isNull();
-  }
 }

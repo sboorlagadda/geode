@@ -63,10 +63,10 @@ public class AlterConnectionCommandIntegrationTest {
   @Test
   public void altersConnectionConfigurationInService() {
     String[] newParams = new String[] {"key1:value1", "key2:value2"};
-    Result result =
+    Object result =
         alterConnectionCommand.alterConnection(name, "newUrl", "newUser", "newPassword", newParams);
 
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
+    assertThat(result).isNotNull();
 
     JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
     ConnectorService.Connection connectionConfig = service.getConnectionConfig(name);

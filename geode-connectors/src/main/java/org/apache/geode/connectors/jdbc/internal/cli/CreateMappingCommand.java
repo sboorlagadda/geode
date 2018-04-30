@@ -21,6 +21,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.cache.configuration.CacheConfig;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
@@ -59,7 +60,7 @@ public class CreateMappingCommand extends SingleGfshCommand {
   @CliMetaData(relatedTopic = CliStrings.DEFAULT_TOPIC_GEODE)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Result createMapping(
+  public Object createMapping(
       @CliOption(key = CREATE_MAPPING__REGION_NAME, mandatory = true,
           help = CREATE_MAPPING__REGION_NAME__HELP) String regionName,
       @CliOption(key = CREATE_MAPPING__CONNECTION_NAME, mandatory = true,
@@ -73,21 +74,15 @@ public class CreateMappingCommand extends SingleGfshCommand {
           specifiedDefaultValue = "true") boolean keyInValue,
       @CliOption(key = CREATE_MAPPING__FIELD_MAPPING,
           help = CREATE_MAPPING__FIELD_MAPPING__HELP) String[] fieldMappings) {
-
-    // input
-    Set<DistributedMember> targetMembers = getMembers(null, null);
     ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping(regionName,
         pdxClassName, table, connectionName, keyInValue);
     mapping.setFieldMapping(fieldMappings);
+    return mapping;
+  }
 
-    // action
-    List<CliFunctionResult> results =
-        executeAndGetFunctionResult(new CreateMappingFunction(), mapping, targetMembers);
-
-
-    CommandResult commandResult = ResultBuilder.buildResult(results);
-    commandResult.setConfigObject(mapping);
-    return commandResult;
+  @Override
+  public Function getFunction() {
+    return new CreateMappingFunction();
   }
 
   @Override

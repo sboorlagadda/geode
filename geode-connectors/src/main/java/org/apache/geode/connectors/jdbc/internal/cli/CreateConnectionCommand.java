@@ -14,25 +14,21 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
-import java.util.List;
-import java.util.Set;
-
 import org.apache.commons.lang.StringUtils;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.cache.configuration.CacheConfig;
+import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
+import org.apache.geode.management.cli.CommandContext;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.AbstractCliAroundInterceptor;
 import org.apache.geode.management.internal.cli.GfshParseResult;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
@@ -61,7 +57,7 @@ public class CreateConnectionCommand extends SingleGfshCommand {
       interceptor = "org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand$Interceptor")
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Result createConnection(
+  public CommandContext createConnection(
       @CliOption(key = CREATE_CONNECTION__NAME, mandatory = true,
           help = CREATE_CONNECTION__NAME__HELP) String name,
       @CliOption(key = CREATE_CONNECTION__URL, mandatory = true,
@@ -71,19 +67,8 @@ public class CreateConnectionCommand extends SingleGfshCommand {
           help = CREATE_CONNECTION__PASSWORD__HELP) String password,
       @CliOption(key = CREATE_CONNECTION__PARAMS,
           help = CREATE_CONNECTION__PARAMS__HELP) String[] params) {
-
-    // input
-    Set<DistributedMember> targetMembers = getMembers(null, null);
-    ConnectorService.Connection connection =
-        new ConnectorService.Connection(name, url, user, password, params);
-
-    // action
-    List<CliFunctionResult> results =
-        executeAndGetFunctionResult(new CreateConnectionFunction(), connection, targetMembers);
-
-    CommandResult commandResult = ResultBuilder.buildResult(results);
-    commandResult.setConfigObject(connection);
-    return commandResult;
+    ConnectorService.Connection connection = new ConnectorService.Connection(name, url, user, password, params);
+    return new CommandContext(connection, true, new CreateConnectionFunction(), false);
   }
 
   @Override

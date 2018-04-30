@@ -36,8 +36,10 @@ import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.cli.Result;
+import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
+import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
@@ -59,7 +61,7 @@ public class DescribeConnectionCommand extends GfshCommand {
   @CliMetaData(relatedTopic = CliStrings.DEFAULT_TOPIC_GEODE)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Result describeConnection(@CliOption(key = DESCRIBE_CONNECTION__NAME, mandatory = true,
+  public CommandResult describeConnection(@CliOption(key = DESCRIBE_CONNECTION__NAME, mandatory = true,
       help = DESCRIBE_CONNECTION__NAME__HELP) String name) {
     ConnectorService.Connection connection = null;
 

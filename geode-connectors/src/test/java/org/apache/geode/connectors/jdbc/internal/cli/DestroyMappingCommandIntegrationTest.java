@@ -56,27 +56,4 @@ public class DestroyMappingCommandIntegrationTest {
   public void tearDown() {
     cache.close();
   }
-
-  @Test
-  public void destroysNamedMapping() throws Exception {
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    service.createRegionMapping(mapping);
-    assertThat(service.getMappingForRegion(regionName)).isSameAs(mapping);
-
-    Result result = command.destroyMapping(regionName);
-
-    assertThat(result.getStatus()).isSameAs(Result.Status.OK);
-    assertThat(service.getMappingForRegion(regionName)).isNull();
-  }
-
-  @Test
-  public void returnsErrorIfNamedMappingNotFound() throws Exception {
-    JdbcConnectorService service = cache.getService(JdbcConnectorService.class);
-    assertThat(service.getMappingForRegion(regionName)).isNull();
-
-    Result result = command.destroyMapping(regionName);
-    assertThat(result.getStatus()).isSameAs(Result.Status.ERROR);
-
-    assertThat(service.getMappingForRegion(regionName)).isNull();
-  }
 }

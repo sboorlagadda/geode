@@ -14,17 +14,25 @@
  */
 package org.apache.geode.management.internal.cli.remote;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.logging.log4j.Logger;
 import org.springframework.util.ReflectionUtils;
 
 import org.apache.geode.SystemFailure;
+import org.apache.geode.cache.configuration.CacheElement;
 import org.apache.geode.distributed.ClusterConfigurationService;
+import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.internal.logging.LogService;
+import org.apache.geode.management.cli.CommandContext;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.GfshParseResult;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
 import org.apache.geode.management.internal.cli.exceptions.UserErrorException;
+import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.security.NotAuthorizedException;
@@ -107,36 +115,72 @@ public class CommandExecutor {
     }
 
     SingleGfshCommand gfshCommand = (SingleGfshCommand) command;
-    CommandResult commandResult = (CommandResult) result;
+    CommandResult commandResult = null;
+    if(result instanceof CommandResult) {
+      commandResult = (CommandResult) result;
+    } else if(result instanceof CommandContext) {
+      CommandContext commandContext = (CommandContext) result;
+      String[] groups = (String[]) parseResult.getParamValue("-group");
+      String[] members = (String[]) parseResult.getParamValue("-member");
+
+      Set<DistributedMember> targetedMembers = gfshCommand.findMembers(groups, groups);
+      if(targetedMembers.size() == 0){
+        return ResultBuilder.createUserErrorResult("No Member Found");
+      }
+
+      List<CliFunctionResult> results = null;
+      if(commandContext.isExecuteOnSingleMember()) {
+        results = gfshCommand.executeAndGetFunctionResult(commandContext.getCliFunction(), commandContext.getFunctionArgs(), Collections
+            .singleton(targetedMembers.iterator().next()));
+      } else {
+        results = gfshCommand.executeAndGetFunctionResult(commandContext.getCliFunction(), commandContext.getFunctionArgs(), targetedMembers);
+      }
+      CliFunctionResult successResult =
+          results.stream().filter(CliFunctionResult::isSuccessful).findAny().get();
+
+      if(successResult.getResultObject() instanceof CacheElement) {
+        //alter, describe, list
+
+        CacheElement appliedConfig = (CacheElement) successResult.getResultObject();
+        commandResult.setConfigObject(appliedConfig);
+      } else {
+        //create and destroy
+        commandResult.setConfigObject(commandContext.getFunctionArgs());
+      }
+    }
+
     if (commandResult.getStatus() == Result.Status.ERROR) {
       return result;
     }
 
     // if command result is ok, we will need to see if we need to update cluster configuration
-    ClusterConfigurationService ccService = gfshCommand.getConfigurationService();
-    if (parseResult.getParamValue("member") != null || ccService == null) {
-      commandResult.setCommandPersisted(false);
-      return commandResult;
-    }
+    if(commandResult.getConfigObject() != null) {
+      ClusterConfigurationService ccService = gfshCommand.getConfigurationService();
+      if (parseResult.getParamValue("member") != null || ccService == null) {
+        commandResult.setCommandPersisted(false);
+        return commandResult;
+      }
 
-    String groupInput = parseResult.getParamValueAsString("group");
-    if (groupInput == null) {
-      groupInput = "cluster";
-    }
-    String[] groups = groupInput.split(",");
-    for (String group : groups) {
-      ccService.updateCacheConfig(group, cc -> {
-        try {
-          gfshCommand.updateClusterConfig(group, cc, commandResult.getConfigObject());
-        } catch (Exception e) {
-          logger.error("failed to update cluster config for " + group, e);
-          // for now, if one cc update failed, we will set this flag. Will change this when we can
-          // add lines to the result returned by the command
-          commandResult.setCommandPersisted(false);
-          return null;
-        }
-        return cc;
-      });
+      String groupInput = parseResult.getParamValueAsString("group");
+      if (groupInput == null) {
+        groupInput = "cluster";
+      }
+      String[] groups = groupInput.split(",");
+      for (String group : groups) {
+        CommandResult finalCommandResult = commandResult;
+        ccService.updateCacheConfig(group, cc -> {
+          try {
+            gfshCommand.updateClusterConfig(group, cc, finalCommandResult.getConfigObject());
+          } catch (Exception e) {
+            logger.error("failed to update cluster config for " + group, e);
+            // for now, if one cc update failed, we will set this flag. Will change this when we can
+            // add lines to the result returned by the command
+            finalCommandResult.setCommandPersisted(false);
+            return null;
+          }
+          return cc;
+        });
+      }
     }
     return commandResult;
   }
