@@ -25,13 +25,18 @@ import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.ClusterConfigurationService;
 import org.apache.geode.management.cli.CliMetaData;
+import org.apache.geode.management.cli.CommandExecutionContext;
+import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
+import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
+import org.apache.geode.management.internal.cli.result.CommandResult;
+import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
-public class AlterMappingCommand extends SingleGfshCommand {
+public class AlterMappingCommand extends GfshCommand {
   static final String ALTER_MAPPING = "alter jdbc-mapping";
   static final String ALTER_MAPPING__HELP = "Alter properties for an existing jdbc mapping.";
 
@@ -57,7 +62,7 @@ public class AlterMappingCommand extends SingleGfshCommand {
   @CliMetaData(relatedTopic = CliStrings.DEFAULT_TOPIC_GEODE)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Object alterMapping(
+  public CommandExecutionContext alterMapping(
       @CliOption(key = ALTER_MAPPING__REGION_NAME, mandatory = true,
           help = ALTER_MAPPING__REGION_NAME__HELP) String regionName,
       @CliOption(key = ALTER_MAPPING__CONNECTION_NAME, specifiedDefaultValue = "",
@@ -92,12 +97,7 @@ public class AlterMappingCommand extends SingleGfshCommand {
       }
     }
 
-    return newMapping;
-  }
-
-  @Override
-  public Function getFunction() {
-    return new AlterMappingFunction();
+    return new CommandExecutionContext(newMapping, new AlterMappingFunction(), CommandExecutionContext.ALTER_CONSUMER, );
   }
 
   @Override

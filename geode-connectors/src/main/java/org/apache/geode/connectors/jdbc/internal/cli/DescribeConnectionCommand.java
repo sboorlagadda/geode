@@ -46,7 +46,7 @@ import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
-public class DescribeConnectionCommand extends GfshCommand {
+public class DescribeConnectionCommand extends SingleGfshCommand {
   private static Logger logger = LogService.getLogger();
   static final String DESCRIBE_CONNECTION = "describe jdbc-connection";
   static final String DESCRIBE_CONNECTION__HELP = "Describe the specified jdbc connection.";

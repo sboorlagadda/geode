@@ -22,7 +22,6 @@ import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.cache.configuration.CacheConfig;
 import org.apache.geode.cache.configuration.CacheElement;
-import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
@@ -46,9 +45,18 @@ public class DestroyConnectionCommand extends SingleGfshCommand {
   @CliMetaData(relatedTopic = CliStrings.DEFAULT_TOPIC_GEODE)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Object destroyConnection(@CliOption(key = DESTROY_CONNECTION__NAME, mandatory = true,
+  public Result destroyConnection(@CliOption(key = DESTROY_CONNECTION__NAME, mandatory = true,
       help = DESTROY_CONNECTION__NAME__HELP) String name) {
-    return name;
+
+    // input
+    Set<DistributedMember> targetMembers = getMembers(null, null);
+
+    // action
+    List<CliFunctionResult> results =
+        executeAndGetFunctionResult(new DestroyConnectionFunction(), name, targetMembers);
+    CommandResult commandResult = ResultBuilder.buildResult(results);
+    commandResult.setConfigObject(name);
+    return commandResult;
   }
 
   @Override

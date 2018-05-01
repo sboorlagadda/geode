@@ -25,6 +25,7 @@ import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
+import org.apache.geode.management.cli.CommandExecutionContext;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
@@ -60,7 +61,7 @@ public class CreateMappingCommand extends SingleGfshCommand {
   @CliMetaData(relatedTopic = CliStrings.DEFAULT_TOPIC_GEODE)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public Object createMapping(
+  public CommandExecutionContext createMapping(
       @CliOption(key = CREATE_MAPPING__REGION_NAME, mandatory = true,
           help = CREATE_MAPPING__REGION_NAME__HELP) String regionName,
       @CliOption(key = CREATE_MAPPING__CONNECTION_NAME, mandatory = true,
@@ -77,12 +78,7 @@ public class CreateMappingCommand extends SingleGfshCommand {
     ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping(regionName,
         pdxClassName, table, connectionName, keyInValue);
     mapping.setFieldMapping(fieldMappings);
-    return mapping;
-  }
-
-  @Override
-  public Function getFunction() {
-    return new CreateMappingFunction();
+    return new CommandExecutionContext(mapping, true, new CreateMappingFunction(), false);
   }
 
   @Override

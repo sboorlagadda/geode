@@ -16,27 +16,18 @@ package org.apache.geode.connectors.jdbc.internal.cli;
 
 import static org.apache.geode.distributed.ClusterConfigurationService.CLUSTER_CONFIG;
 
-import java.util.List;
-import java.util.Set;
-
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.cache.configuration.CacheConfig;
 import org.apache.geode.cache.configuration.CacheElement;
-import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.distributed.ClusterConfigurationService;
-import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
-import org.apache.geode.management.cli.CommandContext;
-import org.apache.geode.management.cli.Result;
+import org.apache.geode.management.cli.CommandExecutionContext;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.CommandResult;
-import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
@@ -94,7 +85,7 @@ public class AlterConnectionCommand extends SingleGfshCommand {
         throw new EntityNotFoundException("connection with name '" + name + "' does not exist.");
       }
     }
-    return new CommandContext(newConnection, true, new AlterConnectionFunction(), false);
+    return new CommandExecutionContext(newConnection, true, new AlterConnectionFunction(), false);
   }
 
   @Override

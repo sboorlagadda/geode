@@ -18,12 +18,9 @@
 package org.apache.geode.management.cli;
 
 import java.util.List;
-import java.util.Set;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.configuration.CacheConfig;
-import org.apache.geode.cache.execute.Function;
-import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
 import org.apache.geode.management.internal.cli.result.CommandResult;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -50,8 +47,4 @@ public abstract class SingleGfshCommand extends GfshCommand {
    *        it should throw some RuntimeException if update failed.
    */
   public abstract void updateClusterConfig(String group, CacheConfig config, Object configObject);
-
-  public CommandResult buildCommandResult(List<CliFunctionResult> results, CommandContext context) {
-    return ResultBuilder.buildResult(results);
-  }
 }

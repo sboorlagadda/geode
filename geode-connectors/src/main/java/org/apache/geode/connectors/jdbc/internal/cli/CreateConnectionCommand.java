@@ -20,10 +20,9 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.cache.configuration.CacheConfig;
-import org.apache.geode.cache.execute.Function;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
 import org.apache.geode.management.cli.CliMetaData;
-import org.apache.geode.management.cli.CommandContext;
+import org.apache.geode.management.cli.CommandExecutionContext;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.cli.SingleGfshCommand;
 import org.apache.geode.management.internal.cli.AbstractCliAroundInterceptor;
@@ -57,7 +56,7 @@ public class CreateConnectionCommand extends SingleGfshCommand {
       interceptor = "org.apache.geode.connectors.jdbc.internal.cli.CreateConnectionCommand$Interceptor")
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.MANAGE)
-  public CommandContext createConnection(
+  public CommandExecutionContext createConnection(
       @CliOption(key = CREATE_CONNECTION__NAME, mandatory = true,
           help = CREATE_CONNECTION__NAME__HELP) String name,
       @CliOption(key = CREATE_CONNECTION__URL, mandatory = true,
@@ -68,7 +67,7 @@ public class CreateConnectionCommand extends SingleGfshCommand {
       @CliOption(key = CREATE_CONNECTION__PARAMS,
           help = CREATE_CONNECTION__PARAMS__HELP) String[] params) {
     ConnectorService.Connection connection = new ConnectorService.Connection(name, url, user, password, params);
-    return new CommandContext(connection, true, new CreateConnectionFunction(), false);
+    return new CommandExecutionContext(connection, true, new CreateConnectionFunction(), false);
   }
 
   @Override
