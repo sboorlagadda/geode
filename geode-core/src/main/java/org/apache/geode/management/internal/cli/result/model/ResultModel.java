@@ -211,6 +211,25 @@ public class ResultModel {
     return toJson();
   }
 
+  public ResultModel addTable(List<CliFunctionResult> functionResults, String header,
+      String footer) {
+    boolean atLeastOneSuccess = false;
+    TabularResultModel tabularResultModel = this.addTable();
+    tabularResultModel.setHeader(header);
+    tabularResultModel.setFooter(footer);
+    tabularResultModel.setColumnHeader("Member", "Status");
+    for (CliFunctionResult functionResult : functionResults) {
+      tabularResultModel.addRow(functionResult.getMemberIdOrName(), functionResult.getStatus());
+      if (functionResult.isSuccessful()) {
+        atLeastOneSuccess = true;
+      }
+    }
+    if (!atLeastOneSuccess) {
+      this.setStatus(Result.Status.ERROR);
+    }
+    return this;
+  }
+
 
   // ********************************************
   // static convenience methods
@@ -241,20 +260,6 @@ public class ResultModel {
   public static ResultModel createMemberStatusResult(List<CliFunctionResult> functionResults,
       String header, String footer) {
     ResultModel result = new ResultModel();
-    boolean atLeastOneSuccess = false;
-    TabularResultModel tabularResultModel = result.addTable();
-    tabularResultModel.setHeader(header);
-    tabularResultModel.setFooter(footer);
-    tabularResultModel.setColumnHeader("Member", "Status");
-    for (CliFunctionResult functionResult : functionResults) {
-      tabularResultModel.addRow(functionResult.getMemberIdOrName(), functionResult.getStatus());
-      if (functionResult.isSuccessful()) {
-        atLeastOneSuccess = true;
-      }
-    }
-    if (!atLeastOneSuccess) {
-      result.setStatus(Result.Status.ERROR);
-    }
-    return result;
+    return result.addTable(functionResults, header, footer);
   }
 }

@@ -17,25 +17,14 @@
 
 package org.apache.geode.cache.configuration;
 
-import java.io.Serializable;
-import java.util.List;
+public interface CacheConfigCRUDOperator {
+  default void add(CacheConfig cache) {};
 
-import org.apache.geode.annotations.Experimental;
-import org.apache.geode.lang.Identifiable;
+  default void update(CacheConfig cache) {};
 
-@Experimental
-public interface CacheElement
-    extends Identifiable<String>, Serializable, CacheCRUDOperator, CacheConfigCRUDOperator {
+  default void deleteFrom(CacheConfig cache) {};
 
-  public enum Operation {
-    ADD, DELETE, UPDATE
+  default boolean exist(CacheConfig cache) {
+    return false;
   };
-
-  static <T extends CacheElement> T findElement(List<T> list, String id) {
-    return list.stream().filter(o -> o.getId().equals(id)).findFirst().orElse(null);
-  }
-
-  static <T extends CacheElement> void removeElement(List<T> list, String id) {
-    list.removeIf(t -> t.getId().equals(id));
-  }
 }

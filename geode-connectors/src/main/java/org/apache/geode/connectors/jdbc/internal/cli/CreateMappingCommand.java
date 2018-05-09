@@ -14,26 +14,23 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
-import java.util.List;
-import java.util.Set;
 
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.configuration.CacheConfig;
+import org.apache.geode.cache.configuration.CacheElement;
 import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
-import org.apache.geode.management.cli.SingleGfshCommand;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
+import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.model.ResultModel;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
 @Experimental
-public class CreateMappingCommand extends SingleGfshCommand {
+public class CreateMappingCommand extends GfshCommand {
   static final String CREATE_MAPPING = "create jdbc-mapping";
   static final String CREATE_MAPPING__HELP =
       EXPERIMENTAL + "Create a mapping for a region for use with a JDBC database connection.";
@@ -74,29 +71,10 @@ public class CreateMappingCommand extends SingleGfshCommand {
       @CliOption(key = CREATE_MAPPING__FIELD_MAPPING,
           help = CREATE_MAPPING__FIELD_MAPPING__HELP) String[] fieldMappings) {
     // input
-    Set<DistributedMember> targetMembers = getMembers(null, null);
     ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping(regionName,
         pdxClassName, table, connectionName, keyInValue);
     mapping.setFieldMapping(fieldMappings);
 
-    // action
-    List<CliFunctionResult> results =
-        executeAndGetFunctionResult(new CreateMappingFunction(), mapping, targetMembers);
-
-    ResultModel result = ResultModel.createMemberStatusResult(results, EXPERIMENTAL, null);
-    result.setConfigObject(mapping);
-    return result;
-  }
-
-  @Override
-  public void updateClusterConfig(String group, CacheConfig config, Object element) {
-    ConnectorService.RegionMapping mapping = (ConnectorService.RegionMapping) element;
-    ConnectorService service =
-        config.findCustomCacheElement("connector-service", ConnectorService.class);
-    if (service == null) {
-      service = new ConnectorService();
-      config.getCustomCacheElements().add(service);
-    }
-    service.getRegionMapping().add(mapping);
+    return persistCacheElement(mapping, null, null, CacheElement.Operation.ADD);
   }
 }

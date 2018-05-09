@@ -34,6 +34,8 @@ public interface ConfigurationPersistenceService {
    */
   CacheConfig getCacheConfig(String group);
 
+  CacheConfig getCacheConfig(String group, boolean createNew);
+
   /**
    * update the cluster configuration of a member group
    *

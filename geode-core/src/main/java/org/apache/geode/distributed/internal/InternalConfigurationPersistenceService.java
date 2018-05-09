@@ -846,20 +846,28 @@ public class InternalConfigurationPersistenceService implements ConfigurationPer
 
   @Override
   public CacheConfig getCacheConfig(String group) {
+    return getCacheConfig(group, false);
+  }
+
+  @Override
+  public CacheConfig getCacheConfig(String group, boolean createNew) {
     if (group == null) {
       group = CLUSTER_CONFIG;
     }
     Configuration configuration = getConfiguration(group);
-    if (configuration == null) {
-      return null;
-    }
-    String xmlContent = configuration.getCacheXmlContent();
-    // group existed, so we should create a blank one to start with
-    if (xmlContent == null || xmlContent.isEmpty()) {
-      return null;
+    if (configuration != null) {
+      String xmlContent = configuration.getCacheXmlContent();
+      // group existed, so we should create a blank one to start with
+      if (xmlContent != null && !xmlContent.isEmpty()) {
+        return jaxbService.unMarshall(xmlContent);
+      }
     }
 
-    return jaxbService.unMarshall(xmlContent);
+    if (createNew) {
+      return new CacheConfig("1.0");
+    } else {
+      return null;
+    }
   }
 
   @Override
@@ -869,10 +877,7 @@ public class InternalConfigurationPersistenceService implements ConfigurationPer
     }
     lockSharedConfiguration();
     try {
-      CacheConfig cacheConfig = getCacheConfig(group);
-      if (cacheConfig == null) {
-        cacheConfig = new CacheConfig("1.0");
-      }
+      CacheConfig cacheConfig = getCacheConfig(group, true);
       cacheConfig = mutator.apply(cacheConfig);
       if (cacheConfig == null) {
         // mutator returns a null config, indicating no change needs to be persisted
