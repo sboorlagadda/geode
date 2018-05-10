@@ -26,5 +26,5 @@ public interface ServerCacheElement {
 
   void deleteFrom(Cache cache) throws Exception;
 
-  boolean exists(Cache cache);
+  CacheElement getExisting(Cache cache);
 }

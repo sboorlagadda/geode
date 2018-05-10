@@ -65,12 +65,11 @@ public class AlterMappingCommand extends GfshCommand {
       @CliOption(key = ALTER_MAPPING__PRIMARY_KEY_IN_VALUE,
           help = ALTER_MAPPING__PRIMARY_KEY_IN_VALUE__HELP,
           specifiedDefaultValue = "true") Boolean keyInValue,
-          specifiedDefaultValue = "true") Boolean keyInValue,
       @CliOption(key = ALTER_MAPPING__FIELD_MAPPING, help = ALTER_MAPPING__FIELD_MAPPING__HELP,
           specifiedDefaultValue = "") String[] fieldMappings) {
     // input
-    ClusterRegionMapping newMapping = new ClusterRegionMapping(regionName,
-        pdxClassName, table, connectionName, keyInValue);
+    ClusterRegionMapping newMapping =
+        new ClusterRegionMapping(regionName, pdxClassName, table, connectionName, keyInValue);
     newMapping.setFieldMapping(fieldMappings);
     return persistCacheElement(newMapping, null, null, ClusterCacheElement.Operation.UPDATE);
   }

@@ -60,7 +60,7 @@ public class AlterMappingCommandTest {
   public void setUp() throws Exception {
     command = spy(AlterMappingCommand.class);
     results = new ArrayList<>();
-    doReturn(Collections.EMPTY_SET).when(command).getMembers(any(), any());
+    doReturn(Collections.EMPTY_SET).when(command).findMembers(any(), any());
     doReturn(results).when(command).executeAndGetFunctionResult(any(), any(), any());
     result = mock(CliFunctionResult.class);
     when(result.isSuccessful()).thenReturn(true);

@@ -18,7 +18,16 @@
 package org.apache.geode.cache.configuration;
 
 public interface ClusterCacheElement extends CacheElement, ServerCacheElement, LocatorCacheElement {
-  public enum Operation {
+  enum Operation {
     ADD, DELETE, UPDATE
-  };
+  }
+
+  default String merge(String newValue, String existingValue) {
+    // if newValue is null use the value already in the config
+    // if newValue is the empty string, then "unset" it by returning null
+    if (newValue == null) {
+      return existingValue;
+    }
+    return newValue.isEmpty() ? null : newValue;
+  }
 }

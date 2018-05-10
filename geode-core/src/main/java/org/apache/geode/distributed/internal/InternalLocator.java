@@ -76,6 +76,7 @@ import org.apache.geode.internal.net.SocketCreator;
 import org.apache.geode.internal.net.SocketCreatorFactory;
 import org.apache.geode.management.internal.JmxManagerLocator;
 import org.apache.geode.management.internal.JmxManagerLocatorRequest;
+import org.apache.geode.management.internal.cli.LocatorClusterConfigurationService;
 import org.apache.geode.management.internal.configuration.domain.SharedConfigurationStatus;
 import org.apache.geode.management.internal.configuration.handlers.SharedConfigurationStatusRequestHandler;
 import org.apache.geode.management.internal.configuration.messages.SharedConfigurationStatusRequest;
@@ -178,6 +179,7 @@ public class InternalLocator extends Locator implements ConnectListener {
   private volatile boolean isSharedConfigurationStarted = false;
 
   private volatile Thread restartThread;
+  private LocatorClusterConfigurationService ccService;
 
   public boolean isSharedConfigurationEnabled() {
     return this.config.getEnableClusterConfiguration();
@@ -666,6 +668,8 @@ public class InternalLocator extends Locator implements ConnectListener {
     startJmxManagerLocationService(internalCache);
 
     startSharedConfigurationService();
+    ccService = new LocatorClusterConfigurationService(locator.myCache,
+        locator.configurationPersistenceService);
   }
 
   /**
@@ -1046,6 +1050,8 @@ public class InternalLocator extends Locator implements ConnectListener {
             new InternalConfigurationPersistenceService(newCache);
         startSharedConfigurationService();
       }
+      ccService = new LocatorClusterConfigurationService(locator.myCache,
+          locator.configurationPersistenceService);
       if (!this.server.isAlive()) {
         logger.info("Locator restart: starting TcpServer");
         startTcpServer();
@@ -1055,6 +1061,10 @@ public class InternalLocator extends Locator implements ConnectListener {
       endStartLocator(this.myDs);
       logger.info("Locator restart completed");
     }
+  }
+
+  public LocatorClusterConfigurationService getClusterConfigurationService() {
+    return ccService;
   }
 
   @Override

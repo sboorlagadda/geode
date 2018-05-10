@@ -14,7 +14,6 @@
  */
 package org.apache.geode.management.cli;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +24,6 @@ import org.springframework.shell.core.CommandMarker;
 
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.configuration.CacheConfig;
 import org.apache.geode.cache.configuration.ClusterCacheElement;
 import org.apache.geode.cache.configuration.ClusterCacheElement.Operation;
 import org.apache.geode.cache.execute.Execution;
@@ -38,12 +36,10 @@ import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.management.internal.cli.CliUtil;
-import org.apache.geode.management.internal.cli.exceptions.EntityExistsException;
+import org.apache.geode.management.internal.cli.LocatorClusterConfigurationService;
 import org.apache.geode.management.internal.cli.exceptions.EntityNotFoundException;
 import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
-import org.apache.geode.management.internal.cli.functions.UpdateCacheFunction;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.model.InfoResultModel;
 import org.apache.geode.management.internal.cli.result.model.ResultModel;
 import org.apache.geode.management.internal.cli.shell.Gfsh;
 import org.apache.geode.security.ResourcePermission;
@@ -91,6 +87,11 @@ public abstract class GfshCommand implements CommandMarker {
   public ConfigurationPersistenceService getConfigurationPersistenceService() {
     InternalLocator locator = InternalLocator.getLocator();
     return locator == null ? null : locator.getConfigurationPersistenceService();
+  }
+
+  public LocatorClusterConfigurationService getClusterConfigurationService() {
+    InternalLocator locator = InternalLocator.getLocator();
+    return locator == null ? null : locator.getClusterConfigurationService();
   }
 
   public void setCache(Cache cache) {
@@ -206,77 +207,8 @@ public abstract class GfshCommand implements CommandMarker {
     return CliFunctionResult.cleanResults((List<?>) rc.getResult());
   }
 
-  public ResultModel persistCacheElement(ClusterCacheElement config, String group, String member,
+  public ResultModel persistCacheElement(ClusterCacheElement element, String group, String member,
       Operation operation) {
-    if (group != null && member != null) {
-      throw new IllegalArgumentException("group and member can't be set at the same time.");
-    }
-    ResultModel result = new ResultModel();
-    InfoResultModel info = result.addInfo();
-    CacheConfig cacheConfig = null;
-    // assuming config is validated at this point
-    ConfigurationPersistenceService ccService = getConfigurationPersistenceService();
-    if (ccService != null) {
-      cacheConfig = ccService.getCacheConfig(group, true);
-      // see if the element already exists in this group's configuration
-      boolean exists = config.exist(cacheConfig);
-      if (operation == Operation.ADD && exists) {
-        throw new EntityExistsException("cache element " + config.getId() + " already exists.");
-      } else if ((operation == Operation.UPDATE || operation == Operation.DELETE) && !exists) {
-        throw new EntityNotFoundException("cache element " + config.getId() + " does not exists.");
-      }
-    }
-
-    // execute function on all members
-    final String[] groups = (group != null) ? new String[] {group} : null;
-    final String[] members = (member != null) ? new String[] {member} : null;
-
-    Set<DistributedMember> targetedMembers = findMembers(groups, members);
-    if (targetedMembers.size() == 0) {
-      info.addLine("No members found");
-    } else {
-      List<CliFunctionResult> functionResults = executeAndGetFunctionResult(
-          new UpdateCacheFunction(), Arrays.asList(config, operation), targetedMembers);
-      result.addTable(functionResults, null, null);
-    }
-
-    if (result.getStatus() == Result.Status.ERROR) {
-      return result;
-    }
-
-    if (ccService == null) {
-      info.addLine(
-          "Cluster configuration service is not available. Configuration change is not persisted.");
-    }
-
-    if (member != null) {
-      info.addLine("Operation is on a specific member. Configuration change is not persisted. ");
-      return result;
-    }
-
-    // persist configuration
-    final String groupName = (group == null) ? "cluster" : group;
-    ccService.updateCacheConfig(groupName, c -> {
-      try {
-        switch (operation) {
-          case ADD:
-            config.add(c);
-            break;
-          case DELETE:
-            config.deleteFrom(c);
-            break;
-          case UPDATE:
-            config.update(c);
-            break;
-        }
-      } catch (Exception e) {
-        String message = "failed to update cluster config for " + groupName;
-        logger.error(message, e);
-        info.addLine(message + ". Reason: " + e.getMessage());
-        return null;
-      }
-      return c;
-    });
-    return result;
+    return getClusterConfigurationService().persistCacheElement(element, group, member, operation);
   }
 }

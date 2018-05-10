@@ -24,5 +24,5 @@ public interface LocatorCacheElement {
 
   void deleteFrom(CacheConfig cache);
 
-  boolean exist(CacheConfig cache);
+  CacheElement getExisting(CacheConfig cache);
 }

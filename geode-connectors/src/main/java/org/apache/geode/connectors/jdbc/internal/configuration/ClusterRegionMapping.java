@@ -1,10 +1,10 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
+ * contributor license agreements. See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -25,14 +25,16 @@ import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingNotFoundException;
 import org.apache.geode.internal.cache.InternalCache;
 
-public class ClusterRegionMapping extends ConnectorService.RegionMapping implements
-    ClusterCacheElement {
+public class ClusterRegionMapping extends ConnectorService.RegionMapping
+    implements ClusterCacheElement {
 
   public ClusterRegionMapping() {};
+
   public ClusterRegionMapping(String regionName, String pdxClassName, String tableName,
-                       String connectionConfigName, Boolean primaryKeyInValue){
+      String connectionConfigName, Boolean primaryKeyInValue) {
     super(regionName, pdxClassName, tableName, connectionConfigName, primaryKeyInValue);
   }
+
   public void create(Cache cache) throws Exception {
     JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
     service.createRegionMapping(this);
@@ -40,14 +42,14 @@ public class ClusterRegionMapping extends ConnectorService.RegionMapping impleme
 
   public void deleteFrom(Cache cache) throws Exception {
     JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
-    if (exists(cache)) {
+    if (getExisting(cache) == null) {
       throw new RegionMappingNotFoundException(
           "RegionMapping for region '" + getRegionName() + "' does not exists.");
     }
     service.destroyRegionMapping(this.getRegionName());
   }
 
-  public CacheElement get(Cache cache) {
+  public CacheElement getExisting(Cache cache) {
     JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
     return service.getMappingForRegion(getRegionName());
   }
@@ -55,27 +57,17 @@ public class ClusterRegionMapping extends ConnectorService.RegionMapping impleme
   public void update(Cache cache) throws Exception {
     JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
 
-    ConnectorService.RegionMapping existingMapping = (ConnectorService.RegionMapping) get(cache);
+    ConnectorService.RegionMapping existingMapping =
+        (ConnectorService.RegionMapping) getExisting(cache);
     if (existingMapping == null) {
       throw new RegionMappingNotFoundException(
           "RegionMapping for region '" + getRegionName() + "' does not exists.");
     }
 
-    if (getConnectionConfigName() == null) {
-      setConnectionConfigName(existingMapping.getConnectionConfigName());
-    }
-
-    if(getTableName() == null) {
-      setTableName(existingMapping.getTableName());
-    }
-
-    if (getTableName() == null) {
-      setTableName(existingMapping.getTableName());
-    }
-
-    if (getPdxClassName() == null) {
-      setPdxClassName(existingMapping.getPdxClassName());
-    }
+    setConnectionConfigName(
+        merge(getConnectionConfigName(), existingMapping.getConnectionConfigName()));
+    setTableName(merge(getTableName(), existingMapping.getTableName()));
+    setPdxClassName(merge(getPdxClassName(), existingMapping.getPdxClassName()));
 
     if (isPrimaryKeyInValue() == null) {
       setPrimaryKeyInValue(existingMapping.isPrimaryKeyInValue());
@@ -88,19 +80,13 @@ public class ClusterRegionMapping extends ConnectorService.RegionMapping impleme
     service.replaceRegionMapping(this);
   }
 
-  @Override
-  public boolean exists(Cache cache) {
-    JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
-    return service.getMappingForRegion(getRegionName()) != null;
-  }
-
-  public boolean exist(CacheConfig cacheConfig) {
+  public CacheElement getExisting(CacheConfig cacheConfig) {
     ConnectorService service =
         cacheConfig.findCustomCacheElement("connector-service", ConnectorService.class);
     if (service == null) {
-      return false;
+      return null;
     }
-    return CacheElement.findElement(service.getRegionMapping(), getId()) != null;
+    return CacheElement.findElement(service.getRegionMapping(), getId());
   }
 
   public void add(CacheConfig config) {
