@@ -71,6 +71,7 @@ dependencies {
 
   testCompile project(':geode-junit')
   testCompile project(':geode-pulse')
+  testCompile project(':geode-connectors')
   testCompile files(project(':geode-core').sourceSets.test.output)
   testCompile files(project(':geode-pulse').sourceSets.test.output)
   testCompile ('org.springframework:spring-web:' + project.'springframework.version') {

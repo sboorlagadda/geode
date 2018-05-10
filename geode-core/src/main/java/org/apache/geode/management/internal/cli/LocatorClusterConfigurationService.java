@@ -35,8 +35,9 @@ public class LocatorClusterConfigurationService implements ClusterConfigurationS
     this.persistenceService = persistenceService;
   }
 
+  @Override
   public ResultModel persistCacheElement(CacheElement element, String group, String member,
-      ClusterCacheElement.Operation operation) {
+      ClusterCacheElement.Operation operation, boolean ifExistsOrNotExists) {
     ClusterCacheElement config = (ClusterCacheElement) element;
     if (group != null && member != null) {
       throw new IllegalArgumentException("group and member can't be set at the same time.");
@@ -50,10 +51,10 @@ public class LocatorClusterConfigurationService implements ClusterConfigurationS
       // see if the element already exists in this group's configuration
       boolean exists = config.getExisting(cacheConfig) != null;
       if (operation == ClusterCacheElement.Operation.ADD && exists) {
-        throw new EntityExistsException("cache element " + config.getId() + " already exists.");
+        throw new EntityExistsException("cache element " + config.getId() + " already exists.", ifExistsOrNotExists);
       } else if ((operation == ClusterCacheElement.Operation.UPDATE
           || operation == ClusterCacheElement.Operation.DELETE) && !exists) {
-        throw new EntityNotFoundException("cache element " + config.getId() + " does not exists.");
+        throw new EntityNotFoundException("cache element " + config.getId() + " does not exists.", ifExistsOrNotExists);
       }
     }
 

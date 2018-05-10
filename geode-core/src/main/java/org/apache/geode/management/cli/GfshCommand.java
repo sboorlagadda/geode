@@ -209,6 +209,6 @@ public abstract class GfshCommand implements CommandMarker {
 
   public ResultModel persistCacheElement(ClusterCacheElement element, String group, String member,
       Operation operation) {
-    return getClusterConfigurationService().persistCacheElement(element, group, member, operation);
+    return getClusterConfigurationService().persistCacheElement(element, group, member, operation, false);
   }
 }

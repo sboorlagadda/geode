@@ -35,6 +35,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -127,6 +128,13 @@ public class HttpClientRule extends ExternalResource {
   public HttpResponse post(String uri, String... params) throws Exception {
     HttpClientContext clientContext = HttpClientContext.create();
     return httpClient.execute(host, buildHttpPost(uri, params), clientContext);
+  }
+
+  public HttpResponse postWithBody(String uri, String body) throws Exception {
+    HttpClientContext clientContext = HttpClientContext.create();
+    HttpPost post = new HttpPost(uri);
+    post.setEntity(new StringEntity(body));
+    return httpClient.execute(host, post, clientContext);
   }
 
   private HttpPost buildHttpPost(String uri, String... params) throws Exception {
