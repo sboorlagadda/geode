@@ -70,8 +70,8 @@ public class CreateMappingCommand extends GfshCommand {
       @CliOption(key = CREATE_MAPPING__FIELD_MAPPING,
           help = CREATE_MAPPING__FIELD_MAPPING__HELP) String[] fieldMappings) {
     // input
-    ClusterRegionMapping mapping = new ClusterRegionMapping(regionName,
-        pdxClassName, table, connectionName, keyInValue);
+    ClusterRegionMapping mapping =
+        new ClusterRegionMapping(regionName, pdxClassName, table, connectionName, keyInValue);
     mapping.setFieldMapping(fieldMappings);
 
     return persistCacheElement(mapping, null, null, ClusterCacheElement.Operation.ADD);

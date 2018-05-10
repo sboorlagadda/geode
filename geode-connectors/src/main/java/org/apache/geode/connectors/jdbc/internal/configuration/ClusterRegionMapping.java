@@ -22,6 +22,7 @@ import org.apache.geode.cache.configuration.CacheConfig;
 import org.apache.geode.cache.configuration.CacheElement;
 import org.apache.geode.cache.configuration.ClusterCacheElement;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
+import org.apache.geode.connectors.jdbc.internal.RegionMappingNotFoundException;
 import org.apache.geode.internal.cache.InternalCache;
 
 public class ClusterRegionMapping extends ConnectorService.RegionMapping implements
@@ -39,20 +40,58 @@ public class ClusterRegionMapping extends ConnectorService.RegionMapping impleme
 
   public void deleteFrom(Cache cache) throws Exception {
     JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
-    ConnectorService.RegionMapping mapping = service.getMappingForRegion(regionName);
-    if (mapping != null) {
-      service.destroyRegionMapping(regionName);
+    if (exists(cache)) {
+      throw new RegionMappingNotFoundException(
+          "RegionMapping for region '" + getRegionName() + "' does not exists.");
     }
+    service.destroyRegionMapping(this.getRegionName());
+  }
+
+  public CacheElement get(Cache cache) {
+    JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
+    return service.getMappingForRegion(getRegionName());
+  }
+
+  public void update(Cache cache) throws Exception {
+    JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
+
+    ConnectorService.RegionMapping existingMapping = (ConnectorService.RegionMapping) get(cache);
+    if (existingMapping == null) {
+      throw new RegionMappingNotFoundException(
+          "RegionMapping for region '" + getRegionName() + "' does not exists.");
+    }
+
+    if (getConnectionConfigName() == null) {
+      setConnectionConfigName(existingMapping.getConnectionConfigName());
+    }
+
+    if(getTableName() == null) {
+      setTableName(existingMapping.getTableName());
+    }
+
+    if (getTableName() == null) {
+      setTableName(existingMapping.getTableName());
+    }
+
+    if (getPdxClassName() == null) {
+      setPdxClassName(existingMapping.getPdxClassName());
+    }
+
+    if (isPrimaryKeyInValue() == null) {
+      setPrimaryKeyInValue(existingMapping.isPrimaryKeyInValue());
+    }
+
+    if (!isFieldMappingModified()) {
+      getFieldMapping().addAll(existingMapping.getFieldMapping());
+    }
+
+    service.replaceRegionMapping(this);
   }
 
   @Override
   public boolean exists(Cache cache) {
-    return false;
-  }
-
-  @Override
-  public void update(Cache cache) throws Exception {
-
+    JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
+    return service.getMappingForRegion(getRegionName()) != null;
   }
 
   public boolean exist(CacheConfig cacheConfig) {
@@ -82,8 +121,11 @@ public class ClusterRegionMapping extends ConnectorService.RegionMapping impleme
     }
   }
 
-  @Override
-  public void update(CacheConfig cache) {
-
+  public void update(CacheConfig config) {
+    ConnectorService service =
+        config.findCustomCacheElement("connector-service", ConnectorService.class);
+    // service is not null at this point
+    CacheElement.removeElement(service.getRegionMapping(), getId());
+    service.getRegionMapping().add(this);
   }
 }

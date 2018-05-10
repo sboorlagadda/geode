@@ -207,7 +207,7 @@ public abstract class GfshCommand implements CommandMarker {
   }
 
   public ResultModel persistCacheElement(ClusterCacheElement config, String group, String member,
-                                         Operation operation) {
+      Operation operation) {
     if (group != null && member != null) {
       throw new IllegalArgumentException("group and member can't be set at the same time.");
     }
@@ -228,8 +228,8 @@ public abstract class GfshCommand implements CommandMarker {
     }
 
     // execute function on all members
-    final String[] groups = (group!=null)? new String[]{group}:null;
-    final String[] members = (member!=null)? new String[]{member}:null;
+    final String[] groups = (group != null) ? new String[] {group} : null;
+    final String[] members = (member != null) ? new String[] {member} : null;
 
     Set<DistributedMember> targetedMembers = findMembers(groups, members);
     if (targetedMembers.size() == 0) {
@@ -255,7 +255,7 @@ public abstract class GfshCommand implements CommandMarker {
     }
 
     // persist configuration
-    final String groupName = (group==null)?"cluster":group;
+    final String groupName = (group == null) ? "cluster" : group;
     ccService.updateCacheConfig(groupName, c -> {
       try {
         switch (operation) {

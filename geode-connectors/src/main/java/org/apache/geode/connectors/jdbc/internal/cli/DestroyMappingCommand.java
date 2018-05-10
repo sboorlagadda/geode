@@ -14,29 +14,21 @@
  */
 package org.apache.geode.connectors.jdbc.internal.cli;
 
-import java.util.List;
-import java.util.Set;
-
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
-import org.apache.geode.annotations.Experimental;
-import org.apache.geode.cache.configuration.CacheConfig;
-import org.apache.geode.cache.configuration.CacheElement;
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
-import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.cache.configuration.ClusterCacheElement;
+import org.apache.geode.connectors.jdbc.internal.configuration.ClusterRegionMapping;
 import org.apache.geode.management.cli.CliMetaData;
-import org.apache.geode.management.cli.SingleGfshCommand;
-import org.apache.geode.management.internal.cli.functions.CliFunctionResult;
+import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.result.model.ResultModel;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
-@Experimental
-public class DestroyMappingCommand extends SingleGfshCommand {
+public class DestroyMappingCommand extends GfshCommand {
   static final String DESTROY_MAPPING = "destroy jdbc-mapping";
-  static final String DESTROY_MAPPING__HELP = EXPERIMENTAL + "Destroy the specified mapping.";
+  static final String DESTROY_MAPPING__HELP = "Destroy the specified mapping.";
   static final String DESTROY_MAPPING__REGION_NAME = "region";
   static final String DESTROY_MAPPING__REGION_NAME__HELP = "Name of the region mapping to destroy.";
 
@@ -48,24 +40,8 @@ public class DestroyMappingCommand extends SingleGfshCommand {
       operation = ResourcePermission.Operation.MANAGE)
   public ResultModel destroyMapping(@CliOption(key = DESTROY_MAPPING__REGION_NAME, mandatory = true,
       help = DESTROY_MAPPING__REGION_NAME__HELP) String regionName) {
-    // input
-    Set<DistributedMember> targetMembers = getMembers(null, null);
-
-    // action
-    List<CliFunctionResult> results =
-        executeAndGetFunctionResult(new DestroyMappingFunction(), regionName, targetMembers);
-
-    ResultModel result = ResultModel.createMemberStatusResult(results, EXPERIMENTAL, null);
-    result.setConfigObject(regionName);
-    return result;
-  }
-
-  @Override
-  public void updateClusterConfig(String group, CacheConfig config, Object element) {
-    ConnectorService service =
-        config.findCustomCacheElement("connector-service", ConnectorService.class);
-    if (service != null) {
-      CacheElement.removeElement(service.getRegionMapping(), (String) element);
-    }
+    ClusterRegionMapping regionMapping = new ClusterRegionMapping();
+    regionMapping.setRegionName(regionName);
+    return persistCacheElement(regionMapping, null, null, ClusterCacheElement.Operation.DELETE);
   }
 }

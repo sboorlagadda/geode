@@ -29,7 +29,8 @@ public class UpdateCacheFunction extends CliFunction<List> {
   @Override
   public CliFunctionResult executeFunction(FunctionContext<List> context) throws Exception {
     ClusterCacheElement cacheElement = (ClusterCacheElement) context.getArguments().get(0);
-    ClusterCacheElement.Operation operation = (ClusterCacheElement.Operation) context.getArguments().get(1);
+    ClusterCacheElement.Operation operation =
+        (ClusterCacheElement.Operation) context.getArguments().get(1);
     Cache cache = context.getCache();
     // the configuration object should know how to create itself given an existing cache
     // throw whatever exception
