@@ -36,15 +36,11 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
-import org.apache.geode.cache.Cache;
-import org.apache.geode.cache.configuration.CacheConfig;
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.configuration.CacheElement;
 import org.apache.geode.cache.configuration.XSDRootElement;
 import org.apache.geode.connectors.jdbc.JdbcConnectorException;
-import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.TableMetaDataView;
-import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.pdx.internal.PdxType;
 import org.apache.geode.pdx.internal.TypeRegistry;
 
@@ -509,46 +505,6 @@ public class ConnectorService implements CacheElement {
       this.tableName = tableName;
       this.connectionConfigName = connectionConfigName;
       this.primaryKeyInValue = primaryKeyInValue;
-    }
-
-    public void create(Cache cache) throws Exception {
-      JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
-      service.createRegionMapping(this);
-    }
-
-    public void deleteFrom(Cache cache) throws Exception {
-      JdbcConnectorService service = ((InternalCache) cache).getService(JdbcConnectorService.class);
-      ConnectorService.RegionMapping mapping = service.getMappingForRegion(regionName);
-      if (mapping != null) {
-        service.destroyRegionMapping(regionName);
-      }
-    }
-
-    public boolean exist(CacheConfig cacheConfig) {
-      ConnectorService service =
-          cacheConfig.findCustomCacheElement("connector-service", ConnectorService.class);
-      if (service == null) {
-        return false;
-      }
-      return CacheElement.findElement(service.getRegionMapping(), getId()) != null;
-    }
-
-    public void create(CacheConfig config) {
-      ConnectorService service =
-          config.findCustomCacheElement("connector-service", ConnectorService.class);
-      if (service == null) {
-        service = new ConnectorService();
-        config.getCustomCacheElements().add(service);
-      }
-      service.getRegionMapping().add(this);
-    }
-
-    public void deleteFrom(CacheConfig config) {
-      ConnectorService service =
-          config.findCustomCacheElement("connector-service", ConnectorService.class);
-      if (service != null) {
-        CacheElement.removeElement(service.getRegionMapping(), this.getId());
-      }
     }
 
     public void setFieldMapping(String[] mappings) {

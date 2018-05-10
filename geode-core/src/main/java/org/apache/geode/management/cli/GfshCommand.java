@@ -26,8 +26,8 @@ import org.springframework.shell.core.CommandMarker;
 import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.configuration.CacheConfig;
-import org.apache.geode.cache.configuration.CacheElement;
-import org.apache.geode.cache.configuration.CacheElement.Operation;
+import org.apache.geode.cache.configuration.ClusterCacheElement;
+import org.apache.geode.cache.configuration.ClusterCacheElement.Operation;
 import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionService;
@@ -206,8 +206,8 @@ public abstract class GfshCommand implements CommandMarker {
     return CliFunctionResult.cleanResults((List<?>) rc.getResult());
   }
 
-  public ResultModel persistCacheElement(CacheElement config, String group, String member,
-      Operation operation) {
+  public ResultModel persistCacheElement(ClusterCacheElement config, String group, String member,
+                                         Operation operation) {
     if (group != null && member != null) {
       throw new IllegalArgumentException("group and member can't be set at the same time.");
     }
@@ -228,12 +228,15 @@ public abstract class GfshCommand implements CommandMarker {
     }
 
     // execute function on all members
-    Set<DistributedMember> members = findMembers(new String[] {group}, new String[] {member});
-    if (members.size() == 0) {
+    final String[] groups = (group!=null)? new String[]{group}:null;
+    final String[] members = (member!=null)? new String[]{member}:null;
+
+    Set<DistributedMember> targetedMembers = findMembers(groups, members);
+    if (targetedMembers.size() == 0) {
       info.addLine("No members found");
     } else {
       List<CliFunctionResult> functionResults = executeAndGetFunctionResult(
-          new UpdateCacheFunction(), Arrays.asList(config, operation), members);
+          new UpdateCacheFunction(), Arrays.asList(config, operation), targetedMembers);
       result.addTable(functionResults, null, null);
     }
 
@@ -252,7 +255,8 @@ public abstract class GfshCommand implements CommandMarker {
     }
 
     // persist configuration
-    ccService.updateCacheConfig(group, c -> {
+    final String groupName = (group==null)?"cluster":group;
+    ccService.updateCacheConfig(groupName, c -> {
       try {
         switch (operation) {
           case ADD:
@@ -266,7 +270,7 @@ public abstract class GfshCommand implements CommandMarker {
             break;
         }
       } catch (Exception e) {
-        String message = "failed to update cluster config for " + group;
+        String message = "failed to update cluster config for " + groupName;
         logger.error(message, e);
         info.addLine(message + ". Reason: " + e.getMessage());
         return null;

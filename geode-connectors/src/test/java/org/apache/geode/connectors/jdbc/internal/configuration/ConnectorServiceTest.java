@@ -71,7 +71,7 @@ public class ConnectorServiceTest {
   @Test
   public void regionMappingTest() {
     ConnectorService service = new ConnectorService();
-    ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping();
+    ClusterRegionMapping mapping = new ClusterRegionMapping();
     mapping.setConnectionConfigName("configName");
     mapping.setPdxClassName("pdxClassName");
     mapping.setRegionName("regionA");

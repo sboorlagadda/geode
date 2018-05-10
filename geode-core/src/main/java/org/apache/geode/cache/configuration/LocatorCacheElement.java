@@ -17,14 +17,12 @@
 
 package org.apache.geode.cache.configuration;
 
-public interface CacheConfigCRUDOperator {
-  default void add(CacheConfig cache) {};
+public interface LocatorCacheElement {
+  void add(CacheConfig cache);
 
-  default void update(CacheConfig cache) {};
+  void update(CacheConfig cache);
 
-  default void deleteFrom(CacheConfig cache) {};
+  void deleteFrom(CacheConfig cache);
 
-  default boolean exist(CacheConfig cache) {
-    return false;
-  };
+  boolean exist(CacheConfig cache);
 }

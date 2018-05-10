@@ -17,20 +17,14 @@
 
 package org.apache.geode.cache.configuration;
 
-import java.io.Serializable;
-import java.util.List;
+import org.apache.geode.cache.Cache;
 
-import org.apache.geode.annotations.Experimental;
-import org.apache.geode.lang.Identifiable;
+public interface ServerCacheElement {
+  void create(Cache cache) throws Exception;
 
-@Experimental
-public interface CacheElement extends Identifiable<String>, Serializable{
+  void update(Cache cache) throws Exception;
 
-  static <T extends CacheElement> T findElement(List<T> list, String id) {
-    return list.stream().filter(o -> o.getId().equals(id)).findFirst().orElse(null);
-  }
+  void deleteFrom(Cache cache) throws Exception;
 
-  static <T extends CacheElement> void removeElement(List<T> list, String id) {
-    list.removeIf(t -> t.getId().equals(id));
-  }
+  boolean exists(Cache cache);
 }

@@ -19,9 +19,8 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
 import org.apache.geode.annotations.Experimental;
-import org.apache.geode.cache.configuration.CacheConfig;
-import org.apache.geode.cache.configuration.CacheElement;
-import org.apache.geode.connectors.jdbc.internal.configuration.ConnectorService;
+import org.apache.geode.cache.configuration.ClusterCacheElement;
+import org.apache.geode.connectors.jdbc.internal.configuration.ClusterRegionMapping;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.GfshCommand;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
@@ -71,10 +70,10 @@ public class CreateMappingCommand extends GfshCommand {
       @CliOption(key = CREATE_MAPPING__FIELD_MAPPING,
           help = CREATE_MAPPING__FIELD_MAPPING__HELP) String[] fieldMappings) {
     // input
-    ConnectorService.RegionMapping mapping = new ConnectorService.RegionMapping(regionName,
+    ClusterRegionMapping mapping = new ClusterRegionMapping(regionName,
         pdxClassName, table, connectionName, keyInValue);
     mapping.setFieldMapping(fieldMappings);
 
-    return persistCacheElement(mapping, null, null, CacheElement.Operation.ADD);
+    return persistCacheElement(mapping, null, null, ClusterCacheElement.Operation.ADD);
   }
 }
