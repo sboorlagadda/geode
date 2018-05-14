@@ -63,15 +63,15 @@ def dockerConfig = {
     // specify the user for starting Gradle test worker within the container.
     user = dunitDockerUser
 
-    client = {
-      DockerClient temp = DockerClientBuilder
-                .getInstance(DefaultDockerClientConfig
-                  .createDefaultConfigBuilder()
-                  .withDockerHost("tcp://35.162.128.163:2377"))
-                .withDockerCmdExecFactory(new NettyDockerCmdExecFactory())
-                .build()
-      return temp
-    }
+    //client = {
+    //  DockerClient temp = DockerClientBuilder
+    //            .getInstance(DefaultDockerClientConfig
+    //              .createDefaultConfigBuilder()
+    //              .withDockerHost("tcp://35.162.128.163:2376"))
+    //              .withDockerCmdExecFactory(new NettyDockerCmdExecFactory())
+    //            .build()
+    //  return temp
+    //}
 
     beforeContainerCreate = { cmd, client ->
       def javaHomeIdx = -1
