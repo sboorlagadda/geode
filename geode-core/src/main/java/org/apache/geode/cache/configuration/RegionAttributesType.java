@@ -19,7 +19,9 @@
 package org.apache.geode.cache.configuration;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -28,6 +30,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.cache.EvictionAttributes;
+import org.apache.geode.management.internal.cli.i18n.CliStrings;
 
 
 /**
@@ -424,6 +428,9 @@ public class RegionAttributesType {
   @XmlAttribute(name = "off-heap")
   protected Boolean offHeap;
 
+  public boolean hasPartitionAttributes() {
+    return this.partitionAttributes == null;
+  }
   /**
    * Gets the value of the keyConstraint property.
    *
@@ -1648,6 +1655,14 @@ public class RegionAttributesType {
         required = true)
     protected ExpirationAttributesType expirationAttributes;
 
+    public EntryIdleTime(String timeout, String action) {
+      expirationAttributes = new ExpirationAttributesType();
+      expirationAttributes.setTimeout(timeout);
+      expirationAttributes.setAction(action);
+    }
+
+    public EntryIdleTime() {
+    }
     /**
      * Gets the value of the expirationAttributes property.
      *
@@ -1702,6 +1717,14 @@ public class RegionAttributesType {
         required = true)
     protected ExpirationAttributesType expirationAttributes;
 
+    public EntryTimeToLive(String timeout, String action) {
+      expirationAttributes = new ExpirationAttributesType();
+      expirationAttributes.setTimeout(timeout);
+      expirationAttributes.setAction(action);
+    }
+
+    public EntryTimeToLive() {
+    }
     /**
      * Gets the value of the expirationAttributes property.
      *
@@ -1795,6 +1818,18 @@ public class RegionAttributesType {
     @XmlElement(name = "lru-memory-size", namespace = "http://geode.apache.org/schema/cache")
     protected RegionAttributesType.EvictionAttributes.LruMemorySize lruMemorySize;
 
+    public EvictionAttributes() {
+    }
+
+    public EvictionAttributes(String action, String evictionMaxMemory, String evictionEntryCount, String sizer) {
+      if (evictionMaxMemory == null && evictionMaxMemory == null) {
+        this.lruHeapPercentage = new LruHeapPercentage(sizer, action);
+      } else if (evictionMaxMemory != null) {
+        this.lruMemorySize = new LruMemorySize(evictionMaxMemory, sizer, action);
+      } else {
+        this.lruEntryCount = new LruEntryCount(evictionEntryCount, action);
+      }
+    }
     /**
      * Gets the value of the lruEntryCount property.
      *
@@ -1892,6 +1927,13 @@ public class RegionAttributesType {
       @XmlAttribute(name = "maximum")
       protected String maximum;
 
+      public LruEntryCount() {
+      }
+
+      public  LruEntryCount(String maximum, String actionValue) {
+        this.maximum = maximum;
+        this.action = EnumActionDestroyOverflow.fromValue(actionValue);
+      }
       /**
        * Gets the value of the action property.
        *
@@ -1964,9 +2006,18 @@ public class RegionAttributesType {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class LruHeapPercentage extends DeclarableType {
+      @XmlElement(name = "sizer")
+      protected ClassNameType sizer;
       @XmlAttribute(name = "action")
       protected EnumActionDestroyOverflow action;
 
+      public LruHeapPercentage() {
+      }
+
+      public  LruHeapPercentage(String sizerClass, String actionValue) {
+        sizer = new ClassNameType(sizerClass);
+        action = EnumActionDestroyOverflow.fromValue(actionValue);
+      }
       /**
        * Gets the value of the action property.
        *
@@ -1989,6 +2040,13 @@ public class RegionAttributesType {
         this.action = value;
       }
 
+      public ClassNameType getSizer() {
+        return sizer;
+      }
+
+      public void setSizer(ClassNameType sizer) {
+        this.sizer = sizer;
+      }
     }
 
 
@@ -2021,6 +2079,14 @@ public class RegionAttributesType {
       @XmlAttribute(name = "maximum")
       protected String maximum;
 
+      public LruMemorySize() {
+        super();
+      }
+
+      public  LruMemorySize(String maximum, String sizerClass, String actionValue) {
+        super(sizerClass, actionValue);
+        this.maximum = maximum;
+      }
       /**
        * Gets the value of the maximum property.
        *
@@ -2324,6 +2390,52 @@ public class RegionAttributesType {
     @XmlAttribute(name = "colocated-with")
     protected String colocatedWith;
 
+    public PartitionAttributes() {
+    }
+
+    public PartitionAttributes(String colocatedWith, String localMaxMemory,String recoveryDelay,
+        String redundantCopies, String startupRecoveryDelay, String totalMaxMemory, String totalNumBuckets,
+        String partitionResolver) {
+        this.colocatedWith = colocatedWith;
+        this.localMaxMemory = localMaxMemory;
+        this.recoveryDelay = recoveryDelay;
+        this.redundantCopies = redundantCopies;
+        this.startupRecoveryDelay = startupRecoveryDelay;
+        this.totalMaxMemory = totalMaxMemory;
+        this.totalNumBuckets = totalNumBuckets;
+        this.partitionResolver = new DeclarableType(partitionResolver);
+    }
+
+    public Set<String> getUserSpecifiedPartitionAttributes() {
+      Set<String> userSpecifiedPartitionAttributes = new HashSet<>();
+
+      if (this.colocatedWith != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__COLOCATEDWITH);
+      }
+      if (this.localMaxMemory != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__LOCALMAXMEMORY);
+      }
+      if (this.recoveryDelay != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__RECOVERYDELAY);
+      }
+      if (this.redundantCopies != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__REDUNDANTCOPIES);
+      }
+      if (this.startupRecoveryDelay != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__STARTUPRECOVERYDDELAY);
+      }
+      if (this.totalMaxMemory != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__TOTALMAXMEMORY);
+      }
+      if (this.totalNumBuckets != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__TOTALNUMBUCKETS);
+      }
+      if (this.partitionResolver != null) {
+        userSpecifiedPartitionAttributes.add(CliStrings.CREATE_REGION__PARTITION_RESOLVER);
+      }
+
+      return userSpecifiedPartitionAttributes;
+    }
     /**
      * Gets the value of the partitionResolver property.
      *
@@ -2693,6 +2805,14 @@ public class RegionAttributesType {
         required = true)
     protected ExpirationAttributesType expirationAttributes;
 
+    public RegionIdleTime(String timeout, String action) {
+      expirationAttributes = new ExpirationAttributesType();
+      expirationAttributes.setTimeout(timeout);
+      expirationAttributes.setAction(action);
+    }
+
+    public RegionIdleTime() {
+    }
     /**
      * Gets the value of the expirationAttributes property.
      *
@@ -2747,6 +2867,14 @@ public class RegionAttributesType {
         required = true)
     protected ExpirationAttributesType expirationAttributes;
 
+    public RegionTimeToLive(String timeout, String action) {
+      expirationAttributes = new ExpirationAttributesType();
+      expirationAttributes.setTimeout(timeout);
+      expirationAttributes.setAction(action);
+    }
+
+    public RegionTimeToLive() {
+    }
     /**
      * Gets the value of the expirationAttributes property.
      *

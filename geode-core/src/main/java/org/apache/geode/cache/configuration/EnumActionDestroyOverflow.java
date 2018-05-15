@@ -49,7 +49,8 @@ import org.apache.geode.annotations.Experimental;
 public enum EnumActionDestroyOverflow {
 
   @XmlEnumValue("local-destroy")
-  LOCAL_DESTROY("local-destroy"), @XmlEnumValue("overflow-to-disk")
+  LOCAL_DESTROY("local-destroy"),
+  @XmlEnumValue("overflow-to-disk")
   OVERFLOW_TO_DISK("overflow-to-disk");
   private final String value;
 

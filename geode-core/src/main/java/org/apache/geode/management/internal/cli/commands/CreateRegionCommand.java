@@ -14,6 +14,9 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,11 +37,17 @@ import org.apache.geode.cache.CacheLoader;
 import org.apache.geode.cache.CacheWriter;
 import org.apache.geode.cache.CustomExpiry;
 import org.apache.geode.cache.DataPolicy;
+import org.apache.geode.cache.Declarable;
 import org.apache.geode.cache.EvictionAction;
+import org.apache.geode.cache.EvictionAttributes;
 import org.apache.geode.cache.ExpirationAction;
+import org.apache.geode.cache.ExpirationAttributes;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionAttributes;
 import org.apache.geode.cache.RegionShortcut;
+import org.apache.geode.cache.configuration.DeclarableType;
+import org.apache.geode.cache.configuration.RegionAttributesType;
+import org.apache.geode.cache.configuration.RegionConfig;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.internal.InternalConfigurationPersistenceService;
@@ -254,43 +263,90 @@ public class CreateRegionCommand extends InternalGfshCommand {
 
     // creating the RegionFunctionArgs
     RegionFunctionArgs functionArgs = new RegionFunctionArgs();
+
+    RegionConfig config = new RegionConfig();
+    RegionAttributesType regionAttributesType = new RegionAttributesType();
+    config.getRegionAttributes().add(regionAttributesType);
+
     functionArgs.setRegionPath(regionPath);
+    config.setName(regionPath);
     functionArgs.setIfNotExists(ifNotExists);
+
     functionArgs.setStatisticsEnabled(statisticsEnabled);
+    regionAttributesType.setStatisticsEnabled(statisticsEnabled);
+
     functionArgs.setEntryExpirationIdleTime(entryExpirationIdleTime, entryExpirationIdleTimeAction);
+    regionAttributesType.setEntryIdleTime(new RegionAttributesType.EntryIdleTime(entryExpirationIdleTime.toString(), entryExpirationTTLAction.toString()));
+
     functionArgs.setEntryExpirationTTL(entryExpirationTTL, entryExpirationTTLAction);
+    regionAttributesType.setEntryTimeToLive(new RegionAttributesType.EntryTimeToLive(entryExpirationTTL.toString(), entryExpirationTTLAction.toString()));
+
     functionArgs.setRegionExpirationIdleTime(regionExpirationIdleTime,
         regionExpirationIdleTimeAction);
+    regionAttributesType.setRegionIdleTime(new RegionAttributesType.RegionIdleTime(regionExpirationIdleTime.toString(), regionExpirationIdleTimeAction.toString()));
+
     functionArgs.setRegionExpirationTTL(regionExpirationTTL, regionExpirationTTLAction);
+    regionAttributesType.setRegionTimeToLive(new RegionAttributesType.RegionTimeToLive(regionExpirationTTL.toString(), regionExpirationTTLAction.toString()));
+
     functionArgs.setEntryIdleTimeCustomExpiry(entryIdleTimeCustomExpiry);
     functionArgs.setEntryTTLCustomExpiry(entryTTLCustomExpiry);
+
     functionArgs.setEvictionAttributes(evictionAction, evictionMaxMemory, evictionEntryCount,
         evictionObjectSizer);
+    regionAttributesType.setEvictionAttributes(new RegionAttributesType.EvictionAttributes(evictionAction, evictionMaxMemory.toString(), evictionEntryCount.toString(),
+        evictionObjectSizer));
+
     functionArgs.setDiskStore(diskStore);
+    regionAttributesType.setDiskStoreName(diskStore);
+
     functionArgs.setDiskSynchronous(diskSynchronous);
+    regionAttributesType.setDiskSynchronous(diskSynchronous);
+
     functionArgs.setEnableAsyncConflation(enableAsyncConflation);
+    regionAttributesType.setEnableAsyncConflation(enableAsyncConflation);
+
     functionArgs.setEnableSubscriptionConflation(enableSubscriptionConflation);
+    regionAttributesType.setEnableSubscriptionConflation(enableSubscriptionConflation);
+
     functionArgs.setAsyncEventQueueIds(asyncEventQueueIds);
+    regionAttributesType.setAsyncEventQueueIds(Arrays.stream(asyncEventQueueIds).collect(Collectors.joining(",")));
+
     functionArgs.setGatewaySenderIds(gatewaySenderIds);
+    regionAttributesType.setGatewaySenderIds(Arrays.stream(gatewaySenderIds).collect(Collectors.joining(",")));
+
     functionArgs.setConcurrencyChecksEnabled(concurrencyChecksEnabled);
+    regionAttributesType.setConcurrencyChecksEnabled(concurrencyChecksEnabled);
+
     functionArgs.setCloningEnabled(cloningEnabled);
+    regionAttributesType.setCloningEnabled(cloningEnabled);
+
     functionArgs.setConcurrencyLevel(concurrencyLevel);
+    regionAttributesType.setConcurrencyLevel(concurrencyLevel.toString());
+
     functionArgs.setPartitionArgs(prColocatedWith, prLocalMaxMemory, prRecoveryDelay,
         prRedundantCopies, prStartupRecoveryDelay, prTotalMaxMemory, prTotalNumBuckets,
         partitionResolver);
+    regionAttributesType.setPartitionAttributes(new RegionAttributesType.PartitionAttributes(prColocatedWith, Integer.toString(prLocalMaxMemory), Long.toString(prRecoveryDelay),
+        Integer.toString(prRedundantCopies), Long.toString(prStartupRecoveryDelay), Long.toString(prTotalMaxMemory), Integer.toString(prTotalNumBuckets),
+        partitionResolver));
+
     functionArgs.setOffHeap(offHeap);
+    regionAttributesType.setOffHeap(offHeap);
+
     functionArgs.setMcastEnabled(mcastEnabled);
+    regionAttributesType.setMulticastEnabled(mcastEnabled);
 
     RegionAttributes<?, ?> regionAttributes = null;
     if (regionShortcut != null) {
-      if (!regionShortcut.name().startsWith("PARTITION") && functionArgs.hasPartitionAttributes()) {
+      if (!regionShortcut.name().startsWith("PARTITION") && regionAttributesType.hasPartitionAttributes()) {
         return ResultBuilder.createUserErrorResult(CliStrings.format(
             CliStrings.CREATE_REGION__MSG__OPTION_0_CAN_BE_USED_ONLY_FOR_PARTITIONEDREGION,
-            functionArgs.getPartitionArgs().getUserSpecifiedPartitionAttributes()) + " "
+            regionAttributesType.getPartitionAttributes().getUserSpecifiedPartitionAttributes()) + " "
             + CliStrings.format(CliStrings.CREATE_REGION__MSG__0_IS_NOT_A_PARITIONEDREGION,
                 regionPath));
       }
       functionArgs.setRegionShortcut(regionShortcut);
+      config.setRefid(regionShortcut.name());
     } else { // templateRegion != null
       if (!regionExists(cache, templateRegion)) {
         return ResultBuilder.createUserErrorResult(CliStrings.format(
@@ -299,62 +355,73 @@ public class CreateRegionCommand extends InternalGfshCommand {
       }
 
       RegionAttributesWrapper<?, ?> wrappedAttributes = getRegionAttributes(cache, templateRegion);
+      RegionAttributesType wrappedAttributesType = getRegionAttributesType(wrappedAttributes);
 
-      if (wrappedAttributes == null) {
+      if (wrappedAttributesType == null) {
         return ResultBuilder.createGemFireErrorResult(CliStrings.format(
             CliStrings.CREATE_REGION__MSG__COULD_NOT_RETRIEVE_REGION_ATTRS_FOR_PATH_0_VERIFY_REGION_EXISTS,
             templateRegion));
       }
 
-      if (wrappedAttributes.getRegionAttributes().getPartitionAttributes() == null
-          && functionArgs.hasPartitionAttributes()) {
+      if (wrappedAttributesType.getPartitionAttributes() == null
+          && regionAttributesType.hasPartitionAttributes()) {
         return ResultBuilder.createUserErrorResult(CliStrings.format(
             CliStrings.CREATE_REGION__MSG__OPTION_0_CAN_BE_USED_ONLY_FOR_PARTITIONEDREGION,
             functionArgs.getPartitionArgs().getUserSpecifiedPartitionAttributes()) + " "
             + CliStrings.format(CliStrings.CREATE_REGION__MSG__0_IS_NOT_A_PARITIONEDREGION,
                 templateRegion));
       }
-      functionArgs.setTemplateRegion(templateRegion);
+      //Config does not need to know template region
+      // functionArgs.setTemplateRegion(templateRegion);
 
       // These attributes will have the actual callback fields (if previously present) nulled out.
       functionArgs.setRegionAttributes(wrappedAttributes.getRegionAttributes());
 
-      functionArgs
-          .setCacheListeners(wrappedAttributes.getCacheListenerClasses().toArray(new ClassName[0]));
-      functionArgs.setCacheWriter(wrappedAttributes.getCacheWriterClass());
-      functionArgs.setCacheLoader(wrappedAttributes.getCacheLoaderClass());
-      functionArgs.setCompressor(wrappedAttributes.getCompressorClass());
-      functionArgs.setKeyConstraint(wrappedAttributes.getKeyConstraintClass());
-      functionArgs.setValueConstraint(wrappedAttributes.getValueConstraintClass());
+      regionAttributesType
+          .getCacheListener().addAll(wrappedAttributesType.getCacheListener());
+      regionAttributesType.setCacheWriter(wrappedAttributesType.getCacheWriter());
+      regionAttributesType.setCacheLoader(wrappedAttributesType.getCacheLoader());
+      regionAttributesType.setCompressor(wrappedAttributesType.getCompressor());
+      regionAttributesType.setKeyConstraint(wrappedAttributesType.getKeyConstraint());
+      regionAttributesType.setValueConstraint(wrappedAttributesType.getValueConstraint());
     }
 
     if (cacheListener != null) {
       functionArgs.setCacheListeners(cacheListener);
+      List<DeclarableType> listeners = Arrays.stream(cacheListener)
+          .map(l -> new DeclarableType(l.getClassName(), l.getInitProperties()))
+          .collect(toList());
+      regionAttributesType.getCacheListener().addAll(listeners);
     }
 
     if (cacheLoader != null) {
       functionArgs.setCacheLoader(cacheLoader);
+      regionAttributesType.setCacheLoader(new DeclarableType(cacheLoader.getClassName(), cacheLoader.getInitProperties()));
     }
 
     if (cacheWriter != null) {
       functionArgs.setCacheWriter(cacheWriter);
+      regionAttributesType.setCacheWriter(new DeclarableType(cacheWriter.getClassName(), cacheWriter.getInitProperties()));
     }
 
     if (compressor != null) {
       functionArgs.setCompressor(compressor);
+      regionAttributesType.setCompressor(new DeclarableType(compressor));
     }
 
     if (keyConstraint != null) {
       functionArgs.setKeyConstraint(keyConstraint);
+      regionAttributesType.setKeyConstraint(keyConstraint);
     }
 
     if (valueConstraint != null) {
       functionArgs.setValueConstraint(valueConstraint);
+      regionAttributesType.setValueConstraint(valueConstraint);
     }
 
     DistributedSystemMXBean dsMBean = getDSMBean();
     // validating colocation
-    if (functionArgs.hasPartitionAttributes()) {
+    if (regionAttributesType.hasPartitionAttributes()) {
       if (prColocatedWith != null) {
         ManagementService mgmtService = getManagementService();
         DistributedRegionMXBean distributedRegionMXBean =
@@ -396,6 +463,7 @@ public class CreateRegionCommand extends InternalGfshCommand {
     // validating diskstore with other attributes
     if (diskStore != null) {
       regionAttributes = functionArgs.getRegionAttributes();
+      //this seems to be only for template region
       if (regionAttributes != null && !regionAttributes.getDataPolicy().withPersistence()) {
         String subMessage =
             LocalizedStrings.DiskStore_IS_USED_IN_NONPERSISTENT_REGION.toLocalizedString();
@@ -415,9 +483,10 @@ public class CreateRegionCommand extends InternalGfshCommand {
     }
 
     // additional authorization
-    if ((functionArgs.getRegionShortcut() != null
-        && functionArgs.getRegionShortcut().isPersistent())
-        || isAttributePersistent(functionArgs.getRegionAttributes())) {
+    if ((config.getRefid() != null
+        && config.getRefid().contains("PERSISTENT"))
+        || //template type
+        isAttributePersistent(functionArgs.getRegionAttributes())) {
       authorize(ResourcePermission.Resource.CLUSTER, ResourcePermission.Operation.WRITE,
           ResourcePermission.Target.DISK);
     }
@@ -471,7 +540,76 @@ public class CreateRegionCommand extends InternalGfshCommand {
     }
     return false;
   }
+  RegionAttributesType getRegionAttributesType(RegionAttributesWrapper wrapper) {
+    if(wrapper == null) {
+      return null;
+    }
 
+    RegionAttributesType attributes = new RegionAttributesType();
+
+    List<ClassName> cacheListenerClasses = wrapper.getCacheListenerClasses();
+    if(cacheListenerClasses != null) {
+      List<DeclarableType> listeners = cacheListenerClasses.stream()
+          .map(l -> new DeclarableType(l.getClassName(), l.getInitProperties())).collect(toList());
+      attributes.getCacheListener().addAll(listeners);
+    }
+
+    if(wrapper.getCacheLoaderClass() != null) {
+      ClassName cacheLoaderClass = wrapper.getCacheLoaderClass();
+      attributes.setCacheLoader(new DeclarableType(cacheLoaderClass.getClassName(), cacheLoaderClass.getInitProperties()));
+    }
+
+    if(wrapper.getCacheWriterClass() != null) {
+      ClassName cacheWriterClass = wrapper.getCacheWriterClass();
+      attributes.setCacheWriter(new DeclarableType(cacheWriterClass.getClassName(), cacheWriterClass.getInitProperties()));
+    }
+
+    if(wrapper.getCompressorClass() != null) {
+      String compressorClass = wrapper.getCompressorClass();
+      attributes.setCompressor(new DeclarableType(compressorClass));
+    }
+
+    attributes.setKeyConstraint(wrapper.getKeyConstraintClass());
+    attributes.setValueConstraint(wrapper.getValueConstraintClass());
+
+    attributes.setStatisticsEnabled(wrapper.getRegionAttributes().getStatisticsEnabled());
+
+    ExpirationAttributes entryIdleTimeout = wrapper.getRegionAttributes().getEntryIdleTimeout();
+    attributes.setEntryIdleTime(new RegionAttributesType.EntryIdleTime(String.valueOf(entryIdleTimeout.getTimeout()), entryIdleTimeout.getAction().toString()));
+
+    ExpirationAttributes entryTimeToLive = wrapper.getRegionAttributes().getEntryTimeToLive();
+    attributes.setEntryTimeToLive(new RegionAttributesType.EntryTimeToLive(String.valueOf(entryTimeToLive.getTimeout()), entryTimeToLive.getAction().toString()));
+
+    ExpirationAttributes regionIdleTimeout = wrapper.getRegionAttributes().getRegionIdleTimeout();
+    attributes.setRegionIdleTime(new RegionAttributesType.RegionIdleTime(String.valueOf(regionIdleTimeout.getTimeout()), regionIdleTimeout.getAction().toString()));
+
+    ExpirationAttributes regionTimeToLive = wrapper.getRegionAttributes().getRegionTimeToLive();
+    attributes.setRegionTimeToLive(new RegionAttributesType.RegionTimeToLive(String.valueOf(regionTimeToLive.getTimeout()), regionTimeToLive.getAction().toString());
+
+    //functionArgs.setEntryTTLCustomExpiry(entryTTLCustomExpiry);
+
+    EvictionAttributes evictionAttributes = wrapper.getRegionAttributes().getEvictionAttributes();
+    attributes.setEvictionAttributes(new RegionAttributesType.EvictionAttributes(evictionAttributes.getAction().toString(),
+        String.valueOf(evictionAttributes.getMaximum()), null,
+        evictionAttributes.getObjectSizer().getClass().getName()));
+
+    attributes.setDiskStoreName(wrapper.getRegionAttributes().getDiskStoreName());
+    //attributes.setDiskSynchronous();
+    attributes.setEnableAsyncConflation(wrapper.getRegionAttributes().getEnableAsyncConflation());
+    attributes.setEnableSubscriptionConflation(wrapper.getRegionAttributes().getEnableSubscriptionConflation());
+    attributes.setAsyncEventQueueIds(wrapper.getRegionAttributes().getAsyncEventQueueIds().stream().collect(joining(","))));
+    attributes.setGatewaySenderIds(wrapper.getRegionAttributes().getGatewaySenderIds().stream().collect(joining(",")));
+    attributes.setConcurrencyChecksEnabled(wrapper.getRegionAttributes().getConcurrencyChecksEnabled());
+    attributes.setCloningEnabled(wrapper.getRegionAttributes().getCloningEnabled());
+    attributes.setConcurrencyLevel(String.valueOf(wrapper.getRegionAttributes().getConcurrencyLevel()));
+    attributes.setPartitionAttributes(new RegionAttributesType.PartitionAttributes(prColocatedWith, Integer.toString(prLocalMaxMemory), Long.toString(prRecoveryDelay),
+        Integer.toString(prRedundantCopies), Long.toString(prStartupRecoveryDelay), Long.toString(prTotalMaxMemory), Integer.toString(prTotalNumBuckets),
+        partitionResolver));
+
+    attributes.setOffHeap(wrapper.getRegionAttributes().getOffHeap());
+    attributes.setMulticastEnabled(wrapper.getRegionAttributes().getMulticastEnabled());
+    return attributes;
+  }
   RegionAttributesWrapper getRegionAttributes(InternalCache cache, String regionPath) {
     if (!isClusterWideSameConfig(cache, regionPath)) {
       throw new IllegalStateException(CliStrings.format(
