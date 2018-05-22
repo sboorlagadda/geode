@@ -31,41 +31,43 @@ import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.ConverterHint;
-import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.CliUtil;
 import org.apache.geode.management.internal.cli.domain.RegionInformation;
 import org.apache.geode.management.internal.cli.functions.GetRegionsFunction;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.ResultBuilder;
-import org.apache.geode.management.internal.cli.result.TabularResultData;
+import org.apache.geode.management.internal.cli.result.model.ResultModel;
+import org.apache.geode.management.internal.cli.result.model.TabularResultModel;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
 public class ListRegionCommand extends InternalGfshCommand {
   private static final GetRegionsFunction getRegionsFunction = new GetRegionsFunction();
 
+  public static final String REGIONS_TABLE = "regions";
+
   @CliCommand(value = {CliStrings.LIST_REGION}, help = CliStrings.LIST_REGION__HELP)
   @CliMetaData(relatedTopic = CliStrings.TOPIC_GEODE_REGION)
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.READ)
-  public Result listRegion(
+  public ResultModel listRegion(
       @CliOption(key = {CliStrings.GROUP, CliStrings.GROUPS},
           optionContext = ConverterHint.MEMBERGROUP,
           help = CliStrings.LIST_REGION__GROUP__HELP) String[] group,
       @CliOption(key = {CliStrings.MEMBER, CliStrings.MEMBERS},
           optionContext = ConverterHint.MEMBERIDNAME,
           help = CliStrings.LIST_REGION__MEMBER__HELP) String[] memberNameOrId) {
-    Result result = null;
+    ResultModel result = null;
     try {
       Set<RegionInformation> regionInfoSet = new LinkedHashSet<>();
       ResultCollector<?, ?> rc;
       Set<DistributedMember> targetMembers = findMembers(group, memberNameOrId);
 
       if (targetMembers.isEmpty()) {
-        return ResultBuilder.createUserErrorResult(CliStrings.NO_MEMBERS_FOUND_MESSAGE);
+        return ResultModel.createError(CliStrings.NO_MEMBERS_FOUND_MESSAGE);
       }
 
-      TabularResultData resultData = ResultBuilder.createTabularResultData();
+      result = new ResultModel();
+      TabularResultModel resultData = result.addTable(REGIONS_TABLE);
       rc = CliUtil.executeFunction(getRegionsFunction, null, targetMembers);
       ArrayList<?> resultList = (ArrayList<?>) rc.getResult();
 
@@ -89,19 +91,15 @@ public class ListRegionCommand extends InternalGfshCommand {
           resultData.accumulate("List of regions", regionName);
         }
 
-        if (!regionNames.isEmpty()) {
-          result = ResultBuilder.buildResult(resultData);
-
-        } else {
-          result = ResultBuilder.createInfoResult(CliStrings.LIST_REGION__MSG__NOT_FOUND);
+        if (regionNames.isEmpty()) {
+          result = ResultModel.createInfo(CliStrings.LIST_REGION__MSG__NOT_FOUND);
         }
       }
     } catch (FunctionInvocationTargetException e) {
-      result = ResultBuilder.createGemFireErrorResult(CliStrings
+      result = ResultModel.createError(CliStrings
           .format(CliStrings.COULD_NOT_EXECUTE_COMMAND_TRY_AGAIN, CliStrings.LIST_REGION));
     } catch (Exception e) {
-      result = ResultBuilder
-          .createGemFireErrorResult(CliStrings.LIST_REGION__MSG__ERROR + " : " + e.getMessage());
+      result = ResultModel.createError(CliStrings.LIST_REGION__MSG__ERROR + " : " + e.getMessage());
     }
     return result;
   }

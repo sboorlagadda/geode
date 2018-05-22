@@ -31,15 +31,14 @@ import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.ConverterHint;
-import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.domain.FixedPartitionAttributesInfo;
 import org.apache.geode.management.internal.cli.domain.RegionDescription;
 import org.apache.geode.management.internal.cli.domain.RegionDescriptionPerMember;
 import org.apache.geode.management.internal.cli.functions.GetRegionDescriptionFunction;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.CompositeResultData;
-import org.apache.geode.management.internal.cli.result.ResultBuilder;
-import org.apache.geode.management.internal.cli.result.TabularResultData;
+import org.apache.geode.management.internal.cli.result.model.DataResultModel;
+import org.apache.geode.management.internal.cli.result.model.ResultModel;
+import org.apache.geode.management.internal.cli.result.model.TabularResultModel;
 import org.apache.geode.management.internal.cli.util.RegionAttributesNames;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
@@ -50,11 +49,17 @@ public class DescribeRegionCommand extends InternalGfshCommand {
   private static final GetRegionDescriptionFunction getRegionDescription =
       new GetRegionDescriptionFunction();
 
+  public static final String Accessors_Section = "accessors";
+  public static final String Members_Section = "hostingMembers";
+  public static final String SectionName = "Info";
+  public static final String CommonAttributes_TableName = "CommonAttributes";
+  public static final String MemberAttributes_TableName = "MemberAttributes";
+
   @CliCommand(value = {CliStrings.DESCRIBE_REGION}, help = CliStrings.DESCRIBE_REGION__HELP)
   @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_REGION, CliStrings.TOPIC_GEODE_CONFIG})
   @ResourceOperation(resource = ResourcePermission.Resource.CLUSTER,
       operation = ResourcePermission.Operation.READ)
-  public Result describeRegion(
+  public ResultModel describeRegion(
       @CliOption(key = CliStrings.DESCRIBE_REGION__NAME, optionContext = ConverterHint.REGION_PATH,
           help = CliStrings.DESCRIBE_REGION__NAME__HELP, mandatory = true) String regionName) {
 
@@ -106,17 +111,19 @@ public class DescribeRegionCommand extends InternalGfshCommand {
     return (List<?>) rc.getResult();
   }
 
-  public Result buildDescriptionResult(String regionName,
+  public ResultModel buildDescriptionResult(String regionName,
       List<RegionDescription> regionDescriptions) {
     if (regionDescriptions.isEmpty()) {
-      return ResultBuilder
-          .createUserErrorResult(CliStrings.format(CliStrings.REGION_NOT_FOUND, regionName));
+      return ResultModel.createError(CliStrings.format(CliStrings.REGION_NOT_FOUND, regionName));
     }
 
-    CompositeResultData crd = ResultBuilder.createCompositeResultData();
+    ResultModel crm = new ResultModel();
     for (RegionDescription regionDescription : regionDescriptions) {
-      CompositeResultData.SectionResultData regionSection = crd.addSection();
-      regionSection.addSeparator('-');
+      String suffix = Members_Section;
+      if (regionDescription.isAccessor()) {
+        suffix = Accessors_Section;
+      }
+      DataResultModel regionSection = crm.addData(suffix + SectionName);
       regionSection.addData("Name", regionDescription.getName());
 
       String dataPolicy =
@@ -132,9 +139,9 @@ public class DescribeRegionCommand extends InternalGfshCommand {
       }
       regionSection.addData(memberType,
           StringUtils.join(regionDescription.getHostingMembers(), '\n'));
-      regionSection.addSeparator('.');
 
-      TabularResultData commonNonDefaultAttrTable = regionSection.addTable();
+      TabularResultModel commonNonDefaultAttrTable =
+          crm.addTable(suffix + CommonAttributes_TableName);
 
       commonNonDefaultAttrTable.setHeader(CliStrings
           .format(CliStrings.DESCRIBE_REGION__NONDEFAULT__COMMONATTRIBUTES__HEADER, memberType));
@@ -159,7 +166,7 @@ public class DescribeRegionCommand extends InternalGfshCommand {
           regionDescription.getRegionDescriptionPerMemberMap();
       Set<String> members = regDescPerMemberMap.keySet();
 
-      TabularResultData table = regionSection.addTable();
+      TabularResultModel table = crm.addTable(suffix + MemberAttributes_TableName);
 
       boolean setHeader = false;
       for (String member : members) {
@@ -204,10 +211,10 @@ public class DescribeRegionCommand extends InternalGfshCommand {
       }
     }
 
-    return ResultBuilder.buildResult(crd);
+    return crm;
   }
 
-  private void writeCommonAttributesToTable(TabularResultData table, String attributeType,
+  private void writeCommonAttributesToTable(TabularResultModel table, String attributeType,
       Map<String, String> attributesMap) {
     if (!attributesMap.isEmpty()) {
       Set<String> attributes = attributesMap.keySet();
@@ -229,7 +236,7 @@ public class DescribeRegionCommand extends InternalGfshCommand {
     }
   }
 
-  private void writeFixedPartitionAttributesToTable(TabularResultData table,
+  private void writeFixedPartitionAttributesToTable(TabularResultModel table,
       List<FixedPartitionAttributesInfo> fpaList, String member, boolean isMemberNameAdded) {
 
     if (fpaList != null) {
@@ -273,7 +280,7 @@ public class DescribeRegionCommand extends InternalGfshCommand {
 
   }
 
-  private boolean writeAttributesToTable(TabularResultData table, String attributeType,
+  private boolean writeAttributesToTable(TabularResultModel table, String attributeType,
       Map<String, String> attributesMap, String member, boolean isMemberNameAdded) {
     if (!attributesMap.isEmpty()) {
       Set<String> attributes = attributesMap.keySet();
@@ -305,7 +312,7 @@ public class DescribeRegionCommand extends InternalGfshCommand {
     return isMemberNameAdded;
   }
 
-  private void writeAttributeToTable(TabularResultData table, String member, String attributeType,
+  private void writeAttributeToTable(TabularResultModel table, String member, String attributeType,
       String attributeName, String attributeValue) {
 
     final String blank = "";
@@ -331,7 +338,7 @@ public class DescribeRegionCommand extends InternalGfshCommand {
     }
   }
 
-  private void writeCommonAttributeToTable(TabularResultData table, String attributeType,
+  private void writeCommonAttributeToTable(TabularResultModel table, String attributeType,
       String attributeName, String attributeValue) {
     final String blank = "";
     if (attributeValue != null) {
