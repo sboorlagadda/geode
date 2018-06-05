@@ -1266,6 +1266,7 @@ public abstract class AbstractRegionMap
                   newRe.removePhase2();
                   removeEntry(key, newRe, false);
                 }
+                logger.info("Debug.....case 3.. calling txApplyDestroyPart2..!");
                 owner.txApplyDestroyPart2(newRe, newRe.getKey(), inTokenMode,
                     false /* clearConflict */, true);
                 // Note no need for LRU work since the entry is destroyed
