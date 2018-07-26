@@ -474,135 +474,117 @@ public class SocketCreator {
 
   private TrustManager[] getTrustManagers()
       throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
-    TrustManager[] trustManagers = null;
-    GfeConsoleReader consoleReader = GfeConsoleReaderFactory.getDefaultConsoleReader();
+    if (sslConfig.isUseDefaultProvider()) {
+      // ssl-use-default-trustmanager = true
+      // ssl-use-default-keysmanager = true
+      // or a single parameter
+      // ssl-default-provider = true
 
-    String trustStoreType = sslConfig.getTruststoreType();
-    if (StringUtils.isEmpty(trustStoreType)) {
-      // read from console, default on empty
-      if (consoleReader.isSupported()) {
-        trustStoreType = consoleReader
-            .readLine("Please enter the trustStoreType (javax.net.ssl.trustStoreType) : ");
-      } else {
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init((KeyStore) null);
+      return tmf.getTrustManagers();
+    } else {
+      TrustManager[] trustManagers = null;
+
+      String trustStoreType = sslConfig.getTruststoreType();
+      if (StringUtils.isEmpty(trustStoreType)) {
         trustStoreType = KeyStore.getDefaultType();
       }
-    }
 
-    KeyStore ts = KeyStore.getInstance(trustStoreType);
-    String trustStorePath = sslConfig.getTruststore();
-    if (StringUtils.isEmpty(trustStorePath)) {
-      if (consoleReader.isSupported()) {
-        trustStorePath = consoleReader
-            .readLine("Please enter the trustStore location (javax.net.ssl.trustStore) : ");
-      }
-    }
-    FileInputStream fis = new FileInputStream(trustStorePath);
-    String passwordString = sslConfig.getTruststorePassword();
-    char[] password = null;
-    if (passwordString != null) {
-      if (passwordString.trim().equals("")) {
-        if (!StringUtils.isEmpty(passwordString)) {
-          String toDecrypt = "encrypted(" + passwordString + ")";
-          passwordString = PasswordUtil.decrypt(toDecrypt);
+      KeyStore ts = KeyStore.getInstance(trustStoreType);
+      String trustStorePath = sslConfig.getTruststore();
+      FileInputStream fis = new FileInputStream(trustStorePath);
+      String passwordString = sslConfig.getTruststorePassword();
+      char[] password = null;
+      if (passwordString != null) {
+        if (passwordString.trim().equals("")) {
+          if (!StringUtils.isEmpty(passwordString)) {
+            String toDecrypt = "encrypted(" + passwordString + ")";
+            passwordString = PasswordUtil.decrypt(toDecrypt);
+            password = passwordString.toCharArray();
+          }
+        } else {
           password = passwordString.toCharArray();
         }
-        // read from the console
-        if (StringUtils.isEmpty(passwordString) && consoleReader.isSupported()) {
-          password = consoleReader.readPassword(
-              "Please enter password for trustStore (javax.net.ssl.trustStorePassword) : ");
-        }
-      } else {
-        password = passwordString.toCharArray();
       }
-    }
-    ts.load(fis, password);
+      ts.load(fis, password);
 
-    // default algorithm can be changed by setting property "ssl.TrustManagerFactory.algorithm" in
-    // security properties
-    TrustManagerFactory tmf =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init(ts);
-    trustManagers = tmf.getTrustManagers();
-    // follow the security tip in java doc
-    if (password != null) {
-      java.util.Arrays.fill(password, ' ');
+      // default algorithm can be changed by setting property "ssl.TrustManagerFactory.algorithm" in
+      // security properties
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init(ts);
+      trustManagers = tmf.getTrustManagers();
+      // follow the security tip in java doc
+      if (password != null) {
+        java.util.Arrays.fill(password, ' ');
+      }
+      return trustManagers;
     }
-
-    return trustManagers;
   }
 
   private KeyManager[] getKeyManagers() throws KeyStoreException, IOException,
       NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
-    GfeConsoleReader consoleReader = GfeConsoleReaderFactory.getDefaultConsoleReader();
+    if (sslConfig.isUseDefaultProvider()) {
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      keyManagerFactory.init(null, null);
+      return keyManagerFactory.getKeyManagers();
+    } else {
+      if (sslConfig.getKeystore() == null) {
+        return null;
+      }
 
-    if (sslConfig.getKeystore() == null) {
-      return null;
-    }
-
-    KeyManager[] keyManagers = null;
-    String keyStoreType = sslConfig.getKeystoreType();
-    if (StringUtils.isEmpty(keyStoreType)) {
-      // read from console, default on empty
-      if (consoleReader.isSupported()) {
-        keyStoreType =
-            consoleReader.readLine("Please enter the keyStoreType (javax.net.ssl.keyStoreType) : ");
-      } else {
+      KeyManager[] keyManagers = null;
+      String keyStoreType = sslConfig.getKeystoreType();
+      if (StringUtils.isEmpty(keyStoreType)) {
         keyStoreType = KeyStore.getDefaultType();
       }
-    }
-    KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-    String keyStoreFilePath = sslConfig.getKeystore();
-    if (StringUtils.isEmpty(keyStoreFilePath)) {
-      if (consoleReader.isSupported()) {
-        keyStoreFilePath = consoleReader
-            .readLine("Please enter the keyStore location (javax.net.ssl.keyStore) : ");
-      } else {
+      KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+      String keyStoreFilePath = sslConfig.getKeystore();
+      if (StringUtils.isEmpty(keyStoreFilePath)) {
         keyStoreFilePath =
             System.getProperty("user.home") + System.getProperty("file.separator") + ".keystore";
       }
-    }
 
-    FileInputStream fileInputStream = new FileInputStream(keyStoreFilePath);
-    String passwordString = sslConfig.getKeystorePassword();
-    char[] password = null;
-    if (passwordString != null) {
-      if (passwordString.trim().equals("")) {
-        String encryptedPass = System.getenv("javax.net.ssl.keyStorePassword");
-        if (!StringUtils.isEmpty(encryptedPass)) {
-          String toDecrypt = "encrypted(" + encryptedPass + ")";
-          passwordString = PasswordUtil.decrypt(toDecrypt);
+      FileInputStream fileInputStream = new FileInputStream(keyStoreFilePath);
+      String passwordString = sslConfig.getKeystorePassword();
+      char[] password = null;
+      if (passwordString != null) {
+        if (passwordString.trim().equals("")) {
+          String encryptedPass = System.getenv("javax.net.ssl.keyStorePassword");
+          if (!StringUtils.isEmpty(encryptedPass)) {
+            String toDecrypt = "encrypted(" + encryptedPass + ")";
+            passwordString = PasswordUtil.decrypt(toDecrypt);
+            password = passwordString.toCharArray();
+          }
+        } else {
           password = passwordString.toCharArray();
         }
-        // read from the console
-        if (StringUtils.isEmpty(passwordString) && consoleReader != null) {
-          password = consoleReader.readPassword(
-              "Please enter password for keyStore (javax.net.ssl.keyStorePassword) : ");
-        }
-      } else {
-        password = passwordString.toCharArray();
       }
+      keyStore.load(fileInputStream, password);
+      // default algorithm can be changed by setting property "ssl.KeyManagerFactory.algorithm" in
+      // security properties
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      keyManagerFactory.init(keyStore, password);
+      keyManagers = keyManagerFactory.getKeyManagers();
+      // follow the security tip in java doc
+      if (password != null) {
+        java.util.Arrays.fill(password, ' ');
+      }
+
+      KeyManager[] extendedKeyManagers = new KeyManager[keyManagers.length];
+
+      for (int i = 0; i < keyManagers.length; i++)
+
+      {
+        extendedKeyManagers[i] = new ExtendedAliasKeyManager(keyManagers[i], sslConfig.getAlias());
+      }
+
+      return extendedKeyManagers;
     }
-    keyStore.load(fileInputStream, password);
-    // default algorithm can be changed by setting property "ssl.KeyManagerFactory.algorithm" in
-    // security properties
-    KeyManagerFactory keyManagerFactory =
-        KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    keyManagerFactory.init(keyStore, password);
-    keyManagers = keyManagerFactory.getKeyManagers();
-    // follow the security tip in java doc
-    if (password != null) {
-      java.util.Arrays.fill(password, ' ');
-    }
-
-    KeyManager[] extendedKeyManagers = new KeyManager[keyManagers.length];
-
-    for (int i = 0; i < keyManagers.length; i++)
-
-    {
-      extendedKeyManagers[i] = new ExtendedAliasKeyManager(keyManagers[i], sslConfig.getAlias());
-    }
-
-    return extendedKeyManagers;
   }
 
   public SSLContext getSslContext() {
@@ -1004,10 +986,15 @@ public class SocketCreator {
   }
 
   /**
-   * Will be a server socket... this one simply registers the listeners.
+   * Use this method to perform the SSL handshake on a newly accepted socket. Non-SSL
+   * sockets are ignored by this method.
+   *
+   * @param timeout the number of milliseconds allowed for the handshake to complete
    */
-  public void configureServerSSLSocket(Socket socket) throws IOException {
+  public void handshakeIfSocketIsSSL(Socket socket, int timeout) throws IOException {
     if (socket instanceof SSLSocket) {
+      int oldTimeout = socket.getSoTimeout();
+      socket.setSoTimeout(timeout);
       SSLSocket sslSocket = (SSLSocket) socket;
       try {
         sslSocket.startHandshake();
@@ -1027,6 +1014,9 @@ public class SocketCreator {
               ex);
           throw ex;
         }
+        // else ignore
+      } finally {
+        socket.setSoTimeout(oldTimeout);
       }
     }
   }
