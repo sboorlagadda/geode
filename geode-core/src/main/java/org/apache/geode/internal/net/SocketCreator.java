@@ -473,18 +473,17 @@ public class SocketCreator {
 
   private TrustManager[] getTrustManagers()
       throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
-    boolean SSL_DEFAULT_PROVIDER = false;
-    if(SSL_DEFAULT_PROVIDER) {
-      //ssl-use-default-trustmanager = true
-      //ssl-use-default-keysmanager = true
-      //or a single parameter
-      //ssl-default-provider = true
+    if (sslConfig.isUseDefaultProvider()) {
+      // ssl-use-default-trustmanager = true
+      // ssl-use-default-keysmanager = true
+      // or a single parameter
+      // ssl-default-provider = true
 
-      TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
       tmf.init((KeyStore) null);
       return tmf.getTrustManagers();
-    }
-    else {
+    } else {
       TrustManager[] trustManagers = null;
 
       String trustStoreType = sslConfig.getTruststoreType();
@@ -512,7 +511,8 @@ public class SocketCreator {
 
       // default algorithm can be changed by setting property "ssl.TrustManagerFactory.algorithm" in
       // security properties
-      TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
       tmf.init(ts);
       trustManagers = tmf.getTrustManagers();
       // follow the security tip in java doc
@@ -525,9 +525,9 @@ public class SocketCreator {
 
   private KeyManager[] getKeyManagers() throws KeyStoreException, IOException,
       NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
-    boolean SSL_DEFAULT_PROVIDER = false;
-    if(SSL_DEFAULT_PROVIDER) {
-      KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    if (sslConfig.isUseDefaultProvider()) {
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
       keyManagerFactory.init(null, null);
       return keyManagerFactory.getKeyManagers();
     } else {
@@ -543,7 +543,8 @@ public class SocketCreator {
       KeyStore keyStore = KeyStore.getInstance(keyStoreType);
       String keyStoreFilePath = sslConfig.getKeystore();
       if (StringUtils.isEmpty(keyStoreFilePath)) {
-        keyStoreFilePath = System.getProperty("user.home") + System.getProperty("file.separator") + ".keystore";
+        keyStoreFilePath =
+            System.getProperty("user.home") + System.getProperty("file.separator") + ".keystore";
       }
 
       FileInputStream fileInputStream = new FileInputStream(keyStoreFilePath);
@@ -564,7 +565,8 @@ public class SocketCreator {
       keyStore.load(fileInputStream, password);
       // default algorithm can be changed by setting property "ssl.KeyManagerFactory.algorithm" in
       // security properties
-      KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
       keyManagerFactory.init(keyStore, password);
       keyManagers = keyManagerFactory.getKeyManagers();
       // follow the security tip in java doc

@@ -1929,6 +1929,8 @@ public interface ConfigurationProperties {
    * Geode 1.0
    */
   String DISTRIBUTED_TRANSACTIONS = "distributed-transactions";
+
+  String SSL_USE_DEFAULT_PROVIDER = "ssl-use-default-provider";
   /**
    * The static String definition of the <i>"ssl-enabled-components"</i> property <a
    * name="ssl-enabled-components"/a>

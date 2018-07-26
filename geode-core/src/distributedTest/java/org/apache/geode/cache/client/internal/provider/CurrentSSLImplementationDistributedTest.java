@@ -25,10 +25,8 @@ import static org.apache.geode.distributed.ConfigurationProperties.SSL_REQUIRE_A
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_PASSWORD;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_TYPE;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_USE_DEFAULT_PROVIDER;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.security.Security;
 import java.util.Properties;
 
 import org.junit.BeforeClass;
@@ -42,7 +40,7 @@ import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.client.ClientCacheFactory;
 import org.apache.geode.cache.client.ClientRegionFactory;
 import org.apache.geode.cache.client.ClientRegionShortcut;
-import org.apache.geode.cache.client.internal.provider.ssl.CustomProvider;
+import org.apache.geode.cache.client.internal.CacheServerSSLConnectionDUnitTest;
 import org.apache.geode.security.SecurableCommunicationChannels;
 import org.apache.geode.test.dunit.SerializableConsumerIF;
 import org.apache.geode.test.dunit.rules.ClientVM;
@@ -53,11 +51,13 @@ import org.apache.geode.test.junit.rules.GfshCommandRule;
 import org.apache.geode.util.test.TestUtil;
 
 @Category({ClientServerTest.class})
-public class CustomSSLProviderDistributedTest {
+public class CurrentSSLImplementationDistributedTest {
   private static MemberVM locator;
   private static MemberVM server;
   private static ClientVM client;
 
+  private static final String CLIENT_KEY_STORE = "client.keystore";
+  private static final String CLIENT_TRUST_STORE = "client.truststore";
   private static final String SERVER_KEY_STORE = "cacheserver.keystore";
   private static final String SERVER_TRUST_STORE = "cacheserver.truststore";
 
@@ -68,9 +68,15 @@ public class CustomSSLProviderDistributedTest {
   public static GfshCommandRule gfsh = new GfshCommandRule();
 
   private static String serverKeystore =
-      TestUtil.getResourcePath(CustomSSLProviderDistributedTest.class, SERVER_KEY_STORE);
+      TestUtil.getResourcePath(CurrentSSLImplementationDistributedTest.class, SERVER_KEY_STORE);
   private static String serverTruststore =
-      TestUtil.getResourcePath(CustomSSLProviderDistributedTest.class, SERVER_TRUST_STORE);
+      TestUtil.getResourcePath(CurrentSSLImplementationDistributedTest.class, SERVER_TRUST_STORE);
+
+  private static String clientKeystore =
+      TestUtil.getResourcePath(CacheServerSSLConnectionDUnitTest.class, CLIENT_KEY_STORE);
+  private static String clientTruststore =
+      TestUtil.getResourcePath(CacheServerSSLConnectionDUnitTest.class, CLIENT_TRUST_STORE);
+
 
   private static Properties serverSSLProperties = new Properties() {
     {
@@ -83,15 +89,22 @@ public class CustomSSLProviderDistributedTest {
       setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
       setProperty(SSL_CIPHERS, "any");
       setProperty(SSL_PROTOCOLS, "any");
-      setProperty(SSL_REQUIRE_AUTHENTICATION, String.valueOf("true"));
     }
   };
 
   private static Properties clientSSLProperties = new Properties() {
     {
-      setProperty(SSL_ENABLED_COMPONENTS, SecurableCommunicationChannels.SERVER);
-      setProperty(SSL_REQUIRE_AUTHENTICATION, String.valueOf("true"));
-      setProperty(SSL_USE_DEFAULT_PROVIDER, String.valueOf("true"));
+
+      setProperty(SSL_ENABLED_COMPONENTS, "server");
+      setProperty(SSL_CIPHERS, "any");
+      setProperty(SSL_PROTOCOLS, "any");
+      setProperty(SSL_REQUIRE_AUTHENTICATION, String.valueOf(false));
+      setProperty(SSL_KEYSTORE_TYPE, "JKS");
+      setProperty(SSL_KEYSTORE, clientKeystore);
+      setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
+      setProperty(SSL_KEYSTORE_PASSWORD, "password");
+      setProperty(SSL_TRUSTSTORE, clientTruststore);
+      setProperty(SSL_TRUSTSTORE_PASSWORD, "password");
     }
   };
 
@@ -100,10 +113,15 @@ public class CustomSSLProviderDistributedTest {
     // create a cluster
     locator = cluster.startLocatorVM(0, serverSSLProperties);
     server = cluster.startServerVM(1, serverSSLProperties, locator.getPort());
+    // locator = cluster.startLocatorVM(0);
+    // server = cluster.startServerVM(1, locator.getPort());
 
     // create region
-    server.invoke(CustomSSLProviderDistributedTest::createServerRegion);
+    server.invoke(CurrentSSLImplementationDistributedTest::createServerRegion);
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
+
+    // gfsh.connect(locator);
+    // gfsh.executeAndAssertThat("list regions").statusIsSuccess();
 
     // setup client
     setupClient(server.getPort(), server.getVM().getHost().getHostName());
@@ -118,14 +136,14 @@ public class CustomSSLProviderDistributedTest {
 
   private static void setupClient(int serverPort, String serverHost) throws Exception {
     SerializableConsumerIF<ClientCacheFactory> clientSetup = cf -> {
-      Security.insertProviderAt(new CustomProvider(), 2);
       cf.addPoolServer(serverHost, serverPort);
     };
 
     client = cluster.startClientVM(2, clientSSLProperties, clientSetup);
+    // client = cluster.startClientVM(2, new Properties(), clientSetup);
 
     // create a client region
-    client.invoke(CustomSSLProviderDistributedTest::createClientRegion);
+    client.invoke(CurrentSSLImplementationDistributedTest::createClientRegion);
   }
 
   private static void createClientRegion() {
@@ -137,8 +155,8 @@ public class CustomSSLProviderDistributedTest {
 
   @Test
   public void testClientSSLConnection() {
-    client.invoke(CustomSSLProviderDistributedTest::doClientRegionTest);
-    server.invoke(CustomSSLProviderDistributedTest::doServerRegionTest);
+    client.invoke(CurrentSSLImplementationDistributedTest::doClientRegionTest);
+    server.invoke(CurrentSSLImplementationDistributedTest::doServerRegionTest);
   }
 
   private static void doClientRegionTest() {
