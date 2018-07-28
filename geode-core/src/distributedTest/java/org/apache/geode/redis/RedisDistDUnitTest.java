@@ -15,17 +15,19 @@
 package org.apache.geode.redis;
 
 import static org.apache.geode.distributed.ConfigurationProperties.*;
-import static org.apache.geode.distributed.ConfigurationProperties.LOCATORS;
 import static org.apache.geode.distributed.ConfigurationProperties.LOG_LEVEL;
-import static org.apache.geode.distributed.ConfigurationProperties.MCAST_PORT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
+import java.io.Serializable;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import org.apache.geode.security.SecurableCommunicationChannels;
-import org.apache.geode.test.dunit.SerializableCallableIF;
-import org.apache.geode.test.dunit.SerializableRunnableIF;
+import org.apache.geode.internal.net.SocketCreator;
+import org.apache.geode.test.dunit.AsyncInvocation;
 import org.apache.geode.test.dunit.rules.ClientVM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
@@ -35,26 +37,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import redis.clients.jedis.Jedis;
 
-import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.distributed.ConfigurationProperties;
 import org.apache.geode.internal.AvailablePortHelper;
-import org.apache.geode.internal.net.SocketCreator;
-import org.apache.geode.test.dunit.AsyncInvocation;
-import org.apache.geode.test.dunit.DistributedTestUtils;
-import org.apache.geode.test.dunit.Host;
 import org.apache.geode.test.dunit.IgnoredException;
 import org.apache.geode.test.dunit.LogWriterUtils;
-import org.apache.geode.test.dunit.SerializableCallable;
-import org.apache.geode.test.dunit.VM;
-import org.apache.geode.test.dunit.internal.JUnit4DistributedTestCase;
 import org.apache.geode.test.junit.categories.RedisTest;
 
 @Category({RedisTest.class})
-public class RedisDistDUnitTest {
+public class RedisDistDUnitTest implements Serializable {
 
   public static final String TEST_KEY = "key";
-  public static int pushes = 200;
-  int redisPort = 6379;
+
   private MemberVM locator;
   private MemberVM server1;
   private MemberVM server2;
@@ -63,26 +55,19 @@ public class RedisDistDUnitTest {
 
   private int server1Port;
   private int server2Port;
-
   private String localHost;
 
   private static final int JEDIS_TIMEOUT = 20 * 1000;
 
-  private abstract class ClientTestBase extends SerializableCallable {
-
-    int port;
-
-    protected ClientTestBase(int port) {
-      this.port = port;
-    }
-  }
-
   @Rule
   public ClusterStartupRule clusterStartupRule = new ClusterStartupRule();
 
+  private static final Random r = new Random();
+
   @Before
   public void setup() throws Exception {
-    final int[] ports = AvailablePortHelper.getRandomAvailableTCPPorts(2);
+    localHost = SocketCreator.getLocalHost().getHostName();
+[]    final int[] ports = AvailablePortHelper.getRandomAvailableTCPPorts(2);
 
     locator = clusterStartupRule.startLocatorVM(0);
 
@@ -91,7 +76,7 @@ public class RedisDistDUnitTest {
 
     Properties serverProps = new Properties();
     serverProps.setProperty(LOG_LEVEL, LogWriterUtils.getDUnitLogLevel());
-    serverProps.setProperty(REDIS_BIND_ADDRESS, "localhost");
+    serverProps.setProperty(REDIS_BIND_ADDRESS, localHost);
 
     serverProps.setProperty(REDIS_PORT, "" + server1Port);
     server1 = clusterStartupRule.startServerVM(1, serverProps, locator.getPort());
@@ -103,140 +88,126 @@ public class RedisDistDUnitTest {
   }
 
   @Test
-  public void testConcListOps() throws Exception {
+  public void testConcurrentCreatesSucceeds() throws InterruptedException, ExecutionException, TimeoutException {
     final Jedis jedis1 = new Jedis(localHost, server1Port, JEDIS_TIMEOUT);
     final Jedis jedis2 = new Jedis(localHost, server2Port, JEDIS_TIMEOUT);
-    final int pushes = 20;
+    final long pushes = 20;
 
-    client1.invoke(() -> {
-      Jedis jedis = new Jedis(localHost, server2Port, JEDIS_TIMEOUT);
-      Random r = new Random();
-      for (int i = 0; i < pushes; i++) {
-        if (r.nextBoolean()) {
-          jedis.lpush(TEST_KEY, randString());
-        } else {
-          jedis.rpush(TEST_KEY, randString());
-        }
-      }
-    });
-    //client2.invoke(new ConcListOps(server2Port));
+    AsyncInvocation
+        asyncInvocation =
+        client1.invokeAsync(() -> concurrentCreates(pushes, server2Port));
+    client2.invoke(() -> concurrentCreates(pushes, server1Port));
+    asyncInvocation.await(5, TimeUnit.SECONDS);
 
-    long expected = pushes;
     long result1 = jedis1.llen(TEST_KEY);
     long result2 = jedis2.llen(TEST_KEY);
-    assertEquals(expected, result1);
-    assertEquals(result1, result2);
+    assertThat(2 * pushes).isEqualTo(result1);
+    assertThat(result1).isEqualTo(result2);
+  }
+
+  private void concurrentCreates(long pushes, int port) {
+    Jedis jedis = new Jedis(localHost, port, JEDIS_TIMEOUT);
+    for (int i = 0; i < pushes; i++) {
+      if (r.nextBoolean()) {
+        jedis.lpush(TEST_KEY, randString());
+      } else {
+        jedis.rpush(TEST_KEY, randString());
+      }
+    }
   }
 
   @Test
-  public void testConcCreateDestroy() throws Exception {
+  public void testConcurrentCreatesAndDestroysSucceed()
+      throws InterruptedException, ExecutionException, TimeoutException {
     IgnoredException.addIgnoredException("RegionDestroyedException");
     IgnoredException.addIgnoredException("IndexInvalidException");
-    final int ops = 40;
+    // Expect to run with no exception
+    AsyncInvocation
+        asyncInvocation =
+        client1.invokeAsync(() -> concurrentCreatesAndDestroys(40, server1Port));
+    client2.invoke(() -> concurrentCreatesAndDestroys(40, server2Port));
+    asyncInvocation.await(10, TimeUnit.SECONDS);
+  }
+
+  private void concurrentCreatesAndDestroys(int ops, int port) {
     final String hKey = TEST_KEY + "hash";
     final String lKey = TEST_KEY + "list";
     final String zKey = TEST_KEY + "zset";
     final String sKey = TEST_KEY + "set";
-
-    class ConcCreateDestroy extends ClientTestBase {
-      protected ConcCreateDestroy(int port) {
-        super(port);
-      }
-
-      @Override
-      public Object call() throws Exception {
-        Jedis jedis = new Jedis(localHost, port, JEDIS_TIMEOUT);
-        Random r = new Random();
-        for (int i = 0; i < ops; i++) {
-          int n = r.nextInt(4);
-          if (n == 0) {
-            if (r.nextBoolean()) {
-              jedis.hset(hKey, randString(), randString());
-            } else {
-              jedis.del(hKey);
-            }
-          } else if (n == 1) {
-            if (r.nextBoolean()) {
-              jedis.lpush(lKey, randString());
-            } else {
-              jedis.del(lKey);
-            }
-          } else if (n == 2) {
-            if (r.nextBoolean()) {
-              jedis.zadd(zKey, r.nextDouble(), randString());
-            } else {
-              jedis.del(zKey);
-            }
-          } else {
-            if (r.nextBoolean()) {
-              jedis.sadd(sKey, randString());
-            } else {
-              jedis.del(sKey);
-            }
-          }
+    Jedis jedis = new Jedis(localHost, port, JEDIS_TIMEOUT);
+    for (int i = 0; i < ops; i++) {
+      int n = r.nextInt(4);
+      if (n == 0) {
+        if (r.nextBoolean()) {
+          jedis.hset(hKey, randString(), randString());
+        } else {
+          jedis.del(hKey);
         }
-        return null;
+      } else if (n == 1) {
+        if (r.nextBoolean()) {
+          jedis.lpush(lKey, randString());
+        } else {
+          jedis.del(lKey);
+        }
+      } else if (n == 2) {
+        if (r.nextBoolean()) {
+          jedis.zadd(zKey, r.nextDouble(), randString());
+        } else {
+          jedis.del(zKey);
+        }
+      } else {
+        if (r.nextBoolean()) {
+          jedis.sadd(sKey, randString());
+        } else {
+          jedis.del(sKey);
+        }
       }
     }
-
-    // Expect to run with no exception
-//    AsyncInvocation i = client1.invokeAsync(new ConcCreateDestroy(server1Port));
-//    client2.invoke(new ConcCreateDestroy(server2Port));
-//    i.getResult();
   }
 
   /**
    * Just make sure there are no unexpected server crashes
    */
-  public void testConcOps() throws Exception {
+  @Test
+  public void testConcurrentOperationsSucceed() throws InterruptedException, ExecutionException, TimeoutException {
+    // Expect to run with no exception
+    AsyncInvocation
+        asyncInvocation =
+        client1.invokeAsync(() -> concurrentOperations(100, server1Port));
+    client2.invoke(() -> concurrentOperations(100, server2Port));
+    asyncInvocation.await(5, TimeUnit.SECONDS);
+  }
 
-    final int ops = 100;
+  private void concurrentOperations(int ops, int port) {
     final String hKey = TEST_KEY + "hash";
     final String lKey = TEST_KEY + "list";
     final String zKey = TEST_KEY + "zset";
     final String sKey = TEST_KEY + "set";
-
-    class ConcOps extends ClientTestBase {
-
-      protected ConcOps(int port) {
-        super(port);
-      }
-
-      @Override
-      public Object call() throws Exception {
-        Jedis jedis = new Jedis(localHost, port, JEDIS_TIMEOUT);
-        Random r = new Random();
-        for (int i = 0; i < ops; i++) {
-          int n = r.nextInt(4);
-          if (n == 0) {
-            jedis.hset(hKey, randString(), randString());
-            jedis.hgetAll(hKey);
-            jedis.hvals(hKey);
-          } else if (n == 1) {
-            jedis.lpush(lKey, randString());
-            jedis.rpush(lKey, randString());
-            jedis.ltrim(lKey, 0, 100);
-            jedis.lrange(lKey, 0, -1);
-          } else if (n == 2) {
-            jedis.zadd(zKey, r.nextDouble(), randString());
-            jedis.zrangeByLex(zKey, "(a", "[z");
-            jedis.zrangeByScoreWithScores(zKey, 0, 1, 0, 100);
-            jedis.zremrangeByScore(zKey, r.nextDouble(), r.nextDouble());
-          } else {
-            jedis.sadd(sKey, randString());
-            jedis.smembers(sKey);
-            jedis.sdiff(sKey, "afd");
-            jedis.sunionstore("dst", sKey, "afds");
-          }
-        }
-        return null;
+    Jedis jedis = new Jedis(localHost, port, JEDIS_TIMEOUT);
+    Random r = new Random();
+    for (int i = 0; i < ops; i++) {
+      int n = r.nextInt(4);
+      if (n == 0) {
+        jedis.hset(hKey, randString(), randString());
+        jedis.hgetAll(hKey);
+        jedis.hvals(hKey);
+      } else if (n == 1) {
+        jedis.lpush(lKey, randString());
+        jedis.rpush(lKey, randString());
+        jedis.ltrim(lKey, 0, 100);
+        jedis.lrange(lKey, 0, -1);
+      } else if (n == 2) {
+        jedis.zadd(zKey, r.nextDouble(), randString());
+        jedis.zrangeByLex(zKey, "(a", "[z");
+        jedis.zrangeByScoreWithScores(zKey, 0, 1, 0, 100);
+        jedis.zremrangeByScore(zKey, r.nextDouble(), r.nextDouble());
+      } else {
+        jedis.sadd(sKey, randString());
+        jedis.smembers(sKey);
+        jedis.sdiff(sKey, "afd");
+        jedis.sunionstore("dst", sKey, "afds");
       }
     }
-
-    // Expect to run with no exception
-//    AsyncInvocation i = client1.invokeAsync(new ConcOps(server1Port));
-//    client2.invoke(new ConcOps(server2Port));
-//    i.getResult();
   }
 
   private String randString() {
