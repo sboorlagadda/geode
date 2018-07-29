@@ -14,10 +14,10 @@
  */
 package org.apache.geode.redis;
 
-import static org.apache.geode.distributed.ConfigurationProperties.*;
 import static org.apache.geode.distributed.ConfigurationProperties.LOG_LEVEL;
+import static org.apache.geode.distributed.ConfigurationProperties.REDIS_BIND_ADDRESS;
+import static org.apache.geode.distributed.ConfigurationProperties.REDIS_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.io.Serializable;
 import java.util.Properties;
@@ -26,11 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.geode.internal.net.SocketCreator;
-import org.apache.geode.test.dunit.AsyncInvocation;
-import org.apache.geode.test.dunit.rules.ClientVM;
-import org.apache.geode.test.dunit.rules.ClusterStartupRule;
-import org.apache.geode.test.dunit.rules.MemberVM;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,8 +33,13 @@ import org.junit.experimental.categories.Category;
 import redis.clients.jedis.Jedis;
 
 import org.apache.geode.internal.AvailablePortHelper;
+import org.apache.geode.internal.net.SocketCreator;
+import org.apache.geode.test.dunit.AsyncInvocation;
 import org.apache.geode.test.dunit.IgnoredException;
 import org.apache.geode.test.dunit.LogWriterUtils;
+import org.apache.geode.test.dunit.rules.ClientVM;
+import org.apache.geode.test.dunit.rules.ClusterStartupRule;
+import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.RedisTest;
 
 @Category({RedisTest.class})
@@ -67,7 +67,7 @@ public class RedisDistDUnitTest implements Serializable {
   @Before
   public void setup() throws Exception {
     localHost = SocketCreator.getLocalHost().getHostName();
-[]    final int[] ports = AvailablePortHelper.getRandomAvailableTCPPorts(2);
+    final int[] ports = AvailablePortHelper.getRandomAvailableTCPPorts(2);
 
     locator = clusterStartupRule.startLocatorVM(0);
 
@@ -88,13 +88,13 @@ public class RedisDistDUnitTest implements Serializable {
   }
 
   @Test
-  public void testConcurrentCreatesSucceeds() throws InterruptedException, ExecutionException, TimeoutException {
+  public void testConcurrentCreatesSucceeds()
+      throws InterruptedException, ExecutionException, TimeoutException {
     final Jedis jedis1 = new Jedis(localHost, server1Port, JEDIS_TIMEOUT);
     final Jedis jedis2 = new Jedis(localHost, server2Port, JEDIS_TIMEOUT);
     final long pushes = 20;
 
-    AsyncInvocation
-        asyncInvocation =
+    AsyncInvocation asyncInvocation =
         client1.invokeAsync(() -> concurrentCreates(pushes, server2Port));
     client2.invoke(() -> concurrentCreates(pushes, server1Port));
     asyncInvocation.await(5, TimeUnit.SECONDS);
@@ -122,8 +122,7 @@ public class RedisDistDUnitTest implements Serializable {
     IgnoredException.addIgnoredException("RegionDestroyedException");
     IgnoredException.addIgnoredException("IndexInvalidException");
     // Expect to run with no exception
-    AsyncInvocation
-        asyncInvocation =
+    AsyncInvocation asyncInvocation =
         client1.invokeAsync(() -> concurrentCreatesAndDestroys(40, server1Port));
     client2.invoke(() -> concurrentCreatesAndDestroys(40, server2Port));
     asyncInvocation.await(10, TimeUnit.SECONDS);
@@ -169,10 +168,10 @@ public class RedisDistDUnitTest implements Serializable {
    * Just make sure there are no unexpected server crashes
    */
   @Test
-  public void testConcurrentOperationsSucceed() throws InterruptedException, ExecutionException, TimeoutException {
+  public void testConcurrentOperationsSucceed()
+      throws InterruptedException, ExecutionException, TimeoutException {
     // Expect to run with no exception
-    AsyncInvocation
-        asyncInvocation =
+    AsyncInvocation asyncInvocation =
         client1.invokeAsync(() -> concurrentOperations(100, server1Port));
     client2.invoke(() -> concurrentOperations(100, server2Port));
     asyncInvocation.await(5, TimeUnit.SECONDS);
