@@ -67,8 +67,7 @@ abstract class CustomKeyManagerFactory extends KeyManagerFactorySpi {
   private void init() {
     String CLIENT_KEY_STORE = "client.keystore";
     String SSL_KEYSTORE_TYPE = "JKS";
-    String SSL_KEYSTORE =
-        TestUtil.getResourcePath(CustomKeyManagerFactory.class, CLIENT_KEY_STORE);
+    String SSL_KEYSTORE = TestUtil.getResourcePath(CustomKeyManagerFactory.class, CLIENT_KEY_STORE);
     String SSL_KEYSTORE_PASSWORD = "password";
 
     try {
