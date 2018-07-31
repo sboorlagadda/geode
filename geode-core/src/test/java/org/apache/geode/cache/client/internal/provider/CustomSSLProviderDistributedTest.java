@@ -45,10 +45,11 @@ import org.apache.geode.test.dunit.rules.ClientVM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.ClientServerTest;
+import org.apache.geode.test.junit.categories.DistributedTest;
 import org.apache.geode.test.junit.rules.GfshCommandRule;
 import org.apache.geode.util.test.TestUtil;
 
-@Category({ClientServerTest.class})
+@Category({ClientServerTest.class, DistributedTest.class})
 public class CustomSSLProviderDistributedTest {
   private static MemberVM locator;
   private static MemberVM server;
@@ -99,7 +100,7 @@ public class CustomSSLProviderDistributedTest {
 
     // create region
     server.invoke(CustomSSLProviderDistributedTest::createServerRegion);
-    //locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
+    // locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
     setupClient(server.getPort(), server.getVM().getHost().getHostName());
@@ -113,12 +114,12 @@ public class CustomSSLProviderDistributedTest {
   }
 
   private static void setupClient(int serverPort, String serverHost) throws Exception {
-    //SerializableConsumerIF<ClientCacheFactory> clientSetup = cf -> {
-    //  Security.insertProviderAt(new CustomProvider(), 2);
-      //cf.addPoolServer(serverHost, serverPort);
-    //};
+    // SerializableConsumerIF<ClientCacheFactory> clientSetup = cf -> {
+    // Security.insertProviderAt(new CustomProvider(), 2);
+    // cf.addPoolServer(serverHost, serverPort);
+    // };
 
-    //client = cluster.startClientVM(2, clientSSLProperties, clientSetup);
+    // client = cluster.startClientVM(2, clientSSLProperties, clientSetup);
 
     // create a client region
     client.invoke(CustomSSLProviderDistributedTest::createClientRegion);
