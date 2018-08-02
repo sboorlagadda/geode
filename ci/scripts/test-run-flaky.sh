@@ -143,7 +143,7 @@ pushd ${GEODE_BUILD}
   echo "Running tests"
   set -x
 
-  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-web:distributedTest -PtestCategory=-PtestCategory=org.apache.geode.test.junit.categories.GfshTest --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest
+  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-web:distributedTest -PtestCategory=org.apache.geode.test.junit.categories.GfshTest --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest
   export GRADLE_EXIT_STATUS=$?
   set +x
 popd
