@@ -114,7 +114,7 @@ fi
 DEFAULT_GRADLE_TASK_OPTIONS="--no-daemon -x javadoc -x spotlessCheck"
 
 if [[ -n "${GRADLE_TEST_CATEGORY}" ]]; then
-  GRADLE_TASK_OPTIONS="-PtestCategory=${GRADLE_TEST_CATEGORY} --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest"
+  GRADLE_TASK_OPTIONS="-PtestCategory=${GRADLE_TEST_CATEGORY}"
 fi
 
 mkdir -p ${GEODE_BUILD}
@@ -149,7 +149,8 @@ pushd ${GEODE_BUILD}
       ${DUNIT_DOCKER_IMAGE} \
       ${DEFAULT_GRADLE_TASK_OPTIONS} \
       ${GRADLE_TASK_OPTIONS} \
-      ${GRADLE_TASK}
+      ${GRADLE_TASK} \
+      --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest
   export GRADLE_EXIT_STATUS=$?
   set +x
 popd
