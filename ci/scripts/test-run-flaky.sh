@@ -143,14 +143,7 @@ pushd ${GEODE_BUILD}
   echo "Running tests"
   set -x
 
-#    ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-assembly:acceptanceTest --tests org.apache.geode.management.internal.cli.commands.PutCommandWithJsonTest
-  ./gradlew ${PARALLEL_DUNIT} \
-      ${DUNIT_PARALLEL_FORKS} \
-      ${DUNIT_DOCKER_IMAGE} \
-      ${DEFAULT_GRADLE_TASK_OPTIONS} \
-      ${GRADLE_TASK_OPTIONS} \
-      ${GRADLE_TASK} \
-      --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest
+  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-web:distributedTest -PtestCategory=-PtestCategory=org.apache.geode.test.junit.categories.GfshTest --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest
   export GRADLE_EXIT_STATUS=$?
   set +x
 popd
