@@ -114,7 +114,7 @@ fi
 DEFAULT_GRADLE_TASK_OPTIONS="--no-daemon -x javadoc -x spotlessCheck"
 
 if [[ -n "${GRADLE_TEST_CATEGORY}" ]]; then
-  GRADLE_TASK_OPTIONS="-PtestCategory=${GRADLE_TEST_CATEGORY}"
+  GRADLE_TASK_OPTIONS="-PtestCategory=${GRADLE_TEST_CATEGORY} --tests org.apache.geode.management.internal.cli.commands.ExportLogsOverHttpDistributedTest"
 fi
 
 mkdir -p ${GEODE_BUILD}
