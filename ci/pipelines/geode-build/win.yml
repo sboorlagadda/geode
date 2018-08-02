@@ -39,6 +39,21 @@ resources:
     branch: feature/GEODE-5212
     paths:
     - ci/*
+- name: geode-flaky
+  type: git
+  source:
+    uri: https://github.com/sboorlagadda/geode.git
+    branch: export-logs-flaky
+    ignore_paths:
+    - ci/*
+- name: geode-ci-flaky
+  type: git
+  source:
+    depth: 1
+    uri: https://github.com/sboorlagadda/geode.git
+    branch: feature/GEODE-5212-run-single
+    paths:
+    - ci/*
 - name: geode-build-version
   type: semver
   source:
@@ -328,3 +343,74 @@ jobs:
               - geode-ci/ci/scripts/test-archive.sh
               - distributedTest
               - windows-gfshdistributedtest
+
+- name: WindowsDebugFlakyTest
+  serial: true
+  public: true
+  plan:
+    - aggregate:
+      - get: geode-flaky
+        trigger: true
+      - get: geode-ci-flaky
+      - get: geode-build-version
+    - task: cleanup-java-processes
+      tags: [windows-distributed-tests]
+      config:
+        platform: windows
+        run:
+          path: powershell
+          args:
+          - -command
+          - |
+            gwmi win32_process -filter 'name = "java.exe"' | select commandline | format-list
+            kill -name java -force
+            exit 0
+    - task: run-flaky-test
+      tags: [windows-debug-tests]
+      privileged: true
+      timeout: 8h
+      config:
+        inputs:
+          - name: geode-flaky
+          - name: geode-ci-flaky
+          - name: geode-build-version
+        platform: windows
+        outputs:
+          - name: built-geode
+        params:
+          DUNIT_PARALLEL_FORKS: 0
+          MAINTENANCE_VERSION: develop
+          PARALLEL_DUNIT: false
+          SERVICE_ACCOUNT: ((!concourse-gcp-account))
+          PUBLIC_BUCKET: ((!public-bucket))
+          CALL_STACK_TIMEOUT: 25200
+          JAVA_HOME: "C:\\progra~1\\java\\jdk1.8.0_181"
+        run:
+          path: bash
+          args:
+          - geode-ci-flaky/ci/scripts/test-run-flaky.sh
+          - distributedTest
+          - windows-flaky
+          - org.apache.geode.test.junit.categories.GfshTest
+      ensure:
+        aggregate:
+        - task: archive-results-core
+          tags: [windows-debug-tests]
+          config:
+            inputs:
+              - name: geode-flaky
+              - name: geode-ci-flaky
+              - name: geode-build-version
+              - name: built-geode
+            platform: windows
+            params:
+              MAINTENANCE_VERSION: (( grab metadata.geode-build-branch ))
+              SERVICE_ACCOUNT: ((!concourse-gcp-account))
+              PUBLIC_BUCKET: ((!public-bucket))
+              JAVA_HOME: "C:\\progra~1\\java\\jdk1.8.0_181"
+            run:
+              path: bash
+              args:
+              - geode-ci-flaky/ci/scripts/test-archive.sh
+              - distributedTest
+              - windows-flaky
