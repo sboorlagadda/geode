@@ -143,7 +143,7 @@ pushd ${GEODE_BUILD}
   echo "Running tests"
   set -x
 
-  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-core:integrationTest --tests org.apache.geode.distributed.ServerLauncherRemoteWithCustomLoggingIntegrationTest
+  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-core:integrationTest --tests org.apache.geode.distributed.LocatorLauncherRemoteIntegrationTest
   export GRADLE_EXIT_STATUS=$?
   set +x
 popd
