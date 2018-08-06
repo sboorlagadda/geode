@@ -42,8 +42,8 @@ resources:
 - name: geode-flaky
   type: git
   source:
-    uri: https://github.com/sboorlagadda/geode.git
-    branch: export-logs-flaky
+    uri: https://github.com/apache/geode.git
+    branch: feature/windows-debug-integration-tests
     ignore_paths:
     - ci/*
 - name: geode-ci-flaky
