@@ -28,6 +28,11 @@ export GRADLE_TEST_CATEGORY=${3}
 export GEODE_BUILD=${DEST_DIR}/test
 export GEODE_BUILD_VERSION_NUMBER=$(grep "versionNumber *=" geode-flaky/gradle.properties | awk -F "=" '{print $2}' | tr -d ' ')
 
+env | sort
+
+unset TEMP
+unset TMP
+
 GEODE_BUILD_VERSION_FILE=${BUILDROOT}/geode-build-version/number
 GEODE_PULL_REQUEST_ID_FILE=${BUILDROOT}/geode-flaky/.git/id
 if [ -e "${GEODE_PULL_REQUEST_ID_FILE}" ]; then
