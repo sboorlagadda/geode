@@ -354,7 +354,7 @@ jobs:
       - get: geode-ci-flaky
       - get: geode-build-version
     - task: cleanup-java-processes
-      tags: [windows-distributed-tests]
+      tags: [windows-debug-tests]
       config:
         platform: windows
         run:
