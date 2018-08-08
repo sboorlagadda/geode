@@ -42,8 +42,8 @@ resources:
 - name: geode-flaky
   type: git
   source:
-    uri: https://github.com/apache/geode.git
-    branch: feature/windows-debug-integration-tests
+    uri: https://github.com/sboorlagadda/geode.git
+    branch: debug-ssl-failures
     ignore_paths:
     - ci/*
 - name: geode-ci-flaky
@@ -389,7 +389,7 @@ jobs:
           path: bash
           args:
           - geode-ci-flaky/ci/scripts/test-run-flaky.sh
-          - distributedTest
+          - test
           - windows-flaky
           - org.apache.geode.test.junit.categories.GfshTest
       ensure:
@@ -412,5 +412,5 @@ jobs:
               path: bash
               args:
               - geode-ci-flaky/ci/scripts/test-archive.sh
-              - distributedTest
+              - test
               - windows-flaky
