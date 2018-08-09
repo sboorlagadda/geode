@@ -14,6 +14,7 @@
  */
 package org.apache.geode.internal.statistics;
 
+import static org.apache.geode.internal.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -21,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,9 +73,10 @@ public class LinuxSystemStatsTest extends StatSamplerTestCase {
   @Before
   public void setUp() throws Exception {
     File testDir = this.temporaryFolder.getRoot();
-    assertThat(testDir.exists()).isTrue();
-    System.setProperty(SimpleStatSampler.ARCHIVE_FILE_NAME_PROPERTY, testDir.getAbsolutePath()
-        + File.separator + SimpleStatSampler.DEFAULT_ARCHIVE_FILE_NAME);
+    assertTrue(testDir.exists());
+    System.setProperty(SimpleStatSampler.ARCHIVE_FILE_NAME_PROPERTY,
+        Paths.get(testDir.getAbsolutePath(), SimpleStatSampler.DEFAULT_ARCHIVE_FILE_NAME)
+            .toString());
     LinuxProcFsStatistics.init();
     initStats();
     StatisticsTypeImpl statisticsType = (StatisticsTypeImpl) LinuxSystemStats.getType();

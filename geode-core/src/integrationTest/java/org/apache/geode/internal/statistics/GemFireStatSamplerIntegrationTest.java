@@ -31,6 +31,7 @@ import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -189,13 +190,10 @@ public class GemFireStatSamplerIntegrationTest extends StatSamplerTestCase {
   @Test
   public void testArchiveFileExists() throws Exception {
     final String dir = this.testDir.getAbsolutePath();
-    final String archiveFileName = dir + File.separator + this.testName.getMethodName() + ".gfs";
-
-    final File archiveFile1 =
-        new File(dir + File.separator + this.testName.getMethodName() + ".gfs");
+    final File archiveFile1 = Paths.get(dir, this.testName.getMethodName() + ".gfs").toFile();
 
     Properties props = createGemFireProperties();
-    props.setProperty(STATISTIC_ARCHIVE_FILE, archiveFileName);
+    props.setProperty(STATISTIC_ARCHIVE_FILE, archiveFile1.getName());
     connect(props);
 
     GemFireStatSampler statSampler = getGemFireStatSampler();
@@ -211,7 +209,7 @@ public class GemFireStatSamplerIntegrationTest extends StatSamplerTestCase {
         "File name incorrect: archiveFile.getName()=" + archiveFile.getName()
             + " archiveFile.getAbsolutePath()=" + archiveFile.getAbsolutePath()
             + " getCanonicalPath()" + archiveFile.getCanonicalPath(),
-        archiveFileName.contains(archiveFile.getName()));
+        archiveFile1.getName().contains(archiveFile.getName()));
   }
 
   /**
@@ -367,19 +365,18 @@ public class GemFireStatSamplerIntegrationTest extends StatSamplerTestCase {
   public void testArchiveRolling() throws Exception {
     final String dirName = this.testDir.getAbsolutePath() + File.separator + this.testName;
     new File(dirName).mkdirs();
-    final String archiveFileName = dirName + File.separator + this.testName + ".gfs";
 
-    final File archiveFile = new File(archiveFileName);
-    final File archiveFile1 = new File(dirName + File.separator + this.testName + "-01-01.gfs");
-    final File archiveFile2 = new File(dirName + File.separator + this.testName + "-01-02.gfs");
-    final File archiveFile3 = new File(dirName + File.separator + this.testName + "-01-03.gfs");
+    final File archiveFile = Paths.get(dirName, this.testName + ".gfs").toFile();
+    final File archiveFile1 = Paths.get(dirName, this.testName + "-01-01.gfs").toFile();
+    final File archiveFile2 = Paths.get(dirName, this.testName + "-01-02.gfs").toFile();
+    final File archiveFile3 = Paths.get(dirName, this.testName + "-01-03.gfs").toFile();
 
     // set the system property to use KB instead of MB for file size
     System.setProperty(HostStatSampler.TEST_FILE_SIZE_LIMIT_IN_KB_PROPERTY, "true");
     Properties props = createGemFireProperties();
     props.setProperty(ARCHIVE_FILE_SIZE_LIMIT, "1");
     props.setProperty(ARCHIVE_DISK_SPACE_LIMIT, "0");
-    props.setProperty(STATISTIC_ARCHIVE_FILE, archiveFileName);
+    props.setProperty(STATISTIC_ARCHIVE_FILE, archiveFile.getName());
     connect(props);
 
     assertTrue(getGemFireStatSampler().waitForInitialization(5000));
@@ -412,20 +409,19 @@ public class GemFireStatSamplerIntegrationTest extends StatSamplerTestCase {
   public void testArchiveRemoval() throws Exception {
     final String dirName = this.testDir.getAbsolutePath();// + File.separator + this.testName;
     new File(dirName).mkdirs();
-    final String archiveFileName = dirName + File.separator + this.testName + ".gfs";
 
-    final File archiveFile = new File(archiveFileName);
-    final File archiveFile1 = new File(dirName + File.separator + this.testName + "-01-01.gfs");
-    final File archiveFile2 = new File(dirName + File.separator + this.testName + "-01-02.gfs");
-    final File archiveFile3 = new File(dirName + File.separator + this.testName + "-01-03.gfs");
-    final File archiveFile4 = new File(dirName + File.separator + this.testName + "-01-04.gfs");
+    final File archiveFile = Paths.get(dirName, this.testName + ".gfs").toFile();
+    final File archiveFile1 = Paths.get(dirName, this.testName + "-01-01.gfs").toFile();
+    final File archiveFile2 = Paths.get(dirName, this.testName + "-01-02.gfs").toFile();
+    final File archiveFile3 = Paths.get(dirName, this.testName + "-01-03.gfs").toFile();
+    final File archiveFile4 = Paths.get(dirName, this.testName + "-01-04.gfs").toFile();
 
     final int sampleRate = 1000;
 
     // set the system property to use KB instead of MB for file size
     System.setProperty(HostStatSampler.TEST_FILE_SIZE_LIMIT_IN_KB_PROPERTY, "true");
     Properties props = createGemFireProperties();
-    props.setProperty(STATISTIC_ARCHIVE_FILE, archiveFileName);
+    props.setProperty(STATISTIC_ARCHIVE_FILE, archiveFile.getName());
     props.setProperty(ARCHIVE_FILE_SIZE_LIMIT, "1");
     props.setProperty(ARCHIVE_DISK_SPACE_LIMIT, "12");
     props.setProperty(STATISTIC_SAMPLE_RATE, String.valueOf(sampleRate));

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -84,7 +85,7 @@ public class StatArchiveWriterReaderIntegrationTest {
     this.allStatistics = new HashMap<>();
     this.dir = this.temporaryFolder.getRoot();
     this.archiveFileName =
-        this.dir.getAbsolutePath() + File.separator + this.testName.getMethodName() + ".gfs";
+        Paths.get(this.dir.getAbsolutePath(), this.testName.getMethodName() + ".gfs").toString();
   }
 
   @After

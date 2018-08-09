@@ -14,12 +14,12 @@
  */
 package org.apache.geode.management.internal.cli.util;
 
-import static java.io.File.separator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,10 +41,17 @@ public class LogSizerTest {
   @Rule
   public TestName testName = new TestName();
 
+  private File mockStatFile;
+  private File mockLogFile;
+
   @Before
   public void setUp() throws Exception {
     logFilter = mock(LogFilter.class);
     nonFilteringArgs = new ExportLogsFunction.Args(null, null, null, false, false, false);
+    mockStatFile = mock(File.class);
+    mockLogFile = mock(File.class);
+    when(mockLogFile.toPath()).thenReturn(Paths.get("root", "parent", testName + ".log"));
+    when(mockStatFile.toPath()).thenReturn(Paths.get("root", "parent", testName + ".gfs"));
   }
 
   @Test
@@ -58,9 +65,9 @@ public class LogSizerTest {
     File mockStatFile = mock(File.class);
     File mockLogFile = mock(File.class);
     when(mockLogFile.toPath()).thenReturn(
-        new File("root" + separator + "parent" + separator + testName + ".log").toPath());
+       Paths.get("root", "parent", testName + ".log"));
     when(mockStatFile.toPath()).thenReturn(
-        new File("root" + separator + "parent" + separator + testName + ".gfs").toPath());
+       Paths.get("root", "parent", testName + ".gfs"));
     LogExporter sizer = new LogExporter(logFilter, mockLogFile, mockStatFile);
     assertThat(sizer.estimateFilteredSize()).isEqualTo(0L);
   }
@@ -70,9 +77,9 @@ public class LogSizerTest {
     File mockStatFile = mock(File.class);
     File mockLogFile = mock(File.class);
     when(mockLogFile.toPath()).thenReturn(
-        new File("root" + separator + "parent" + separator + testName + ".log").toPath());
+        Paths.get("root", "parent", testName + ".log"));
     when(mockStatFile.toPath()).thenReturn(
-        new File("root" + separator + "parent" + separator + testName + ".gfs").toPath());
+        Paths.get("root", "parent", testName + ".gfs"));
     LogFilter logFilter =
         new LogFilter(nonFilteringArgs.getLogLevel(), nonFilteringArgs.isThisLogLevelOnly(),
             nonFilteringArgs.getStartTime(), nonFilteringArgs.getEndTime());

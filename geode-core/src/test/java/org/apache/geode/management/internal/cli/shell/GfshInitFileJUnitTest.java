@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -173,8 +174,9 @@ public class GfshInitFileJUnitTest {
   @Test
   public void testInitFile_NotFound() throws Exception {
     // Construct the file name but not the file
-    String initFileName = temporaryFolder_CurrentDirectory.getRoot().getAbsolutePath()
-        + File.separator + INIT_FILE_NAME;
+    String initFileName =
+        Paths.get(temporaryFolder_CurrentDirectory.getRoot().getAbsolutePath(), INIT_FILE_NAME)
+            .toString();
 
     /*
      * String historyFileName, String defaultPrompt, int historySize, String logDir, Level logLevel,

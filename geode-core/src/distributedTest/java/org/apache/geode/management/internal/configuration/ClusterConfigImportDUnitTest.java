@@ -15,6 +15,7 @@
  */
 package org.apache.geode.management.internal.configuration;
 
+import static java.util.stream.Collectors.toSet;
 import static org.apache.geode.distributed.ConfigurationProperties.GROUPS;
 import static org.apache.geode.distributed.ConfigurationProperties.LOCATORS;
 import static org.assertj.core.api.Assertions.assertThat;
