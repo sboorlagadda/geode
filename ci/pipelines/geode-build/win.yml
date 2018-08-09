@@ -42,8 +42,8 @@ resources:
 - name: geode-flaky
   type: git
   source:
-    uri: https://github.com/sboorlagadda/geode.git
-    branch: debug-ssl-failures
+    uri: https://github.com/apache/geode.git
+    branch: debug-alter-runtime
     ignore_paths:
     - ci/*
 - name: geode-ci-flaky
