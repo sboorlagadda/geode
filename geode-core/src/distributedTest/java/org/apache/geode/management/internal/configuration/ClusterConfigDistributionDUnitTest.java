@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.junit.Before;
@@ -147,8 +148,9 @@ public class ClusterConfigDistributionDUnitTest {
   }
 
   private String createAsyncEventQueueJar() throws IOException {
-    String queueCommandsJarName = temporaryFolder.getRoot().getCanonicalPath() + File.separator
-        + "testEndToEndSC-QueueCommands.jar";
+    String queueCommandsJarName = Paths
+        .get(temporaryFolder.getRoot().getCanonicalPath(), "testEndToEndSC-QueueCommands.jar")
+        .toString();
     final File jarFile = new File(queueCommandsJarName);
 
     ClassBuilder classBuilder = new ClassBuilder();

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -154,14 +155,14 @@ public class BackupInspectorIntegrationTest {
   private void validateIncrementalBackupScript(final BackupInspector inspector) {
     // verify copyFrom
     assertThat(inspector.getCopyFromForOplogFile(CRF_FILE_NAME))
-        .isEqualTo(fullBackupDir.getAbsolutePath() + File.separator + CRF_FILE_NAME);
+        .isEqualTo(Paths.get(fullBackupDir.getAbsolutePath(), CRF_FILE_NAME).toString());
     assertThat(inspector.getCopyFromForOplogFile(DRF_FILE_NAME))
-        .isEqualTo(fullBackupDir.getAbsolutePath() + File.separator + DRF_FILE_NAME);
+        .isEqualTo(Paths.get(fullBackupDir.getAbsolutePath(), DRF_FILE_NAME).toString());
 
     // verify copyTo
     assertThat(inspector.getCopyToForOplogFile(CRF_FILE_NAME))
-        .isEqualTo(diskDir.getAbsolutePath() + File.separator + CRF_FILE_NAME);
+        .isEqualTo(Paths.get(diskDir.getAbsolutePath(), CRF_FILE_NAME).toString());
     assertThat(inspector.getCopyToForOplogFile(DRF_FILE_NAME))
-        .isEqualTo(diskDir.getAbsolutePath() + File.separator + DRF_FILE_NAME);
+        .isEqualTo(Paths.get(diskDir.getAbsolutePath(), DRF_FILE_NAME).toString());
   }
 }
