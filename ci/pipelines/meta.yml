@@ -61,6 +61,13 @@ resources:
     branch: ((!geode-build-branch))
     paths:
     - ci/pipelines/metrics.yml
+- name: geode-reaper-pipeline
+  type: git
+  source:
+    uri: https://github.com/((!geode-fork))/geode.git
+    branch: ((!geode-build-branch))
+    paths:
+    - ci/pipelines/reaper.yml
 - name: apachegeode-build-concourse-docker-image
   type: docker-image
   source:
@@ -154,6 +161,39 @@ jobs:
   - put: apachegeode-concourse
     params:
       pipelines:
-      - name: ((!geode-build-branch))-metrics
+      - name: ((!pipeline-prefix))metrics
         team: ((!concourse-team))
         config_file: geode-metrics-pipeline/ci/pipelines/metrics.yml
+
+- name: set-reaper-pipeline
+  serial: true
+  public: ((!public-pipelines))
+  plan:
+  - get: geode-reaper-pipeline
+    trigger: true
+  - task: pipeline-vars
+    config:
+      outputs:
+      - name: pipeline-vars
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: alpine
+      run:
+        path: /bin/sh
+        args:
+          - -c
+          - |
+            cat <<EOF >>pipeline-vars/vars
+            ---
+            pipeline-prefix: "((!pipeline-prefix))"
+            docker-image-prefix: "((!pipeline-prefix))"
+  - put: apachegeode-concourse
+    params:
+      pipelines:
+      - name: ((!pipeline-prefix))reaper
+        team: ((!concourse-team))
+        config_file: geode-reaper-pipeline/ci/pipelines/reaper.yml
+        vars_files:
+        - pipeline-vars/vars

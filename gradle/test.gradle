@@ -82,6 +82,7 @@ subprojects {
     doFirst {
       TestPropertiesWriter.writeTestProperties(buildDir, name)
     }
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
   }
 
   apply plugin: 'nebula.facet'
@@ -144,6 +145,17 @@ subprojects {
 
     forkEvery 1
     outputs.upToDateWhen{false}
+  }
+
+  performanceTest {
+    useJUnit {
+      if(project.hasProperty("testCategory")) {
+        includeCategories += project.testCategory
+      }
+      excludeCategories 'org.apache.geode.test.junit.categories.FlakyTest'
+    }
+
+    forkEvery 1
   }
 
   acceptanceTest {
@@ -282,7 +294,6 @@ subprojects {
         afterTest { desc, result ->
           def now = new Date().format('yyyy-MM-dd HH:mm:ss.SSS Z')
           progress << "$now Completed test $desc.className $desc.name with result: ${result.resultType}$eol"
-          logger.quiet("Test: ${desc.className}.${desc.name}: ${result.resultType}")
         }
 
         doFirst {
