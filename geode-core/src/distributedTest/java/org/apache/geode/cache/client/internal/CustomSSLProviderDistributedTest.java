@@ -43,6 +43,7 @@ import org.apache.geode.cache.client.ClientCacheFactory;
 import org.apache.geode.cache.client.ClientRegionFactory;
 import org.apache.geode.cache.client.ClientRegionShortcut;
 import org.apache.geode.cache.client.internal.provider.CustomProvider;
+import org.apache.geode.cache.client.internal.security.CertStores;
 import org.apache.geode.security.SecurableCommunicationChannels;
 import org.apache.geode.test.dunit.SerializableConsumerIF;
 import org.apache.geode.test.dunit.rules.ClientVM;
@@ -97,16 +98,22 @@ public class CustomSSLProviderDistributedTest {
 
   @BeforeClass
   public static void setupCluster() throws Exception {
+    CertStores serverStores = new CertStores(false, "server", "localhost");
+    CertStores clientStores = new CertStores(true, "client", "localhost");
+
+    Properties serverSSLProps = serverStores.getTrustingConfig(clientStores);
+    Properties clientSSLProps = clientStores.getTrustingConfig(serverStores);
+
     // create a cluster
-    locator = cluster.startLocatorVM(0, serverSSLProperties);
-    server = cluster.startServerVM(1, serverSSLProperties, locator.getPort());
+    locator = cluster.startLocatorVM(0, serverSSLProps);
+    server = cluster.startServerVM(1, serverSSLProps, locator.getPort());
 
     // create region
     server.invoke(CustomSSLProviderDistributedTest::createServerRegion);
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
-    setupClient(server.getPort(), server.getVM().getHost().getHostName());
+    setupClient(clientSSLProps, server.getPort(), server.getVM().getHost().getHostName());
   }
 
   private static void createServerRegion() {
@@ -116,14 +123,15 @@ public class CustomSSLProviderDistributedTest {
     r.put("serverkey", "servervalue");
   }
 
-  private static void setupClient(int serverPort, String serverHost) throws Exception {
+  private static void setupClient(Properties clientSSLProps, int serverPort,
+      String serverHost) throws Exception {
     SerializableConsumerIF<ClientCacheFactory> clientSetup = cf -> {
       // add custom provider
       Security.insertProviderAt(new CustomProvider(), 2);
       cf.addPoolServer(serverHost, serverPort);
     };
 
-    client = cluster.startClientVM(2, clientSSLProperties, clientSetup);
+    client = cluster.startClientVM(2, clientSSLProps, clientSetup);
 
     // create a client region
     client.invoke(CustomSSLProviderDistributedTest::createClientRegion);
