@@ -77,7 +77,8 @@ abstract class CustomTrustManagerFactory extends TrustManagerFactorySpi {
   }
 
   private void init() {
-    String trustStoreName = "client.truststore";
+    //String trustStoreName = "client.truststore";
+    String trustStoreName = "clientWithDNS.truststore";
     String trustStorePath =
         TestUtil.getResourcePath(CustomTrustManagerFactory.class, trustStoreName);
     String trustStoreType = "JKS";

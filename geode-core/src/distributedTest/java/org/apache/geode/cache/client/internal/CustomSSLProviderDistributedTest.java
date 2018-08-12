@@ -58,8 +58,11 @@ public class CustomSSLProviderDistributedTest {
   private static MemberVM server;
   private static ClientVM client;
 
-  private static final String SERVER_KEY_STORE = "cacheserver.keystore";
-  private static final String SERVER_TRUST_STORE = "cacheserver.truststore";
+//  private static final String SERVER_KEY_STORE = "cacheserver.keystore";
+//  private static final String SERVER_TRUST_STORE = "cacheserver.truststore";
+
+  private static final String SERVER_KEY_STORE = "serverWithDNS.keystore";
+  private static final String SERVER_TRUST_STORE = "serverWithDNS.truststore";
 
   @ClassRule
   public static ClusterStartupRule cluster = new ClusterStartupRule();
