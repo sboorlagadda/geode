@@ -34,21 +34,21 @@ public class ClusterSSLProvider {
 
   public ClusterSSLProvider withServerCertificate(String cn)
       throws GeneralSecurityException, IOException {
-    this.withServerCertificate("server", new TestSSLUtils.CertificateBuilder().withName(cn));
+    this.withServerCertificate("server", new TestSSLUtils.CertificateBuilder().name(cn));
     return this;
   }
 
   public ClusterSSLProvider withServerCertificate(String cn, String hostname)
       throws GeneralSecurityException, IOException {
     this.withServerCertificate("server",
-        new TestSSLUtils.CertificateBuilder().withName(cn).sanDnsName(hostname));
+        new TestSSLUtils.CertificateBuilder().name(cn).sanDnsName(hostname));
     return this;
   }
 
   public ClusterSSLProvider withServerCertificate(String cn, InetAddress ipAddress)
       throws GeneralSecurityException, IOException {
     this.withServerCertificate("server",
-        new TestSSLUtils.CertificateBuilder().withName(cn).sanIpAddress(ipAddress));
+        new TestSSLUtils.CertificateBuilder().name(cn).sanIpAddress(ipAddress));
     return this;
   }
 
@@ -68,7 +68,7 @@ public class ClusterSSLProvider {
 
   public ClusterSSLProvider withClientCertificate(String cn)
       throws GeneralSecurityException, IOException {
-    this.withClientCertificate("client", new TestSSLUtils.CertificateBuilder().withName(cn));
+    this.withClientCertificate("client", new TestSSLUtils.CertificateBuilder().name(cn));
     return this;
   }
 

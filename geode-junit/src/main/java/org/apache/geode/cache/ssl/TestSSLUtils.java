@@ -156,6 +156,7 @@ public class TestSSLUtils {
     private final int days;
     private final String algorithm;
     private byte[] subjectAltName;
+    private String name;
 
     public CertificateBuilder() {
       this(30, "SHA1withRSA");
@@ -164,6 +165,11 @@ public class TestSSLUtils {
     public CertificateBuilder(int days, String algorithm) {
       this.days = days;
       this.algorithm = algorithm;
+    }
+
+    public CertificateBuilder name(String cn) {
+      this.name = "CN=" + cn + ", O=Geode";
+      return this;
     }
 
     public CertificateBuilder sanDnsName(String hostName) throws IOException {
@@ -177,6 +183,10 @@ public class TestSSLUtils {
           new GeneralName(GeneralName.iPAddress, new DEROctetString(hostAddress.getAddress())))
               .getEncoded();
       return this;
+    }
+
+    public X509Certificate generate(KeyPair keyPair) throws CertificateException {
+      return this.generate(this.name, keyPair);
     }
 
     public X509Certificate generate(String dn, KeyPair keyPair) throws CertificateException {
