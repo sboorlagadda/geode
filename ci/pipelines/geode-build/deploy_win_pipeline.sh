@@ -81,7 +81,7 @@ if [[ "${GEODE_BRANCH}" == "develop" ]] || [[ ${GEODE_BRANCH} =~ ^release/* ]]; 
 fi
 
 if [[ "${GEODE_FORK}" == "apache" ]]; then
-  PIPELINE_NAME=windows-test
+  PIPELINE_NAME=windows
   DOCKER_IMAGE_PREFIX=""
 else
   PIPELINE_NAME="${GEODE_FORK}-${SANITIZED_GEODE_BRANCH}"
