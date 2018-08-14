@@ -17,6 +17,8 @@ package org.apache.geode.cache.client.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import org.junit.BeforeClass;
@@ -53,7 +55,9 @@ public class CacheServerSSLDistributedTest {
   @BeforeClass
   public static void setupCluster() throws Exception {
     ClusterSSLProvider sslProvider = new ClusterSSLProvider();
-    sslProvider.withServerCertificate("server", InetAddress.getLocalHost())
+    List<String> dnsNames = Arrays.asList(InetAddress.getLoopbackAddress().getHostName(),
+        InetAddress.getLocalHost().getHostName());
+    sslProvider.withServerCertificate("server", dnsNames, InetAddress.getLocalHost())
         .withClientCertificate("client");
 
     Properties serverSSLProps = sslProvider.generateServerPropertiesWith();
@@ -68,7 +72,7 @@ public class CacheServerSSLDistributedTest {
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
-    setupClient(clientSSLProps, server.getPort(), "192.168.254.45");
+    setupClient(clientSSLProps, server.getPort(), server.getVM().getHost().getHostName());
   }
 
   private static void createServerRegion() {

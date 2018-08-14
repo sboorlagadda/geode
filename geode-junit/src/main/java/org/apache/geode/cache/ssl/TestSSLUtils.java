@@ -44,10 +44,13 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -182,6 +185,22 @@ public class TestSSLUtils {
       subjectAltName = new GeneralNames(
           new GeneralName(GeneralName.iPAddress, new DEROctetString(hostAddress.getAddress())))
               .getEncoded();
+      return this;
+    }
+
+    public CertificateBuilder sanDnsAndIpAddress(List<String> hostNames, InetAddress hostAddress)
+        throws IOException {
+      List<GeneralName> names = new ArrayList<>();
+      if (hostNames != null) {
+        names = hostNames.stream()
+            .map(name -> new GeneralName(GeneralName.dNSName, name))
+            .collect(Collectors.toList());
+      }
+      names.add(
+          new GeneralName(GeneralName.iPAddress, new DEROctetString(hostAddress.getAddress())));
+
+      subjectAltName = new GeneralNames(names.toArray(new GeneralName[] {})).getEncoded();
+
       return this;
     }
 

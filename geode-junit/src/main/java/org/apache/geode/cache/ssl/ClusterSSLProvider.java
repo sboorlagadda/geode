@@ -21,6 +21,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -49,6 +50,14 @@ public class ClusterSSLProvider {
       throws GeneralSecurityException, IOException {
     this.withServerCertificate("server",
         new TestSSLUtils.CertificateBuilder().name(cn).sanIpAddress(ipAddress));
+    return this;
+  }
+
+  public ClusterSSLProvider withServerCertificate(String cn, List<String> hostnames,
+      InetAddress hostAddress)
+      throws GeneralSecurityException, IOException {
+    this.withServerCertificate("server",
+        new TestSSLUtils.CertificateBuilder().name(cn).sanDnsAndIpAddress(hostnames, hostAddress));
     return this;
   }
 
