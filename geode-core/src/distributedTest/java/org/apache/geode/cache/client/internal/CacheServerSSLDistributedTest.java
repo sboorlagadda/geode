@@ -14,11 +14,9 @@
  */
 package org.apache.geode.cache.client.internal;
 
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_ENABLED_COMPONENTS;
-import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
-import static org.apache.geode.security.SecurableCommunicationChannels.SERVER;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.InetAddress;
 import java.util.Properties;
 
 import org.junit.BeforeClass;
@@ -32,7 +30,7 @@ import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.client.ClientCacheFactory;
 import org.apache.geode.cache.client.ClientRegionFactory;
 import org.apache.geode.cache.client.ClientRegionShortcut;
-import org.apache.geode.cache.ssl.CertStores;
+import org.apache.geode.cache.ssl.ClusterSSLProvider;
 import org.apache.geode.test.dunit.SerializableConsumerIF;
 import org.apache.geode.test.dunit.rules.ClientVM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
@@ -54,14 +52,12 @@ public class CacheServerSSLDistributedTest {
 
   @BeforeClass
   public static void setupCluster() throws Exception {
-    CertStores serverStores = new CertStores(false, "locator", "localhost");
-    CertStores clientStores = new CertStores(true, "client", "localhost");
+    ClusterSSLProvider sslProvider = new ClusterSSLProvider();
+    sslProvider.withServerCertificate("server", InetAddress.getLocalHost())
+        .withClientCertificate("client");
 
-    Properties serverSSLProps = serverStores.getTrustingConfig(clientStores);
-    serverSSLProps.setProperty(SSL_ENABLED_COMPONENTS, ALL);
-
-    Properties clientSSLProps = clientStores.getTrustingConfig(serverStores);
-    clientSSLProps.setProperty(SSL_ENABLED_COMPONENTS, SERVER);
+    Properties serverSSLProps = sslProvider.generateServerPropertiesWith();
+    Properties clientSSLProps = sslProvider.generateClientPropertiesWith();
 
     // create a cluster
     locator = cluster.startLocatorVM(0, serverSSLProps);
@@ -72,7 +68,7 @@ public class CacheServerSSLDistributedTest {
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
-    setupClient(clientSSLProps, server.getPort(), server.getVM().getHost().getHostName());
+    setupClient(clientSSLProps, server.getPort(), "192.168.254.45");
   }
 
   private static void createServerRegion() {

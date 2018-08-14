@@ -63,6 +63,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSession;
@@ -1029,6 +1030,10 @@ public class SocketCreator {
 
       sslSocket.setUseClientMode(true);
       sslSocket.setEnableSessionCreation(true);
+
+      SSLParameters sslParameters = sslSocket.getSSLParameters();
+      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+      sslSocket.setSSLParameters(sslParameters);
 
       String[] protocols = this.sslConfig.getProtocolsAsStringArray();
 
