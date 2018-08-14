@@ -15,17 +15,7 @@
 
 package org.apache.geode.cache.ssl;
 
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_CIPHERS;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE_PASSWORD;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE_TYPE;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_PROTOCOLS;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_PASSWORD;
-import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_TYPE;
-
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,10 +36,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.bouncycastle.asn1.DEROctetString;
@@ -109,50 +97,6 @@ public class TestSSLUtils {
     try (OutputStream out = Files.newOutputStream(Paths.get(filename))) {
       ks.store(out, password.toCharArray());
     }
-  }
-
-  private static Properties createSslConfig(File keyStoreFile, String password,
-      File trustStoreFile, String trustStorePassword) {
-    Properties sslConfigs = new Properties();
-    sslConfigs.setProperty(SSL_KEYSTORE, keyStoreFile.getPath());
-    sslConfigs.setProperty(SSL_KEYSTORE_TYPE, "JKS");
-    sslConfigs.setProperty(SSL_KEYSTORE_PASSWORD, password);
-    sslConfigs.setProperty(SSL_TRUSTSTORE, trustStoreFile.getPath());
-    sslConfigs.setProperty(SSL_TRUSTSTORE_PASSWORD, trustStorePassword);
-    sslConfigs.setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
-    sslConfigs.setProperty(SSL_PROTOCOLS, "any");
-    sslConfigs.setProperty(SSL_CIPHERS, "any");
-    return sslConfigs;
-  }
-
-  public static Properties createSslConfig(boolean client, String cn,
-      CertificateBuilder certBuilder)
-      throws IOException, GeneralSecurityException {
-
-    Map<String, X509Certificate> certs = new HashMap<>();
-    File keyStoreFile;
-    File trustStoreFile;
-    String keyManagerPassword = "password";
-    String trustStorePassword = "password";
-
-    String keyStorePrefix = client ? "clientKS" : "serverKS";
-    keyStoreFile = File.createTempFile(keyStorePrefix, ".jks");
-    keyStoreFile.deleteOnExit();
-
-    String org = client ? "A client" : "A server";
-    String alias = client ? "pulse" : "locator";
-
-    KeyPair keyPair = generateKeyPair("RSA");
-    X509Certificate cert = certBuilder.generate("CN=" + cn + ", O=" + org, keyPair);
-    createKeyStore(keyStoreFile.getPath(), keyManagerPassword, alias, keyPair.getPrivate(), cert);
-    certs.put(alias, cert);
-
-    String trustStoreName = client ? "clientTS" : "serverTS";
-    trustStoreFile = File.createTempFile(trustStoreName, ".jks");
-    trustStoreFile.deleteOnExit();
-    createTrustStore(trustStoreFile.getPath(), trustStorePassword, certs);
-
-    return createSslConfig(keyStoreFile, keyManagerPassword, trustStoreFile, trustStorePassword);
   }
 
   public static class CertificateBuilder {
