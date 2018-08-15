@@ -15,6 +15,8 @@
 
 package org.apache.geode.cache.ssl;
 
+import static java.util.stream.Collectors.toList;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -102,8 +103,9 @@ public class TestSSLUtils {
   public static class CertificateBuilder {
     private final int days;
     private final String algorithm;
-    private byte[] subjectAltName;
     private String name;
+    private List<String> dnsNames;
+    private List<InetAddress> ipAddresses;
 
     public CertificateBuilder() {
       this(30, "SHA1withRSA");
@@ -112,40 +114,45 @@ public class TestSSLUtils {
     public CertificateBuilder(int days, String algorithm) {
       this.days = days;
       this.algorithm = algorithm;
+      this.dnsNames = new ArrayList<>();
+      this.ipAddresses = new ArrayList<>();
     }
 
-    public CertificateBuilder name(String cn) {
+    private static GeneralName dnsGeneralName(String name) {
+      return new GeneralName(GeneralName.dNSName, name);
+    }
+
+    private static GeneralName ipGeneralName(InetAddress hostAddress) {
+      return new GeneralName(GeneralName.iPAddress,
+          new DEROctetString(hostAddress.getAddress()));
+    }
+
+    public CertificateBuilder commonName(String cn) {
       this.name = "CN=" + cn + ", O=Geode";
       return this;
     }
 
-    public CertificateBuilder sanDnsName(String hostName) throws IOException {
-      subjectAltName =
-          new GeneralNames(new GeneralName(GeneralName.dNSName, hostName)).getEncoded();
+    public CertificateBuilder sanDnsName(String hostName) {
+      this.dnsNames.add(hostName);
       return this;
     }
 
-    public CertificateBuilder sanIpAddress(InetAddress hostAddress) throws IOException {
-      subjectAltName = new GeneralNames(
-          new GeneralName(GeneralName.iPAddress, new DEROctetString(hostAddress.getAddress())))
-              .getEncoded();
+    public CertificateBuilder sanIpAddress(InetAddress hostAddress) {
+      this.ipAddresses.add(hostAddress);
       return this;
     }
 
-    public CertificateBuilder sanDnsAndIpAddress(List<String> hostNames, InetAddress hostAddress)
-        throws IOException {
-      List<GeneralName> names = new ArrayList<>();
-      if (hostNames != null) {
-        names = hostNames.stream()
-            .map(name -> new GeneralName(GeneralName.dNSName, name))
-            .collect(Collectors.toList());
-      }
-      names.add(
-          new GeneralName(GeneralName.iPAddress, new DEROctetString(hostAddress.getAddress())));
+    private byte[] san() throws IOException {
+      List<GeneralName> names = dnsNames.stream()
+          .map(CertificateBuilder::dnsGeneralName)
+          .collect(toList());
 
-      subjectAltName = new GeneralNames(names.toArray(new GeneralName[] {})).getEncoded();
+      names.addAll(ipAddresses.stream()
+          .map(CertificateBuilder::ipGeneralName)
+          .collect(toList()));
 
-      return this;
+      return names.isEmpty() ? null
+          : new GeneralNames(names.toArray(new GeneralName[] {})).getEncoded();
     }
 
     public X509Certificate generate(KeyPair keyPair) throws CertificateException {
@@ -170,8 +177,11 @@ public class TestSSLUtils {
         BigInteger sn = new BigInteger(64, new SecureRandom());
         X509v3CertificateBuilder v3CertGen =
             new X509v3CertificateBuilder(name, sn, from, to, name, subPubKeyInfo);
-        if (subjectAltName != null)
+
+        byte[] subjectAltName = san();
+        if (subjectAltName != null) {
           v3CertGen.addExtension(Extension.subjectAlternativeName, false, subjectAltName);
+        }
         X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
         return new JcaX509CertificateConverter().setProvider("BC")
             .getCertificate(certificateHolder);

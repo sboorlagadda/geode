@@ -18,8 +18,6 @@ import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.InetAddress;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import org.junit.BeforeClass;
@@ -34,6 +32,7 @@ import org.apache.geode.cache.client.ClientCacheFactory;
 import org.apache.geode.cache.client.ClientRegionFactory;
 import org.apache.geode.cache.client.ClientRegionShortcut;
 import org.apache.geode.cache.ssl.ClusterSSLProvider;
+import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
 import org.apache.geode.test.dunit.SerializableConsumerIF;
 import org.apache.geode.test.dunit.rules.ClientVM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
@@ -55,11 +54,19 @@ public class CacheServerSSLDistributedTest {
 
   @BeforeClass
   public static void setupCluster() throws Exception {
-    List<String> dnsNames = Arrays.asList(InetAddress.getLoopbackAddress().getHostName(),
-        InetAddress.getLocalHost().getHostName());
+    CertificateBuilder serverCertificate = new CertificateBuilder()
+        .commonName("server")
+        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+        .sanIpAddress(InetAddress.getLocalHost());
+
+    CertificateBuilder clientCertificate = new CertificateBuilder()
+        .commonName("client");
+
     ClusterSSLProvider sslProvider = new ClusterSSLProvider();
-    sslProvider.withServerCertificate("server", dnsNames, InetAddress.getLocalHost())
-        .withClientCertificate("client");
+
+    sslProvider.serverCertificate(serverCertificate)
+        .clientCertificate(clientCertificate);
 
     Properties serverSSLProps = sslProvider.generateServerPropertiesWith(ALL, "any", "any");
     Properties clientSSLProps = sslProvider.generateClientPropertiesWith(ALL, "any", "any");
