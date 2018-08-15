@@ -32,6 +32,9 @@ public class ClusterSSLProvider {
   private File serverKeyStoreFile;
   private File clientKeyStoreFile;
 
+  private String trustStorePassword = "password";
+  private String keyStorePassword = "password";
+
   public ClusterSSLProvider locatorCertificate(CertificateBuilder certificateBuilder)
       throws GeneralSecurityException, IOException {
     locatorKeyStoreFile = File.createTempFile("locatorKS", ".jks");
@@ -61,7 +64,7 @@ public class ClusterSSLProvider {
     X509Certificate cert = certificateBuilder.generate(keyPair);
     certs.put(alias, cert);
 
-    createKeyStore(keyStoreFile.getPath(), "password", alias, keyPair.getPrivate(), cert);
+    createKeyStore(keyStoreFile.getPath(), keyStorePassword, alias, keyPair.getPrivate(), cert);
   }
 
   public Properties locatorPropertiesWith(String components, String protocols,
@@ -71,7 +74,7 @@ public class ClusterSSLProvider {
     locatorTrustStore.deleteOnExit();
 
     // locator trusts all
-    createTrustStore(locatorTrustStore.getPath(), "password", certs);
+    createTrustStore(locatorTrustStore.getPath(), trustStorePassword, certs);
 
     return generatePropertiesWith(components, protocols, ciphers, locatorTrustStore,
         locatorKeyStoreFile);
@@ -84,7 +87,7 @@ public class ClusterSSLProvider {
     serverTrustStoreFile.deleteOnExit();
 
     // a server should trust itself, locator and client
-    createTrustStore(serverTrustStoreFile.getPath(), "password", certs);
+    createTrustStore(serverTrustStoreFile.getPath(), trustStorePassword, certs);
 
     return generatePropertiesWith(components, protocols, ciphers, serverTrustStoreFile,
         serverKeyStoreFile);
@@ -98,14 +101,14 @@ public class ClusterSSLProvider {
 
     // only trust locator and server
     Map<String, X509Certificate> trustedCerts = new HashMap<>();
-    if(certs.containsKey("locator")) {
+    if (certs.containsKey("locator")) {
       trustedCerts.put("locator", certs.get("locator"));
     }
-    if(certs.containsKey("server")) {
+    if (certs.containsKey("server")) {
       trustedCerts.put("server", certs.get("server"));
     }
 
-    createTrustStore(clientTrustStoreFile.getPath(), "password", trustedCerts);
+    createTrustStore(clientTrustStoreFile.getPath(), trustStorePassword, trustedCerts);
 
     return generatePropertiesWith(components, protocols, ciphers, clientTrustStoreFile,
         clientKeyStoreFile);
@@ -118,9 +121,9 @@ public class ClusterSSLProvider {
     sslConfigs.setProperty(SSL_ENABLED_COMPONENTS, components);
     sslConfigs.setProperty(SSL_KEYSTORE, keyStoreFile.getPath());
     sslConfigs.setProperty(SSL_KEYSTORE_TYPE, "JKS");
-    sslConfigs.setProperty(SSL_KEYSTORE_PASSWORD, "password");
+    sslConfigs.setProperty(SSL_KEYSTORE_PASSWORD, keyStorePassword);
     sslConfigs.setProperty(SSL_TRUSTSTORE, trustStoreFile.getPath());
-    sslConfigs.setProperty(SSL_TRUSTSTORE_PASSWORD, "password");
+    sslConfigs.setProperty(SSL_TRUSTSTORE_PASSWORD, trustStorePassword);
     sslConfigs.setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
     sslConfigs.setProperty(SSL_PROTOCOLS, protocols);
     sslConfigs.setProperty(SSL_CIPHERS, ciphers);

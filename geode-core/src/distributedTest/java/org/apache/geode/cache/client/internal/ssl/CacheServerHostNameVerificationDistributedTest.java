@@ -17,9 +17,6 @@ package org.apache.geode.cache.client.internal.ssl;
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
@@ -27,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionFactory;
@@ -42,22 +38,15 @@ import org.apache.geode.test.dunit.rules.ClientVM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.ClientServerTest;
-import org.apache.geode.test.junit.rules.GfshCommandRule;
 
 @Category({ClientServerTest.class})
-public class CacheServerHostNameVerficationDistributedTest {
+public class CacheServerHostNameVerificationDistributedTest {
   private static MemberVM locator;
   private static MemberVM server;
   private static ClientVM client;
 
   @ClassRule
   public static ClusterStartupRule cluster = new ClusterStartupRule();
-
-  @ClassRule
-  public static GfshCommandRule gfsh = new GfshCommandRule();
-
-  @ClassRule
-  public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @BeforeClass
   public static void setupCluster() throws Exception {
@@ -92,24 +81,11 @@ public class CacheServerHostNameVerficationDistributedTest {
     server = cluster.startServerVM(1, serverSSLProps, locator.getPort());
 
     // create region
-    server.invoke(CacheServerHostNameVerficationDistributedTest::createServerRegion);
+    server.invoke(CacheServerHostNameVerificationDistributedTest::createServerRegion);
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
     setupClient(clientSSLProps, server.getPort(), server.getVM().getHost().getHostName());
-
-    // connect gfsh
-    File sslConfigFile = gfshSecurityProperties(clientSSLProps);
-    gfsh.connectAndVerify(locator.getPort(), GfshCommandRule.PortType.locator,
-        "security-properties-file", sslConfigFile.getAbsolutePath());
-    gfsh.executeAndAssertThat("list regions").statusIsSuccess();
-  }
-
-  private static File gfshSecurityProperties(Properties clientSSLProps) throws IOException {
-    File sslConfigFile = temporaryFolder.newFile("gfsh-ssl.properties");
-    FileOutputStream out = new FileOutputStream(sslConfigFile);
-    clientSSLProps.store(out, null);
-    return sslConfigFile;
   }
 
   private static void createServerRegion() {
@@ -128,7 +104,7 @@ public class CacheServerHostNameVerficationDistributedTest {
     client = cluster.startClientVM(2, clientSSLProps, clientSetup);
 
     // create a client region
-    client.invoke(CacheServerHostNameVerficationDistributedTest::createClientRegion);
+    client.invoke(CacheServerHostNameVerificationDistributedTest::createClientRegion);
   }
 
   private static void createClientRegion() {
@@ -140,8 +116,8 @@ public class CacheServerHostNameVerficationDistributedTest {
 
   @Test
   public void testClientSSLConnection() {
-    client.invoke(CacheServerHostNameVerficationDistributedTest::doClientRegionTest);
-    server.invoke(CacheServerHostNameVerficationDistributedTest::doServerRegionTest);
+    client.invoke(CacheServerHostNameVerificationDistributedTest::doClientRegionTest);
+    server.invoke(CacheServerHostNameVerificationDistributedTest::doServerRegionTest);
   }
 
   private static void doClientRegionTest() {

@@ -36,7 +36,7 @@ import org.apache.geode.test.junit.categories.ClientServerTest;
 import org.apache.geode.test.junit.rules.GfshCommandRule;
 
 @Category({ClientServerTest.class})
-public class GfshHostNameVerficationDistributedTest {
+public class GfshHostNameVerificationDistributedTest {
   private static MemberVM locator;
 
   @ClassRule
