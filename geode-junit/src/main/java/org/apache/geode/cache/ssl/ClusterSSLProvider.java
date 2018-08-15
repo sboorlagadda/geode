@@ -1,5 +1,6 @@
 package org.apache.geode.cache.ssl;
 
+import static org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
 import static org.apache.geode.cache.ssl.TestSSLUtils.createKeyStore;
 import static org.apache.geode.cache.ssl.TestSSLUtils.createTrustStore;
 import static org.apache.geode.cache.ssl.TestSSLUtils.generateKeyPair;
@@ -27,25 +28,32 @@ public class ClusterSSLProvider {
   private Map<String, KeyPair> keyPairs = new HashMap<>();
   private Map<String, X509Certificate> certs = new HashMap<>();
 
+  private File locatorKeyStoreFile;
   private File serverKeyStoreFile;
   private File clientKeyStoreFile;
 
-  public ClusterSSLProvider serverCertificate(TestSSLUtils.CertificateBuilder certificateBuilder)
+  public ClusterSSLProvider locatorCertificate(CertificateBuilder certificateBuilder)
+      throws GeneralSecurityException, IOException {
+    locatorKeyStoreFile = File.createTempFile("locatorKS", ".jks");
+    certificate("locator", certificateBuilder, locatorKeyStoreFile);
+    return this;
+  }
+
+  public ClusterSSLProvider serverCertificate(CertificateBuilder certificateBuilder)
       throws GeneralSecurityException, IOException {
     serverKeyStoreFile = File.createTempFile("serverKS", ".jks");
     certificate("server", certificateBuilder, serverKeyStoreFile);
     return this;
   }
 
-  public ClusterSSLProvider clientCertificate(
-      TestSSLUtils.CertificateBuilder certificateBuilder)
+  public ClusterSSLProvider clientCertificate(CertificateBuilder certificateBuilder)
       throws GeneralSecurityException, IOException {
     clientKeyStoreFile = File.createTempFile("clientKS", ".jks");
     certificate("client", certificateBuilder, clientKeyStoreFile);
     return this;
   }
 
-  private void certificate(String alias, TestSSLUtils.CertificateBuilder certificateBuilder,
+  private void certificate(String alias, CertificateBuilder certificateBuilder,
       File keyStoreFile) throws GeneralSecurityException, IOException {
     KeyPair keyPair = generateKeyPair("RSA");
     keyPairs.put(alias, keyPair);
@@ -56,7 +64,20 @@ public class ClusterSSLProvider {
     createKeyStore(keyStoreFile.getPath(), "password", alias, keyPair.getPrivate(), cert);
   }
 
-  public Properties generateServerPropertiesWith(String components, String protocols,
+  public Properties locatorPropertiesWith(String components, String protocols,
+      String ciphers)
+      throws GeneralSecurityException, IOException {
+    File locatorTrustStore = File.createTempFile("locatorTS", ".jks");
+    locatorTrustStore.deleteOnExit();
+
+    // locator trusts all
+    createTrustStore(locatorTrustStore.getPath(), "password", certs);
+
+    return generatePropertiesWith(components, protocols, ciphers, locatorTrustStore,
+        locatorKeyStoreFile);
+  }
+
+  public Properties serverPropertiesWith(String components, String protocols,
       String ciphers)
       throws GeneralSecurityException, IOException {
     File serverTrustStoreFile = File.createTempFile("serverTS", ".jks");
@@ -69,7 +90,7 @@ public class ClusterSSLProvider {
         serverKeyStoreFile);
   }
 
-  public Properties generateClientPropertiesWith(String components, String protocols,
+  public Properties clientPropertiesWith(String components, String protocols,
       String ciphers)
       throws GeneralSecurityException, IOException {
     File clientTrustStoreFile = File.createTempFile("clientTS", ".jks");
@@ -77,6 +98,7 @@ public class ClusterSSLProvider {
 
     // only trust locator and server
     Map<String, X509Certificate> trustedCerts = new HashMap<>();
+    trustedCerts.put("locator", certs.get("locator"));
     trustedCerts.put("server", certs.get("server"));
 
     createTrustStore(clientTrustStoreFile.getPath(), "password", trustedCerts);

@@ -17,6 +17,9 @@ package org.apache.geode.cache.client.internal;
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
@@ -24,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionFactory;
@@ -52,8 +56,17 @@ public class CacheServerSSLDistributedTest {
   @ClassRule
   public static GfshCommandRule gfsh = new GfshCommandRule();
 
+  @ClassRule
+  public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+
   @BeforeClass
   public static void setupCluster() throws Exception {
+    CertificateBuilder locatorCertificate = new CertificateBuilder()
+        .commonName("locator")
+        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+        .sanIpAddress(InetAddress.getLocalHost());
+
     CertificateBuilder serverCertificate = new CertificateBuilder()
         .commonName("server")
         .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
@@ -65,14 +78,17 @@ public class CacheServerSSLDistributedTest {
 
     ClusterSSLProvider sslProvider = new ClusterSSLProvider();
 
-    sslProvider.serverCertificate(serverCertificate)
+    sslProvider
+        .locatorCertificate(locatorCertificate)
+        .serverCertificate(serverCertificate)
         .clientCertificate(clientCertificate);
 
-    Properties serverSSLProps = sslProvider.generateServerPropertiesWith(ALL, "any", "any");
-    Properties clientSSLProps = sslProvider.generateClientPropertiesWith(ALL, "any", "any");
+    Properties locatorSSLProps = sslProvider.locatorPropertiesWith(ALL, "any", "any");
+    Properties serverSSLProps = sslProvider.serverPropertiesWith(ALL, "any", "any");
+    Properties clientSSLProps = sslProvider.clientPropertiesWith(ALL, "any", "any");
 
     // create a cluster
-    locator = cluster.startLocatorVM(0, serverSSLProps);
+    locator = cluster.startLocatorVM(0, locatorSSLProps);
     server = cluster.startServerVM(1, serverSSLProps, locator.getPort());
 
     // create region
@@ -81,6 +97,19 @@ public class CacheServerSSLDistributedTest {
 
     // setup client
     setupClient(clientSSLProps, server.getPort(), server.getVM().getHost().getHostName());
+
+    // connect gfsh
+    File sslConfigFile = gfshSecurityProperties(clientSSLProps);
+    gfsh.connectAndVerify(locator.getPort(), GfshCommandRule.PortType.locator,
+        "security-properties-file", sslConfigFile.getAbsolutePath());
+    gfsh.executeAndAssertThat("list regions").statusIsSuccess();
+  }
+
+  private static File gfshSecurityProperties(Properties clientSSLProps) throws IOException {
+    File sslConfigFile = temporaryFolder.newFile("gfsh-ssl.properties");
+    FileOutputStream out = new FileOutputStream(sslConfigFile);
+    clientSSLProps.store(out, null);
+    return sslConfigFile;
   }
 
   private static void createServerRegion() {
