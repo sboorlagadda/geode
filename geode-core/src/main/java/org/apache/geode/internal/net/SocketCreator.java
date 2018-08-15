@@ -1031,9 +1031,11 @@ public class SocketCreator {
       sslSocket.setUseClientMode(true);
       sslSocket.setEnableSessionCreation(true);
 
-      SSLParameters sslParameters = sslSocket.getSSLParameters();
-      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-      sslSocket.setSSLParameters(sslParameters);
+      if (sslConfig.doEndpointIdentification()) {
+        SSLParameters sslParameters = sslSocket.getSSLParameters();
+        sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+        sslSocket.setSSLParameters(sslParameters);
+      }
 
       String[] protocols = this.sslConfig.getProtocolsAsStringArray();
 

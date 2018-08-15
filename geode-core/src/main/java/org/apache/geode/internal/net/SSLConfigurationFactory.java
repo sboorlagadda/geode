@@ -167,6 +167,7 @@ public class SSLConfigurationFactory {
       final SecurableCommunicationChannel sslEnabledComponent) {
     SSLConfig sslConfig = new SSLConfig();
     sslConfig.setCiphers(distributionConfig.getSSLCiphers());
+    sslConfig.setEndpointIdentification(distributionConfig.getSSLEnabledEndpointIdentification());
     sslConfig
         .setEnabled(determineIfSSLEnabledForSSLComponent(distributionConfig, sslEnabledComponent));
     sslConfig.setKeystore(distributionConfig.getSSLKeyStore());

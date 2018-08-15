@@ -149,6 +149,7 @@ import static org.apache.geode.distributed.ConfigurationProperties.SSL_CIPHERS;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_CLUSTER_ALIAS;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_DEFAULT_ALIAS;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_ENABLED_COMPONENTS;
+import static org.apache.geode.distributed.ConfigurationProperties.SSL_ENABLED_ENDPOINT_IDENTIFICATION;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_GATEWAY_ALIAS;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_JMX_ALIAS;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE;
@@ -4877,6 +4878,33 @@ public interface DistributionConfig extends Config, LogConfig {
    */
   @ConfigAttribute(type = String.class)
   String SERVER_SSL_ALIAS_NAME = SSL_SERVER_ALIAS;
+
+  /**
+   * The default {@link ConfigurationProperties#SSL_ENABLED_ENDPOINT_IDENTIFICATION} value.
+   * <p>
+   * Actual value of this constant is <code>false</code>.
+   */
+  boolean DEFAULT_SSL_ENABLED_ENDPOINT_IDENTIFICATION = false;
+
+  /**
+   * Returns the value of the {@link ConfigurationProperties#SSL_ENABLED_ENDPOINT_IDENTIFICATION}
+   * property.
+   */
+  @ConfigAttributeGetter(name = SSL_ENABLED_ENDPOINT_IDENTIFICATION)
+  boolean getSSLEnabledEndpointIdentification();
+
+  /**
+   * Sets the value of the {@link ConfigurationProperties#SSL_ENABLED_ENDPOINT_IDENTIFICATION}
+   * property.
+   */
+  @ConfigAttributeSetter(name = SSL_ENABLED_ENDPOINT_IDENTIFICATION)
+  void setSSLEnabledEndpointIdentification(boolean enabled);
+
+  /**
+   * The name of the {@link ConfigurationProperties#SSL_ENABLED_ENDPOINT_IDENTIFICATION} property
+   */
+  @ConfigAttribute(type = Boolean.class)
+  String SSL_ENABLED_ENDPOINT_IDENTIFICATION_NAME = SSL_ENABLED_ENDPOINT_IDENTIFICATION;
 
   /**
    * Returns the value of the {@link ConfigurationProperties#SSL_ENABLED_COMPONENTS} property.

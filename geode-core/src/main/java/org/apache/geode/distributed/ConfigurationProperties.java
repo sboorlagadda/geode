@@ -1930,6 +1930,17 @@ public interface ConfigurationProperties {
    */
   String DISTRIBUTED_TRANSACTIONS = "distributed-transactions";
   /**
+   * The static String definition of the <i>"sssl-enable-endpoint-identification"</i> property <a
+   * name="ssl-enable-endpoint-identification"/a>
+   * </p>
+   * <U>Description</U>: If true, the endpoint identification/verification will be handled
+   * during SSL/TLS handshaking if ssl enabled using <i>"ssl-enabled-components"</i>.
+   * </p>
+   * <U>Default</U>: code>"false"</code>
+   * <U>Since</U>: Geode 1.8
+   */
+  String SSL_ENABLED_ENDPOINT_IDENTIFICATION = "ssl-enable-endpoint-identification";
+  /**
    * The static String definition of the <i>"ssl-enabled-components"</i> property <a
    * name="ssl-enabled-components"/a>
    * </p>
