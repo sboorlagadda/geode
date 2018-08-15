@@ -12,7 +12,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.geode.cache.client.internal;
+package org.apache.geode.cache.client.internal.ssl;
 
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +45,7 @@ import org.apache.geode.test.junit.categories.ClientServerTest;
 import org.apache.geode.test.junit.rules.GfshCommandRule;
 
 @Category({ClientServerTest.class})
-public class CacheServerSSLDistributedTest {
+public class CacheServerHostNameVerficationDistributedTest {
   private static MemberVM locator;
   private static MemberVM server;
   private static ClientVM client;
@@ -92,7 +92,7 @@ public class CacheServerSSLDistributedTest {
     server = cluster.startServerVM(1, serverSSLProps, locator.getPort());
 
     // create region
-    server.invoke(CacheServerSSLDistributedTest::createServerRegion);
+    server.invoke(CacheServerHostNameVerficationDistributedTest::createServerRegion);
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
@@ -128,7 +128,7 @@ public class CacheServerSSLDistributedTest {
     client = cluster.startClientVM(2, clientSSLProps, clientSetup);
 
     // create a client region
-    client.invoke(CacheServerSSLDistributedTest::createClientRegion);
+    client.invoke(CacheServerHostNameVerficationDistributedTest::createClientRegion);
   }
 
   private static void createClientRegion() {
@@ -140,8 +140,8 @@ public class CacheServerSSLDistributedTest {
 
   @Test
   public void testClientSSLConnection() {
-    client.invoke(CacheServerSSLDistributedTest::doClientRegionTest);
-    server.invoke(CacheServerSSLDistributedTest::doServerRegionTest);
+    client.invoke(CacheServerHostNameVerficationDistributedTest::doClientRegionTest);
+    server.invoke(CacheServerHostNameVerficationDistributedTest::doServerRegionTest);
   }
 
   private static void doClientRegionTest() {

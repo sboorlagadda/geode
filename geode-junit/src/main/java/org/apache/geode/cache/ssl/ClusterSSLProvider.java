@@ -98,8 +98,12 @@ public class ClusterSSLProvider {
 
     // only trust locator and server
     Map<String, X509Certificate> trustedCerts = new HashMap<>();
-    trustedCerts.put("locator", certs.get("locator"));
-    trustedCerts.put("server", certs.get("server"));
+    if(certs.containsKey("locator")) {
+      trustedCerts.put("locator", certs.get("locator"));
+    }
+    if(certs.containsKey("server")) {
+      trustedCerts.put("server", certs.get("server"));
+    }
 
     createTrustStore(clientTrustStoreFile.getPath(), "password", trustedCerts);
 
