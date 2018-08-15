@@ -31,7 +31,7 @@ import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.client.ClientCacheFactory;
 import org.apache.geode.cache.client.ClientRegionFactory;
 import org.apache.geode.cache.client.ClientRegionShortcut;
-import org.apache.geode.cache.ssl.ClusterSSLProvider;
+import org.apache.geode.cache.ssl.CertStores;
 import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
 import org.apache.geode.test.dunit.SerializableConsumerIF;
 import org.apache.geode.test.dunit.rules.ClientVM;
@@ -47,6 +47,27 @@ public class CacheServerHostNameVerificationDistributedTest {
 
   @ClassRule
   public static ClusterStartupRule cluster = new ClusterStartupRule();
+
+
+  // Touch Points
+  // Membership, Discovery, Request Processing
+  // 1. Locator -> Locator
+  // 2. Locator -> Server
+  // 3. Server -> Locator - implicit covers #2
+  // 4. Server -> Server
+  // 5. Client -> Locator
+  // 6. Client -> Server
+  // 7. Gfsh -> locator (JMX)
+  // JMX, REDIS, MEMCACHE
+  // WAN - GWS -> GWR, L11 -> L21
+  // Protobuf
+  // Gfsh, Pulse, Admin REST, DEV REST - HTTPS
+
+  // Mutual Auth
+  // May be effects Clients(apps) -> Server
+  // ??? Peer2Peer -> what happens?
+
+  // Crosscheck about deploy jar socket
 
   @BeforeClass
   public static void setupCluster() throws Exception {
@@ -65,16 +86,31 @@ public class CacheServerHostNameVerificationDistributedTest {
     CertificateBuilder clientCertificate = new CertificateBuilder()
         .commonName("client");
 
-    ClusterSSLProvider sslProvider = new ClusterSSLProvider();
+    CertStores locatorStore = CertStores.locatorStore();
+    locatorStore.withCertificate(locatorCertificate);
 
-    sslProvider
-        .locatorCertificate(locatorCertificate)
-        .serverCertificate(serverCertificate)
-        .clientCertificate(clientCertificate);
+    CertStores serverStore = CertStores.serverStore();
+    serverStore.withCertificate(serverCertificate);
 
-    Properties locatorSSLProps = sslProvider.locatorPropertiesWith(ALL, "any", "any");
-    Properties serverSSLProps = sslProvider.serverPropertiesWith(ALL, "any", "any");
-    Properties clientSSLProps = sslProvider.clientPropertiesWith(ALL, "any", "any");
+    CertStores clientStore = CertStores.clientStore();
+    clientStore.withCertificate(clientCertificate);
+
+    Properties locatorSSLProps = locatorStore
+        .trustSelf()
+        .trust(serverStore.alias(), serverStore.certificate())
+        .trust(clientStore.alias(), clientStore.certificate())
+        .propertiesWith(ALL, "any", "any");
+
+    Properties serverSSLProps = serverStore
+        .trustSelf()
+        .trust(locatorStore.alias(), locatorStore.certificate())
+        .trust(clientStore.alias(), clientStore.certificate())
+        .propertiesWith(ALL, "any", "any");
+
+    Properties clientSSLProps = clientStore
+        .trust(locatorStore.alias(), locatorStore.certificate())
+        .trust(serverStore.alias(), serverStore.certificate())
+        .propertiesWith(ALL, "any", "any");
 
     // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
