@@ -14,6 +14,7 @@
  */
 package org.apache.geode.cache.client.internal;
 
+import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.InetAddress;
@@ -54,14 +55,14 @@ public class CacheServerSSLDistributedTest {
 
   @BeforeClass
   public static void setupCluster() throws Exception {
-    ClusterSSLProvider sslProvider = new ClusterSSLProvider();
     List<String> dnsNames = Arrays.asList(InetAddress.getLoopbackAddress().getHostName(),
         InetAddress.getLocalHost().getHostName());
+    ClusterSSLProvider sslProvider = new ClusterSSLProvider();
     sslProvider.withServerCertificate("server", dnsNames, InetAddress.getLocalHost())
         .withClientCertificate("client");
 
-    Properties serverSSLProps = sslProvider.generateServerPropertiesWith();
-    Properties clientSSLProps = sslProvider.generateClientPropertiesWith();
+    Properties serverSSLProps = sslProvider.generateServerPropertiesWith(ALL, "any", "any");
+    Properties clientSSLProps = sslProvider.generateClientPropertiesWith(ALL, "any", "any");
 
     // create a cluster
     locator = cluster.startLocatorVM(0, serverSSLProps);

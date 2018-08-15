@@ -12,7 +12,6 @@ import static org.apache.geode.distributed.ConfigurationProperties.SSL_PROTOCOLS
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_PASSWORD;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_TYPE;
-import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,46 +32,31 @@ public class ClusterSSLProvider {
   private File serverKeyStoreFile;
   private File clientKeyStoreFile;
 
-  public ClusterSSLProvider withServerCertificate(String cn)
-      throws GeneralSecurityException, IOException {
-    this.withServerCertificate("server", new TestSSLUtils.CertificateBuilder().name(cn));
-    return this;
-  }
-
-  public ClusterSSLProvider withServerCertificate(String cn, String hostname)
-      throws GeneralSecurityException, IOException {
-    this.withServerCertificate("server",
-        new TestSSLUtils.CertificateBuilder().name(cn).sanDnsName(hostname));
-    return this;
-  }
-
-  public ClusterSSLProvider withServerCertificate(String cn, InetAddress ipAddress)
-      throws GeneralSecurityException, IOException {
-    this.withServerCertificate("server",
-        new TestSSLUtils.CertificateBuilder().name(cn).sanIpAddress(ipAddress));
-    return this;
-  }
-
-  public ClusterSSLProvider withServerCertificate(String cn, List<String> hostnames,
+  public ClusterSSLProvider withServerCertificate(String cn, List<String> hostName,
       InetAddress hostAddress)
       throws GeneralSecurityException, IOException {
     this.withServerCertificate("server",
-        new TestSSLUtils.CertificateBuilder().name(cn).sanDnsAndIpAddress(hostnames, hostAddress));
+        new TestSSLUtils.CertificateBuilder().name(cn).sanDnsAndIpAddress(hostName, hostAddress));
     return this;
   }
 
   public ClusterSSLProvider withServerCertificate(String alias,
       TestSSLUtils.CertificateBuilder certificateBuilder)
       throws GeneralSecurityException, IOException {
+    serverKeyStoreFile = File.createTempFile("serverKS", ".jks");
+    withCertificate(alias, certificateBuilder, serverKeyStoreFile);
+    return this;
+  }
+
+  private void withCertificate(String alias, TestSSLUtils.CertificateBuilder certificateBuilder,
+      File keyStoreFile) throws GeneralSecurityException, IOException {
     KeyPair keyPair = generateKeyPair("RSA");
     keyPairs.put(alias, keyPair);
 
     X509Certificate cert = certificateBuilder.generate(keyPair);
     certs.put(alias, cert);
 
-    serverKeyStoreFile = File.createTempFile("serverKS", ".jks");
-    createKeyStore(serverKeyStoreFile.getPath(), "password", alias, keyPair.getPrivate(), cert);
-    return this;
+    createKeyStore(keyStoreFile.getPath(), "password", alias, keyPair.getPrivate(), cert);
   }
 
   public ClusterSSLProvider withClientCertificate(String cn)
@@ -84,59 +68,53 @@ public class ClusterSSLProvider {
   public ClusterSSLProvider withClientCertificate(String alias,
       TestSSLUtils.CertificateBuilder certificateBuilder)
       throws GeneralSecurityException, IOException {
-    KeyPair keyPair = generateKeyPair("RSA");
-    keyPairs.put(alias, keyPair);
-
-    X509Certificate cert = certificateBuilder.generate(keyPair);
-    certs.put(alias, cert);
-
     clientKeyStoreFile = File.createTempFile("clientKS", ".jks");
-    createKeyStore(clientKeyStoreFile.getPath(), "password", alias, keyPair.getPrivate(), cert);
+    withCertificate(alias, certificateBuilder, clientKeyStoreFile);
     return this;
   }
 
-  public Properties generateServerPropertiesWith()
+  public Properties generateServerPropertiesWith(String components, String protocols,
+      String ciphers)
       throws GeneralSecurityException, IOException {
     File serverTrustStoreFile = File.createTempFile("serverTS", ".jks");
     serverTrustStoreFile.deleteOnExit();
 
-    // for peer2peer server should trust itself
+    // a server should trust itself, locator and client
     createTrustStore(serverTrustStoreFile.getPath(), "password", certs);
 
-    Properties sslConfigs = new Properties();
-    sslConfigs.setProperty(SSL_ENABLED_COMPONENTS, ALL);
-    sslConfigs.setProperty(SSL_KEYSTORE, serverKeyStoreFile.getPath());
-    sslConfigs.setProperty(SSL_KEYSTORE_TYPE, "JKS");
-    sslConfigs.setProperty(SSL_KEYSTORE_PASSWORD, "password");
-    sslConfigs.setProperty(SSL_TRUSTSTORE, serverTrustStoreFile.getPath());
-    sslConfigs.setProperty(SSL_TRUSTSTORE_PASSWORD, "password");
-    sslConfigs.setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
-    sslConfigs.setProperty(SSL_PROTOCOLS, "any");
-    sslConfigs.setProperty(SSL_CIPHERS, "any");
-
-    return sslConfigs;
+    return generatePropertiesWith(components, protocols, ciphers, serverTrustStoreFile,
+        serverKeyStoreFile);
   }
 
-  public Properties generateClientPropertiesWith()
+  public Properties generateClientPropertiesWith(String components, String protocols,
+      String ciphers)
       throws GeneralSecurityException, IOException {
     File clientTrustStoreFile = File.createTempFile("clientTS", ".jks");
     clientTrustStoreFile.deleteOnExit();
-    // only trust server cert
+
+    // only trust locator and server
     Map<String, X509Certificate> trustedCerts = new HashMap<>();
     trustedCerts.put("server", certs.get("server"));
 
     createTrustStore(clientTrustStoreFile.getPath(), "password", trustedCerts);
 
+    return generatePropertiesWith(components, protocols, ciphers, clientTrustStoreFile,
+        clientKeyStoreFile);
+  }
+
+  private Properties generatePropertiesWith(String components, String protocols, String ciphers,
+      File trustStoreFile, File keyStoreFile) {
+
     Properties sslConfigs = new Properties();
-    sslConfigs.setProperty(SSL_ENABLED_COMPONENTS, ALL);
-    sslConfigs.setProperty(SSL_KEYSTORE, clientKeyStoreFile.getPath());
+    sslConfigs.setProperty(SSL_ENABLED_COMPONENTS, components);
+    sslConfigs.setProperty(SSL_KEYSTORE, keyStoreFile.getPath());
     sslConfigs.setProperty(SSL_KEYSTORE_TYPE, "JKS");
     sslConfigs.setProperty(SSL_KEYSTORE_PASSWORD, "password");
-    sslConfigs.setProperty(SSL_TRUSTSTORE, clientTrustStoreFile.getPath());
+    sslConfigs.setProperty(SSL_TRUSTSTORE, trustStoreFile.getPath());
     sslConfigs.setProperty(SSL_TRUSTSTORE_PASSWORD, "password");
     sslConfigs.setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
-    sslConfigs.setProperty(SSL_PROTOCOLS, "any");
-    sslConfigs.setProperty(SSL_CIPHERS, "any");
+    sslConfigs.setProperty(SSL_PROTOCOLS, protocols);
+    sslConfigs.setProperty(SSL_CIPHERS, ciphers);
 
     return sslConfigs;
   }
