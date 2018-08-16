@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
-import org.apache.geode.cache.ssl.ClusterSSLProvider;
+import org.apache.geode.cache.ssl.CertStores;
 import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
@@ -39,17 +39,20 @@ import org.apache.geode.test.junit.rules.GfshCommandRule;
 public class GfshHostNameVerificationDistributedTest {
   private static MemberVM locator;
 
-  @ClassRule
-  public static ClusterStartupRule cluster = new ClusterStartupRule();
+  @Rule
+  public ClusterStartupRule cluster = new ClusterStartupRule();
 
-  @ClassRule
-  public static GfshCommandRule gfsh = new GfshCommandRule();
+  @Rule
+  public GfshCommandRule gfsh = new GfshCommandRule();
 
-  @ClassRule
-  public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+  @Rule
+  public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  @BeforeClass
-  public static void setupCluster() throws Exception {
+  Properties locatorSSLProps;
+  Properties gfshSSLProps;
+
+  @Before
+  public void setupCluster() throws Exception {
     CertificateBuilder locatorCertificate = new CertificateBuilder()
         .commonName("locator")
         .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
@@ -59,25 +62,23 @@ public class GfshHostNameVerificationDistributedTest {
     CertificateBuilder gfshCertificate = new CertificateBuilder()
         .commonName("gfsh");
 
-    ClusterSSLProvider sslProvider = new ClusterSSLProvider();
+    CertStores locatorStore = CertStores.locatorStore();
+    CertStores gfshStore = CertStores.clientStore();
 
-    sslProvider
-        .locatorCertificate(locatorCertificate)
-        .clientCertificate(gfshCertificate);
+    locatorStore.withCertificate(locatorCertificate);
+    gfshStore.withCertificate(gfshCertificate);
 
-    Properties locatorSSLProps = sslProvider.locatorPropertiesWith(ALL, "any", "any");
-    Properties clientSSLProps = sslProvider.clientPropertiesWith(ALL, "any", "any");
+    locatorSSLProps = locatorStore
+        .trustSelf()
+        .trust(gfshStore.alias(), gfshStore.certificate())
+        .propertiesWith(ALL);
 
-    // create a cluster
-    locator = cluster.startLocatorVM(0, locatorSSLProps);
-
-    // connect gfsh
-    File sslConfigFile = gfshSecurityProperties(clientSSLProps);
-    gfsh.connectAndVerify(locator.getPort(), GfshCommandRule.PortType.locator,
-        "security-properties-file", sslConfigFile.getAbsolutePath());
+    gfshSSLProps = gfshStore
+        .trust(locatorStore.alias(), locatorStore.certificate())
+        .propertiesWith(ALL);
   }
 
-  private static File gfshSecurityProperties(Properties clientSSLProps) throws IOException {
+  private File gfshSecurityProperties(Properties clientSSLProps) throws IOException {
     File sslConfigFile = temporaryFolder.newFile("gfsh-ssl.properties");
     FileOutputStream out = new FileOutputStream(sslConfigFile);
     clientSSLProps.store(out, null);
@@ -85,7 +86,28 @@ public class GfshHostNameVerificationDistributedTest {
   }
 
   @Test
-  public void testGfshSSLConnection() {
+  public void gfshConnectsToLocator() throws Exception {
+    // create a cluster
+    locator = cluster.startLocatorVM(0, locatorSSLProps);
+
+    // connect gfsh
+    File sslConfigFile = gfshSecurityProperties(gfshSSLProps);
+    gfsh.connectAndVerify(locator.getPort(), GfshCommandRule.PortType.locator,
+        "security-properties-file", sslConfigFile.getAbsolutePath());
+
+    gfsh.executeAndAssertThat("list members").statusIsSuccess();
+  }
+
+  @Test
+  public void gfshConnectsToLocatorOnJMX() throws Exception {
+    // create a cluster
+    locator = cluster.startLocatorVM(0, locatorSSLProps);
+
+    // connect gfsh on jmx
+    File sslConfigFile = gfshSecurityProperties(gfshSSLProps);
+    gfsh.connectAndVerify(locator.getJmxPort(), GfshCommandRule.PortType.jmxManager,
+        "security-properties-file", sslConfigFile.getAbsolutePath());
+
     gfsh.executeAndAssertThat("list members").statusIsSuccess();
   }
 }
