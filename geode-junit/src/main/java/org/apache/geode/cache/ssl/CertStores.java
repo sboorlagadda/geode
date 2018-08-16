@@ -19,10 +19,12 @@ import static org.apache.geode.cache.ssl.TestSSLUtils.createTrustStore;
 import static org.apache.geode.cache.ssl.TestSSLUtils.generateKeyPair;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_CIPHERS;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_ENABLED_COMPONENTS;
+import static org.apache.geode.distributed.ConfigurationProperties.SSL_ENABLED_ENDPOINT_IDENTIFICATION;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE_PASSWORD;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE_TYPE;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_PROTOCOLS;
+import static org.apache.geode.distributed.ConfigurationProperties.SSL_REQUIRE_AUTHENTICATION;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_PASSWORD;
 import static org.apache.geode.distributed.ConfigurationProperties.SSL_TRUSTSTORE_TYPE;
@@ -98,19 +100,31 @@ public class CertStores {
     return this;
   }
 
+  public Properties propertiesWith(String components)
+      throws GeneralSecurityException, IOException {
+    return this.propertiesWith(components, "any", "any", true, true);
+  }
+
+  public Properties propertiesWith(String components, boolean requireAuth,
+      boolean endPointIdentification)
+      throws GeneralSecurityException, IOException {
+    return this.propertiesWith(components, "any", "any", requireAuth, endPointIdentification);
+  }
+
   public Properties propertiesWith(String components, String protocols,
-      String ciphers)
+      String ciphers, boolean requireAuth, boolean endPointIdentification)
       throws GeneralSecurityException, IOException {
     File trustStoreFile = File.createTempFile(storePrefix + "TS", ".jks");
     trustStoreFile.deleteOnExit();
 
     createTrustStore(trustStoreFile.getPath(), trustStorePassword, trustedCerts);
 
-    return propertiesWith(components, protocols, ciphers, trustStoreFile, keyStoreFile);
+    return propertiesWith(components, protocols, ciphers, trustStoreFile, keyStoreFile, requireAuth,
+        endPointIdentification);
   }
 
   private Properties propertiesWith(String components, String protocols, String ciphers,
-      File trustStoreFile, File keyStoreFile) {
+      File trustStoreFile, File keyStoreFile, boolean requireAuth, boolean endPointVerification) {
 
     Properties sslConfigs = new Properties();
     sslConfigs.setProperty(SSL_ENABLED_COMPONENTS, components);
@@ -122,6 +136,9 @@ public class CertStores {
     sslConfigs.setProperty(SSL_TRUSTSTORE_TYPE, "JKS");
     sslConfigs.setProperty(SSL_PROTOCOLS, protocols);
     sslConfigs.setProperty(SSL_CIPHERS, ciphers);
+    sslConfigs.setProperty(SSL_REQUIRE_AUTHENTICATION, String.valueOf(requireAuth));
+    sslConfigs.setProperty(SSL_ENABLED_ENDPOINT_IDENTIFICATION,
+        String.valueOf(endPointVerification));
 
     return sslConfigs;
   }

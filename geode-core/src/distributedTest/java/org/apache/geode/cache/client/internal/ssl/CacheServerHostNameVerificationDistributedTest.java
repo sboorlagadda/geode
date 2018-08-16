@@ -48,7 +48,6 @@ public class CacheServerHostNameVerificationDistributedTest {
   @ClassRule
   public static ClusterStartupRule cluster = new ClusterStartupRule();
 
-
   // Touch Points
   // Membership, Discovery, Request Processing
   // 1. Locator -> Locator
@@ -73,13 +72,13 @@ public class CacheServerHostNameVerificationDistributedTest {
   public static void setupCluster() throws Exception {
     CertificateBuilder locatorCertificate = new CertificateBuilder()
         .commonName("locator")
+        // ClusterStartupRule uses 'localhost' as locator host
         .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
         .sanDnsName(InetAddress.getLocalHost().getHostName())
         .sanIpAddress(InetAddress.getLocalHost());
 
     CertificateBuilder serverCertificate = new CertificateBuilder()
         .commonName("server")
-        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
         .sanDnsName(InetAddress.getLocalHost().getHostName())
         .sanIpAddress(InetAddress.getLocalHost());
 
@@ -99,18 +98,18 @@ public class CacheServerHostNameVerificationDistributedTest {
         .trustSelf()
         .trust(serverStore.alias(), serverStore.certificate())
         .trust(clientStore.alias(), clientStore.certificate())
-        .propertiesWith(ALL, "any", "any");
+        .propertiesWith(ALL);
 
     Properties serverSSLProps = serverStore
         .trustSelf()
         .trust(locatorStore.alias(), locatorStore.certificate())
         .trust(clientStore.alias(), clientStore.certificate())
-        .propertiesWith(ALL, "any", "any");
+        .propertiesWith(ALL);
 
     Properties clientSSLProps = clientStore
         .trust(locatorStore.alias(), locatorStore.certificate())
         .trust(serverStore.alias(), serverStore.certificate())
-        .propertiesWith(ALL, "any", "any");
+        .propertiesWith(ALL);
 
     // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
@@ -121,7 +120,7 @@ public class CacheServerHostNameVerificationDistributedTest {
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // setup client
-    setupClient(clientSSLProps, server.getPort(), server.getVM().getHost().getHostName());
+    setupClient(clientSSLProps, locator.getPort(), locator.getVM().getHost().getHostName());
   }
 
   private static void createServerRegion() {
@@ -131,12 +130,10 @@ public class CacheServerHostNameVerificationDistributedTest {
     r.put("serverkey", "servervalue");
   }
 
-  private static void setupClient(Properties clientSSLProps, int serverPort,
-      String serverHost) throws Exception {
-    SerializableConsumerIF<ClientCacheFactory> clientSetup = cf -> {
-      cf.addPoolServer(serverHost, serverPort);
-    };
-
+  private static void setupClient(Properties clientSSLProps, int locatorPort,
+      String locatorHost) throws Exception {
+    SerializableConsumerIF<ClientCacheFactory> clientSetup =
+        cf -> cf.addPoolLocator(locatorHost, locatorPort);
     client = cluster.startClientVM(2, clientSSLProps, clientSetup);
 
     // create a client region
@@ -151,7 +148,7 @@ public class CacheServerHostNameVerificationDistributedTest {
   }
 
   @Test
-  public void testClientSSLConnection() {
+  public void clientValidatesHostNameOfLocatorAndServerDuringSSLConnection() {
     client.invoke(CacheServerHostNameVerificationDistributedTest::doClientRegionTest);
     server.invoke(CacheServerHostNameVerificationDistributedTest::doServerRegionTest);
   }
