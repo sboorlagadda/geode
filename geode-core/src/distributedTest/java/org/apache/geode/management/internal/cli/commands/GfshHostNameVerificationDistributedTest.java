@@ -12,7 +12,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.geode.cache.client.internal.ssl;
+package org.apache.geode.management.internal.cli.commands;
 
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.apache.geode.security.SecurableCommunicationChannels.JMX;

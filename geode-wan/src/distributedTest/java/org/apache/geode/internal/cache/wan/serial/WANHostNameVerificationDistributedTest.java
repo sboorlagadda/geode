@@ -31,7 +31,6 @@ import org.awaitility.Duration;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionFactory;
@@ -44,16 +43,14 @@ import org.apache.geode.internal.AvailablePortHelper;
 import org.apache.geode.test.dunit.IgnoredException;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
-import org.apache.geode.test.junit.categories.WanTest;
 
-@Category({WanTest.class})
 public class WANHostNameVerificationDistributedTest {
 
-  private static MemberVM locator_s1;
-  private static MemberVM server_s1;
+  private static MemberVM locator_ln;
+  private static MemberVM server_ln;
 
-  private static MemberVM locator_s2;
-  private static MemberVM server_s2;
+  private static MemberVM locator_ny;
+  private static MemberVM server_ny;
 
   @ClassRule
   public static ClusterStartupRule cluster = new ClusterStartupRule();
@@ -66,76 +63,114 @@ public class WANHostNameVerificationDistributedTest {
     IgnoredException.addIgnoredException("could not get remote locator information");
     IgnoredException.addIgnoredException("Unexpected IOException");
 
-    TestSSLUtils.CertificateBuilder site1_cert = new TestSSLUtils.CertificateBuilder()
-        .commonName("site1")
+    TestSSLUtils.CertificateBuilder locator_ln_cert = new TestSSLUtils.CertificateBuilder()
+        .commonName("locator_ln")
         // ClusterStartupRule uses 'localhost' as locator host
         .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
         .sanDnsName(InetAddress.getLocalHost().getHostName())
         .sanIpAddress(InetAddress.getLocalHost());
 
-    TestSSLUtils.CertificateBuilder site2_cert = new TestSSLUtils.CertificateBuilder()
-        .commonName("site2")
+    TestSSLUtils.CertificateBuilder server_ln_cert = new TestSSLUtils.CertificateBuilder()
+        .commonName("server_ln")
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+        .sanIpAddress(InetAddress.getLocalHost());
+
+    TestSSLUtils.CertificateBuilder locator_ny_cert = new TestSSLUtils.CertificateBuilder()
+        .commonName("locator_ny")
+        // ClusterStartupRule uses 'localhost' as locator host
         .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
         .sanDnsName(InetAddress.getLocalHost().getHostName())
         .sanIpAddress(InetAddress.getLocalHost());
 
-    CertStores site1_stores = new CertStores("site1", "site1");
-    site1_stores.withCertificate(site1_cert);
+    TestSSLUtils.CertificateBuilder server_ny_cert = new TestSSLUtils.CertificateBuilder()
+        .commonName("server_ny")
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+        .sanIpAddress(InetAddress.getLocalHost());
 
-    CertStores site2_stores = new CertStores("site2", "site2");
-    site2_stores.withCertificate(site2_cert);
+    CertStores locator_ln_store = new CertStores("ln_locator", "ln_locator");
+    locator_ln_store.withCertificate(locator_ln_cert);
 
-    int site1Port = setupWanSite1(site1_stores, site2_stores);
-    setupWanSite2(site1Port, site2_stores, site1_stores);
+    CertStores server_ln_store = new CertStores("ln_server", "ln_server");
+    server_ln_store.withCertificate(server_ln_cert);
+
+    CertStores locator_ny_store = new CertStores("ny_locator", "ny_locator");
+    locator_ny_store.withCertificate(locator_ny_cert);
+
+    CertStores server_ny_store = new CertStores("ny_server", "ny_server");
+    server_ny_store.withCertificate(server_ny_cert);
+
+    int site1Port =
+        setupWanSite1(locator_ln_store, server_ln_store, locator_ny_store, server_ny_store);
+    setupWanSite2(site1Port, locator_ny_store, server_ny_store, locator_ln_store, server_ln_store);
   }
 
-  private static int setupWanSite1(CertStores site1_stores, CertStores site2_stores)
+  private static int setupWanSite1(CertStores locator_ln_store, CertStores server_ln_store,
+      CertStores locator_ny_store, CertStores server_ny_store)
       throws GeneralSecurityException, IOException {
 
-    Properties site1_props = site1_stores
+    Properties locatorSSLProps = locator_ln_store
         .trustSelf()
-        .trust(site2_stores.alias(), site2_stores.certificate())
+        .trust(server_ln_store.alias(), server_ln_store.certificate())
+        .trust(locator_ny_store.alias(), locator_ny_store.certificate())
+        .trust(server_ny_store.alias(), server_ny_store.certificate())
+        .propertiesWith(ALL);
+
+    Properties serverSSLProps = server_ln_store
+        .trustSelf()
+        .trust(locator_ln_store.alias(), locator_ln_store.certificate())
+        .trust(locator_ny_store.alias(), locator_ny_store.certificate())
+        .trust(server_ny_store.alias(), server_ny_store.certificate())
         .propertiesWith(ALL);
 
     // create a cluster
-    site1_props.setProperty(MCAST_PORT, "0");
-    site1_props.setProperty(DISTRIBUTED_SYSTEM_ID, "1");
-    locator_s1 = cluster.startLocatorVM(0, site1_props);
-    server_s1 = cluster.startServerVM(1, site1_props, locator_s1.getPort());
+    locatorSSLProps.setProperty(DISTRIBUTED_SYSTEM_ID, "1");
+    locator_ln = cluster.startLocatorVM(0, locatorSSLProps);
+    server_ln = cluster.startServerVM(1, serverSSLProps, locator_ln.getPort());
 
     // create a region
-    server_s1.invoke(WANHostNameVerificationDistributedTest::createSite1Region);
-    locator_s1.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
+    server_ln.invoke(WANHostNameVerificationDistributedTest::createServerRegion);
+    locator_ln.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // create gateway sender
-    server_s1.invoke(WANHostNameVerificationDistributedTest::createGatewaySender);
-    locator_s1.waitUntilGatewaySendersAreReadyOnExactlyThisManyServers(1);
+    server_ln.invoke(WANHostNameVerificationDistributedTest::createGatewaySender);
 
-    return locator_s1.getPort();
+    return locator_ln.getPort();
   }
 
-  private static void setupWanSite2(int site1Port, CertStores site2_stores, CertStores site1_stores)
+  private static void setupWanSite2(int site1Port, CertStores locator_ny_store,
+      CertStores server_ny_store,
+      CertStores locator_ln_store, CertStores server_ln_store)
       throws GeneralSecurityException, IOException {
 
-    Properties site2_props = site2_stores
+    Properties locator_ny_props = locator_ny_store
         .trustSelf()
-        .trust(site1_stores.alias(), site1_stores.certificate())
+        .trust(server_ln_store.alias(), server_ln_store.certificate())
+        .trust(server_ny_store.alias(), server_ny_store.certificate())
+        .trust(locator_ln_store.alias(), locator_ln_store.certificate())
+        .propertiesWith(ALL);
+
+    locator_ny_props.setProperty(MCAST_PORT, "0");
+    locator_ny_props.setProperty(DISTRIBUTED_SYSTEM_ID, "2");
+    locator_ny_props.setProperty(REMOTE_LOCATORS, "localhost[" + site1Port + "]");
+
+    Properties server_ny_props = server_ny_store
+        .trustSelf()
+        .trust(locator_ln_store.alias(), locator_ln_store.certificate())
+        .trust(locator_ny_store.alias(), locator_ny_store.certificate())
+        .trust(server_ln_store.alias(), server_ln_store.certificate())
         .propertiesWith(ALL);
 
     // create a cluster
-    site2_props.setProperty(MCAST_PORT, "0");
-    site2_props.setProperty(DISTRIBUTED_SYSTEM_ID, "2");
-    site2_props.setProperty(REMOTE_LOCATORS, "localhost[" + site1Port + "]");
-
-    locator_s2 = cluster.startLocatorVM(2, site2_props);
-    server_s2 = cluster.startServerVM(3, site2_props, locator_s2.getPort());
+    locator_ny_props.setProperty(DISTRIBUTED_SYSTEM_ID, "2");
+    locator_ny = cluster.startLocatorVM(2, locator_ny_props);
+    server_ny = cluster.startServerVM(3, server_ny_props, locator_ny.getPort());
 
     // create a region
-    server_s2.invoke(WANHostNameVerificationDistributedTest::createSite2Region);
-    locator_s2.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
+    server_ny.invoke(WANHostNameVerificationDistributedTest::createServerRegion);
+    locator_ny.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // create gateway sender
-    server_s2.invoke(WANHostNameVerificationDistributedTest::createGatewayReceiver);
+    server_ny.invoke(WANHostNameVerificationDistributedTest::createGatewayReceiver);
   }
 
   private static void createGatewayReceiver() {
@@ -149,30 +184,24 @@ public class WANHostNameVerificationDistributedTest {
   private static void createGatewaySender() {
     GatewaySenderFactory gwSender = getCache().createGatewaySenderFactory();
     gwSender.setBatchSize(1);
-    gwSender.create("s1", 2);
+    gwSender.create("ln", 2);
   }
 
-  private static void createSite1Region() {
+  private static void createServerRegion() {
     RegionFactory factory =
-        getCache().createRegionFactory(RegionShortcut.REPLICATE);
-    factory.addGatewaySenderId("s1");
-    factory.create("region");
-  }
-
-  private static void createSite2Region() {
-    RegionFactory factory =
-        getCache().createRegionFactory(RegionShortcut.REPLICATE);
+        ClusterStartupRule.getCache().createRegionFactory(RegionShortcut.REPLICATE);
+    factory.addGatewaySenderId("ln");
     factory.create("region");
   }
 
   private static void doPutOnSite1() {
-    Region<String, String> region = getCache().getRegion("region");
+    Region<String, String> region = ClusterStartupRule.getCache().getRegion("region");
     region.put("serverkey", "servervalue");
     assertThat("servervalue").isEqualTo(region.get("serverkey"));
   }
 
   private static void verifySite2Received() {
-    Region<String, String> region = getCache().getRegion("region");
+    Region<String, String> region = ClusterStartupRule.getCache().getRegion("region");
     await()
         .atMost(Duration.FIVE_SECONDS)
         .pollInterval(Duration.ONE_SECOND)
@@ -181,7 +210,7 @@ public class WANHostNameVerificationDistributedTest {
 
   @Test
   public void testWANSSL() {
-    server_s1.invoke(WANHostNameVerificationDistributedTest::doPutOnSite1);
-    server_s2.invoke(WANHostNameVerificationDistributedTest::verifySite2Received);
+    server_ln.invoke(WANHostNameVerificationDistributedTest::doPutOnSite1);
+    server_ny.invoke(WANHostNameVerificationDistributedTest::verifySite2Received);
   }
 }

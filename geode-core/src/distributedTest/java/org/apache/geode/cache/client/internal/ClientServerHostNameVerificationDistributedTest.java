@@ -12,7 +12,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.geode.cache.client.internal.ssl;
+package org.apache.geode.cache.client.internal;
 
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +40,7 @@ import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.ClientServerTest;
 
 @Category({ClientServerTest.class})
-public class CacheServerHostNameVerificationDistributedTest {
+public class ClientServerHostNameVerificationDistributedTest {
   private static MemberVM locator;
   private static MemberVM locator2;
   private static MemberVM server;
@@ -121,8 +121,8 @@ public class CacheServerHostNameVerificationDistributedTest {
     server2 = cluster.startServerVM(3, serverSSLProps, locator.getPort());
 
     // create region
-    server.invoke(CacheServerHostNameVerificationDistributedTest::createServerRegion);
-    server2.invoke(CacheServerHostNameVerificationDistributedTest::createServerRegion);
+    server.invoke(ClientServerHostNameVerificationDistributedTest::createServerRegion);
+    server2.invoke(ClientServerHostNameVerificationDistributedTest::createServerRegion);
     locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 2);
 
     // setup client
@@ -143,7 +143,7 @@ public class CacheServerHostNameVerificationDistributedTest {
     client = cluster.startClientVM(4, clientSSLProps, clientSetup);
 
     // create a client region
-    client.invoke(CacheServerHostNameVerificationDistributedTest::createClientRegion);
+    client.invoke(ClientServerHostNameVerificationDistributedTest::createClientRegion);
   }
 
   private static void createClientRegion() {
@@ -155,8 +155,8 @@ public class CacheServerHostNameVerificationDistributedTest {
 
   @Test
   public void clientValidatesHostNameOfLocatorAndServerDuringSSLConnection() {
-    client.invoke(CacheServerHostNameVerificationDistributedTest::doClientRegionTest);
-    server.invoke(CacheServerHostNameVerificationDistributedTest::doServerRegionTest);
+    client.invoke(ClientServerHostNameVerificationDistributedTest::doClientRegionTest);
+    server.invoke(ClientServerHostNameVerificationDistributedTest::doServerRegionTest);
   }
 
   private static void doClientRegionTest() {
