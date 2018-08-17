@@ -15,6 +15,8 @@
 package org.apache.geode.cache.client.internal.ssl;
 
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
+import static org.apache.geode.security.SecurableCommunicationChannels.JMX;
+import static org.apache.geode.security.SecurableCommunicationChannels.LOCATOR;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,10 +28,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 
 import org.apache.geode.cache.ssl.CertStores;
 import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
+import org.apache.geode.test.dunit.VM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.ClientServerTest;
@@ -45,11 +47,8 @@ public class GfshHostNameVerificationDistributedTest {
   @Rule
   public GfshCommandRule gfsh = new GfshCommandRule();
 
-  @Rule
-  public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-  Properties locatorSSLProps;
-  Properties gfshSSLProps;
+  private CertStores locatorStore;
+  private CertStores gfshStore;
 
   @Before
   public void setupCluster() throws Exception {
@@ -62,24 +61,22 @@ public class GfshHostNameVerificationDistributedTest {
     CertificateBuilder gfshCertificate = new CertificateBuilder()
         .commonName("gfsh");
 
-    CertStores locatorStore = CertStores.locatorStore();
-    CertStores gfshStore = CertStores.clientStore();
+    locatorStore = CertStores.locatorStore();
+    gfshStore = CertStores.clientStore();
 
     locatorStore.withCertificate(locatorCertificate);
     gfshStore.withCertificate(gfshCertificate);
 
-    locatorSSLProps = locatorStore
+    locatorStore
         .trustSelf()
-        .trust(gfshStore.alias(), gfshStore.certificate())
-        .propertiesWith(ALL);
+        .trust(gfshStore.alias(), gfshStore.certificate());
 
-    gfshSSLProps = gfshStore
-        .trust(locatorStore.alias(), locatorStore.certificate())
-        .propertiesWith(ALL);
+    gfshStore
+        .trust(locatorStore.alias(), locatorStore.certificate());
   }
 
   private File gfshSecurityProperties(Properties clientSSLProps) throws IOException {
-    File sslConfigFile = temporaryFolder.newFile("gfsh-ssl.properties");
+    File sslConfigFile = File.createTempFile("gfsh-ssl", "properties");
     FileOutputStream out = new FileOutputStream(sslConfigFile);
     clientSSLProps.store(out, null);
     return sslConfigFile;
@@ -87,6 +84,10 @@ public class GfshHostNameVerificationDistributedTest {
 
   @Test
   public void gfshConnectsToLocator() throws Exception {
+    Properties locatorSSLProps = locatorStore.propertiesWith(LOCATOR);
+
+    Properties gfshSSLProps = gfshStore.propertiesWith(LOCATOR);
+
     // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
 
@@ -100,6 +101,35 @@ public class GfshHostNameVerificationDistributedTest {
 
   @Test
   public void gfshConnectsToLocatorOnJMX() throws Exception {
+    Properties locatorSSLProps = locatorStore.propertiesWith(JMX);
+
+    Properties gfshSSLProps = gfshStore.propertiesWith(JMX);
+
+    // create a cluster
+    locator = cluster.startLocatorVM(0, locatorSSLProps);
+
+    // connect gfsh on jmx
+    File sslConfigFile = gfshSecurityProperties(gfshSSLProps);
+    final int jmxPort = locator.getJmxPort();
+    final String sslConfigFilePath = sslConfigFile.getAbsolutePath();
+
+    VM vm = cluster.getVM(1);
+    vm.invoke(() -> {
+      GfshCommandRule rule = new GfshCommandRule();
+      rule.connectAndVerify(jmxPort, GfshCommandRule.PortType.jmxManager,
+          "security-properties-file", sslConfigFilePath);
+
+      rule.executeAndAssertThat("list members").statusIsSuccess();
+      rule.close();
+    });
+  }
+
+  @Test
+  public void gfshConnectsToLocatorOnJMXWhenALL() throws Exception {
+    Properties locatorSSLProps = locatorStore.propertiesWith(ALL);
+
+    Properties gfshSSLProps = gfshStore.propertiesWith(ALL);
+
     // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
 

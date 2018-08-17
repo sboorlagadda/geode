@@ -42,7 +42,9 @@ import org.apache.geode.test.junit.categories.ClientServerTest;
 @Category({ClientServerTest.class})
 public class CacheServerHostNameVerificationDistributedTest {
   private static MemberVM locator;
+  private static MemberVM locator2;
   private static MemberVM server;
+  private static MemberVM server2;
   private static ClientVM client;
 
   @ClassRule
@@ -56,8 +58,9 @@ public class CacheServerHostNameVerificationDistributedTest {
   // 4. Server -> Server
   // 5. Client -> Locator
   // 6. Client -> Server
-  // 7. Gfsh -> locator (JMX)
-  // JMX, REDIS, MEMCACHE
+  // 7. Gfsh -> locator (JMX), locator(locator port)
+  // JMX - no need to check because we dont care about user's JMX impl
+  // REDIS, MEMCACHE
   // WAN - GWS -> GWR, L11 -> L21
   // Protobuf
   // Gfsh, Pulse, Admin REST, DEV REST - HTTPS
@@ -113,11 +116,14 @@ public class CacheServerHostNameVerificationDistributedTest {
 
     // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
-    server = cluster.startServerVM(1, serverSSLProps, locator.getPort());
+    locator2 = cluster.startLocatorVM(1, locatorSSLProps, locator.getPort());
+    server = cluster.startServerVM(2, serverSSLProps, locator.getPort());
+    server2 = cluster.startServerVM(3, serverSSLProps, locator.getPort());
 
     // create region
     server.invoke(CacheServerHostNameVerificationDistributedTest::createServerRegion);
-    locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
+    server2.invoke(CacheServerHostNameVerificationDistributedTest::createServerRegion);
+    locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 2);
 
     // setup client
     setupClient(clientSSLProps, locator.getPort(), locator.getVM().getHost().getHostName());
@@ -134,7 +140,7 @@ public class CacheServerHostNameVerificationDistributedTest {
       String locatorHost) throws Exception {
     SerializableConsumerIF<ClientCacheFactory> clientSetup =
         cf -> cf.addPoolLocator(locatorHost, locatorPort);
-    client = cluster.startClientVM(2, clientSSLProps, clientSetup);
+    client = cluster.startClientVM(4, clientSSLProps, clientSetup);
 
     // create a client region
     client.invoke(CacheServerHostNameVerificationDistributedTest::createClientRegion);

@@ -63,7 +63,7 @@ public class CertStores {
     return new CertStores("client", "client");
   }
 
-  private CertStores(String alias, String storePrefix) {
+  public CertStores(String alias, String storePrefix) {
     this.alias = alias;
     this.storePrefix = storePrefix;
   }
