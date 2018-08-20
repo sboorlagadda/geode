@@ -27,7 +27,7 @@ resources:
   type: git
   source:
     uri: https://github.com/apache/geode.git
-    branch: debug-alter-runtime
+    branch: develop
     ignore_paths:
     - ci/*
 - name: geode-ci-flaky

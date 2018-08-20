@@ -143,7 +143,7 @@ pushd ${GEODE_BUILD}
   echo "Running tests"
   set -x
 
-  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-web:distributedTest --tests org.apache.geode.management.internal.cli.commands.AlterRuntimeCommandDUnitTest
+  ./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-core:integrationTest --tests org.apache.geode.internal.cache.DiskRegionJUnitTest.testAssertionErrorIfMissingOplog
   export GRADLE_EXIT_STATUS=$?
   set +x
 popd
