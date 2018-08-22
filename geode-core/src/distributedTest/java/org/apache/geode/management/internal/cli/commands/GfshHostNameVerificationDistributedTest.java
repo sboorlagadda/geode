@@ -115,7 +115,6 @@ public class GfshHostNameVerificationDistributedTest {
 
   private void validateGfshConnectOnJMX(Properties locatorSSLProps, Properties gfshSSLProps)
       throws IOException {
-    // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
 
     // connect gfsh on jmx
