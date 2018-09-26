@@ -123,7 +123,7 @@ if [ -v CALL_STACK_TIMEOUT ]; then
 fi
 
 pushd geode-flaky
-  tar cf - * | (cd ${GEODE_BUILD}; tar xpf -)
+  tar cf - . | (cd ${GEODE_BUILD}; tar xpf -)
 popd
 
 export FILENAME=${BASE_FILENAME}-${FULL_PRODUCT_VERSION}.tgz
@@ -144,7 +144,7 @@ pushd ${GEODE_BUILD}
   set -x
 
   #./gradlew --no-daemon -x javadoc -x spotlessCheck :geode-core:integrationTest --tests org.apache.geode.internal.cache.DiskRegionJUnitTest
-  ./gradlew --no-daemon -x javadoc -x spotlessCheck -x createVersionPropertiesFile -x writeBuildInfo distributedTest
+  ./gradlew --no-daemon -x javadoc -x spotlessCheck distributedTest
   export GRADLE_EXIT_STATUS=$?
   set +x
 popd
