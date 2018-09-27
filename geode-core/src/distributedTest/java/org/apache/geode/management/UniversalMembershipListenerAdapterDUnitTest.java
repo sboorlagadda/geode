@@ -28,9 +28,9 @@ import static org.apache.geode.internal.AvailablePort.SOCKET;
 import static org.apache.geode.internal.AvailablePort.getRandomAvailablePort;
 import static org.apache.geode.test.dunit.IgnoredException.addIgnoredException;
 import static org.apache.geode.test.dunit.NetworkUtils.getServerHostName;
-import static org.apache.geode.test.dunit.Wait.pause;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.ONE_HUNDRED_MILLISECONDS;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -1011,7 +1011,7 @@ public class UniversalMembershipListenerAdapterDUnitTest extends ClientServerTes
     long failMillis = System.currentTimeMillis() + JOIN_FAIL_MILLIS;
     boolean fullyConnected = false;
     while (!fullyConnected) {
-      pause(100);
+      await().atLeast(ONE_HUNDRED_MILLISECONDS).until(() -> true);
       fullyConnected = pool.getConnectionCount() >= pool.getMinConnections();
       assertThat(System.currentTimeMillis()).isLessThan(failMillis);
     }

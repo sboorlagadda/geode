@@ -27,11 +27,11 @@ import static org.apache.geode.test.dunit.Assert.assertTrue;
 import static org.apache.geode.test.dunit.IgnoredException.addIgnoredException;
 import static org.apache.geode.test.dunit.Invoke.invokeInEveryVM;
 import static org.apache.geode.test.dunit.NetworkUtils.getIPLiteral;
-import static org.apache.geode.test.dunit.Wait.pause;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.TWO_SECONDS;
 
 import java.net.InetAddress;
 import java.util.Properties;
@@ -340,7 +340,7 @@ public class ClusterDistributionManagerDUnitTest extends DistributedTestCase {
       }
     });
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
 
     NetView newView = new NetView(view, view.getViewId() + 1);
     membershipManager.installView(newView);

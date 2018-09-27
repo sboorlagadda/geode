@@ -29,7 +29,8 @@ import static org.apache.geode.test.dunit.Assert.assertNull;
 import static org.apache.geode.test.dunit.Assert.fail;
 import static org.apache.geode.test.dunit.IgnoredException.addIgnoredException;
 import static org.apache.geode.test.dunit.NetworkUtils.getIPLiteral;
-import static org.apache.geode.test.dunit.Wait.pause;
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.TWO_SECONDS;
 
 import java.util.Properties;
 
@@ -398,7 +399,7 @@ public class P2PAuthenticationDUnitTest extends JUnit4DistributedTestCase {
       createDS(peer3, props, javaProps);
 
       // wait for view propagation
-      pause(2000);
+      await().atLeast(TWO_SECONDS).until(() -> true);
 
       // Verify the number of members on all peers and locator
       locatorVM.invoke(() -> verifyMembers(4));

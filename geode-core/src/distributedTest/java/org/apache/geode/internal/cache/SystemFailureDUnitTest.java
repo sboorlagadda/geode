@@ -14,9 +14,11 @@
  */
 package org.apache.geode.internal.cache;
 
+import static org.apache.geode.internal.lang.SystemUtils.isWindows;
 import static org.apache.geode.test.dunit.Assert.assertEquals;
 import static org.apache.geode.test.dunit.Assert.assertTrue;
 import static org.apache.geode.test.dunit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -75,7 +77,10 @@ public class SystemFailureDUnitTest extends DistributedCacheTestCase {
    */
   @Ignore("TODO")
   @Test
-  public void testStackOverflow() throws CacheException, InterruptedException {
+  public void testStackOverflow() throws CacheException {
+    // TODO: Ignore on windows until GEODE-5787
+    assumeFalse(isWindows());
+
     String exceptions = StackOverflowError.class.getName() + "||" + AssertionError.class.getName();
 
     try {
@@ -95,7 +100,9 @@ public class SystemFailureDUnitTest extends DistributedCacheTestCase {
    */
   @Ignore("TODO")
   @Test
-  public void testOutOfMemory() throws CacheException, InterruptedException {
+  public void testOutOfMemory() throws CacheException {
+    // TODO: Ignore on windows until GEODE-5787
+    assumeFalse(isWindows());
 
     String exceptions = OutOfMemoryError.class.getName() + "||" + AssertionError.class.getName();
     try {
@@ -116,7 +123,8 @@ public class SystemFailureDUnitTest extends DistributedCacheTestCase {
   @Ignore("TODO")
   @Test
   public void testPersistentOutOfMemory() throws CacheException, InterruptedException {
-
+    // TODO: Ignore on windows until GEODE-5787
+    assumeFalse(isWindows());
     String exceptions = OutOfMemoryError.class.getName() + "||" + AssertionError.class.getName();
     try {
       String name = "testPersistentOutOfMemory";

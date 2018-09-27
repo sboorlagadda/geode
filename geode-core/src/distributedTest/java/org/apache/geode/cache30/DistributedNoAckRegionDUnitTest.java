@@ -21,7 +21,9 @@ import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import org.awaitility.Awaitility;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -268,13 +270,13 @@ public class DistributedNoAckRegionDUnitTest extends MultiVMRegionTestCase {
   }
 
   @Override
-  protected void pauseIfNecessary(int ms) {
-    Wait.pause(ms);
+  protected void pauseIfNecessary(final int millis) {
+    Awaitility.await().atLeast(millis, TimeUnit.MILLISECONDS).until(() -> true);
   }
 
   @Override
   protected void pauseIfNecessary() {
-    Wait.pause();
+    Awaitility.await().atLeast(250, TimeUnit.MILLISECONDS).until(() -> true);
   }
 
   @Override

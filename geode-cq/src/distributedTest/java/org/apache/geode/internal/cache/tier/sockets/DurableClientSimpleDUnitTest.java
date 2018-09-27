@@ -24,9 +24,10 @@ import static org.apache.geode.internal.cache.tier.sockets.CacheServerTestUtil.T
 import static org.apache.geode.internal.cache.tier.sockets.CacheServerTestUtil.createCacheClient;
 import static org.apache.geode.internal.cache.tier.sockets.CacheServerTestUtil.createCacheServer;
 import static org.apache.geode.test.dunit.NetworkUtils.getServerHostName;
-import static org.apache.geode.test.dunit.Wait.pause;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.FIVE_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -594,7 +595,7 @@ public class DurableClientSimpleDUnitTest extends DurableClientTestBase {
     });
 
     // VJR: wait for ack to go out
-    pause(5000);
+    await().atLeast(FIVE_SECONDS).until(() -> true);
 
     // Stop the durable client
     this.durableClientVM.invoke(() -> CacheServerTestUtil.closeCache(TRUE));

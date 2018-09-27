@@ -42,7 +42,8 @@ import static org.apache.geode.security.SecurityTestUtils.verifyIsEmptyOnServer;
 import static org.apache.geode.security.SecurityTestUtils.verifySizeOnServer;
 import static org.apache.geode.test.dunit.IgnoredException.addIgnoredException;
 import static org.apache.geode.test.dunit.LogWriterUtils.getLogWriter;
-import static org.apache.geode.test.dunit.Wait.pause;
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.FIVE_HUNDRED_MILLISECONDS;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -599,7 +600,7 @@ public abstract class ClientAuthenticationTestCase extends JUnit4DistributedTest
     server1.invoke(() -> closeCache());
 
     // Wait for failover to complete
-    pause(500);
+    await().atLeast(FIVE_HUNDRED_MILLISECONDS).until(() -> true);
 
     // Perform some create/update operations from client1
     client1.invoke(() -> doNPuts(4));

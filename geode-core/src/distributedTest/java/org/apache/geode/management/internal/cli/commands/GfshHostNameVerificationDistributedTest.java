@@ -14,9 +14,11 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
+import static org.apache.geode.internal.lang.SystemUtils.isWindows;
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.apache.geode.security.SecurableCommunicationChannels.JMX;
 import static org.apache.geode.security.SecurableCommunicationChannels.LOCATOR;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -162,6 +164,8 @@ public class GfshHostNameVerificationDistributedTest {
 
   @Test
   public void gfshConnectsToLocatorOnJMXWhenALL() throws Exception {
+    // TODO: Ignore on windows until GEODE-5787
+    assumeFalse(isWindows());
     Properties locatorSSLProps = locatorStore.propertiesWith(ALL);
     Properties gfshSSLProps = gfshStore.propertiesWith(ALL);
     validateGfshConnectOnJMX(locatorSSLProps, gfshSSLProps);
