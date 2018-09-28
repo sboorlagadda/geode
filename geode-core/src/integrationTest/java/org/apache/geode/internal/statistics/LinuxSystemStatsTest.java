@@ -15,7 +15,6 @@
 package org.apache.geode.internal.statistics;
 
 import static org.apache.geode.internal.Assert.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 
 import java.io.File;

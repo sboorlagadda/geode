@@ -65,9 +65,9 @@ public class LogSizerTest {
     File mockStatFile = mock(File.class);
     File mockLogFile = mock(File.class);
     when(mockLogFile.toPath()).thenReturn(
-       Paths.get("root", "parent", testName + ".log"));
+        Paths.get("root", "parent", testName + ".log"));
     when(mockStatFile.toPath()).thenReturn(
-       Paths.get("root", "parent", testName + ".gfs"));
+        Paths.get("root", "parent", testName + ".gfs"));
     LogExporter sizer = new LogExporter(logFilter, mockLogFile, mockStatFile);
     assertThat(sizer.estimateFilteredSize()).isEqualTo(0L);
   }
