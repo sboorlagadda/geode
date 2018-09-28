@@ -14,7 +14,8 @@
  */
 package org.apache.geode.internal.cache.execute;
 
-import static org.apache.geode.test.dunit.Wait.pause;
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.ONE_SECOND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -132,7 +133,7 @@ public abstract class FunctionServiceClientAccessorPRBase extends FunctionServic
         PartitionRegionHelper.moveData(regionFunctionContext.getDataSet(), source, destination,
             100);
       }
-      pause(1000);
+      await().atLeast(ONE_SECOND).until(() -> true);
       context.getResultSender().lastResult(myId);
     }
 

@@ -14,7 +14,8 @@
  */
 package org.apache.geode.internal.cache.execute;
 
-import static org.apache.geode.test.dunit.Wait.pause;
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.ONE_SECOND;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -413,7 +414,7 @@ public abstract class FunctionServiceBase extends JUnit4CacheTestCase {
         CacheFactory.getAnyInstance().close();
         throw new CacheClosedException();
       }
-      pause(1000);
+      await().atLeast(ONE_SECOND).until(() -> true);
       context.getResultSender().lastResult(myId);
     }
 

@@ -14,6 +14,8 @@
  */
 package org.apache.geode.cache30;
 
+import static java.util.concurrent.TimeUnit.*;
+import static org.awaitility.Awaitility.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -271,12 +273,12 @@ public class DistributedNoAckRegionDUnitTest extends MultiVMRegionTestCase {
 
   @Override
   protected void pauseIfNecessary(final int millis) {
-    Awaitility.await().atLeast(millis, TimeUnit.MILLISECONDS).until(() -> true);
+    await().atLeast(millis, MILLISECONDS).until(() -> true);
   }
 
   @Override
   protected void pauseIfNecessary() {
-    Awaitility.await().atLeast(250, TimeUnit.MILLISECONDS).until(() -> true);
+    await().atLeast(250, MILLISECONDS).until(() -> true);
   }
 
   @Override

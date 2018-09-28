@@ -15,14 +15,14 @@
 package org.apache.geode.internal.cache.wan.serial;
 
 import static org.apache.geode.test.dunit.IgnoredException.addIgnoredException;
-import static org.apache.geode.test.dunit.Wait.pause;
+import static org.awaitility.Awaitility.await;
+import static org.awaitility.Duration.TWO_SECONDS;
 import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -76,7 +76,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
 
     vm2.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR", 1000));
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     vm2.invoke(() -> WANTestBase.checkGatewayReceiverStats(100, 1000, 1000));
 
     vm4.invoke(() -> WANTestBase.checkQueueStats("ln", 0, 1000, 1000, 1000));
@@ -115,7 +115,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
 
     vm2.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR", 1000));
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     vm2.invoke(() -> WANTestBase.checkGatewayReceiverStats(100, 1000, 1000));
 
     vm4.invoke(() -> WANTestBase.checkQueueStats("ln", 0, 1000, 1000, 1000));
@@ -170,7 +170,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
     vm2.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR", 1000));
     vm3.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR", 1000));
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     vm2.invoke(() -> WANTestBase.checkGatewayReceiverStats(100, 1000, 1000));
     vm3.invoke(() -> WANTestBase.checkGatewayReceiverStats(100, 1000, 1000));
 
@@ -212,7 +212,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
     vm7.invoke(() -> WANTestBase.createReplicatedRegion(testName + "_RR", "ln", isOffHeap()));
 
     AsyncInvocation inv1 = vm5.invokeAsync(() -> WANTestBase.doPuts(testName + "_RR", 10000));
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     AsyncInvocation inv2 = vm4.invokeAsync(() -> WANTestBase.killSender("ln"));
     Boolean isKilled = Boolean.FALSE;
     try {
@@ -284,7 +284,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
     vm2.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR_1", 1000));
     vm3.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR_2", 500));
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     vm4.invoke(() -> WANTestBase.checkQueueStats("ln", 0, 1500, 1500, 1500));
     vm4.invoke(() -> WANTestBase.checkBatchStats("ln", 75));
     vm4.invoke(() -> WANTestBase.checkUnProcessedStats("ln", 0));
@@ -375,7 +375,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
     vm4.invoke(() -> WANTestBase.validateRegionSize(testName + "_RR_1", numEntries));
 
     // like a latch to guarantee at least one exception returned
-    vm4.invoke(() -> Awaitility.await().atMost(60, TimeUnit.SECONDS)
+    vm4.invoke(() -> await().atMost(60, TimeUnit.SECONDS)
         .untilAsserted(() -> WANTestBase.verifyQueueSize("ln", 0)));
 
     vm4.invoke(() -> WANTestBase.checkBatchStats("ln", true, true));
@@ -416,7 +416,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
 
     vm2.invoke(() -> WANTestBase.validateRegionSize(testName, 800));
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     vm4.invoke(() -> WANTestBase.checkQueueStats("ln", 0, 1000, 900, 800));
     vm4.invoke(() -> WANTestBase.checkEventFilteredStats("ln", 200));
     vm4.invoke(() -> WANTestBase.checkBatchStats("ln", 80));
@@ -484,7 +484,7 @@ public class SerialWANStatsDUnitTest extends WANTestBase {
     vm2.invoke(() -> WANTestBase.validateRegionContents(testName, keyValues));
     vm3.invoke(() -> WANTestBase.validateRegionContents(testName, keyValues));
 
-    pause(2000);
+    await().atLeast(TWO_SECONDS).until(() -> true);
     vm4.invoke(() -> WANTestBase.checkQueueStats("ln", 0, 2000, 2000, 1500));
     vm4.invoke(() -> WANTestBase.checkConflatedStats("ln", 500));
   }
