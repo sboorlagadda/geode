@@ -48,7 +48,7 @@ import java.util.Properties;
 
 import batterytest.greplogs.ExpectedStrings;
 import batterytest.greplogs.LogConsumer;
-import hydra.MethExecutorResult;
+import org.apache.geode.test.dunit.standalone.MethExecutorResult;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
