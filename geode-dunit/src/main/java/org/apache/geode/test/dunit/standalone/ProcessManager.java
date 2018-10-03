@@ -338,4 +338,8 @@ class ProcessManager {
     waitForVMs(DUnitLauncher.STARTUP_TIMEOUT);
     return (RemoteDUnitVMIF) registry.lookup("vm" + i);
   }
+
+  public ProcessHolder getProcessHolder(int i) {
+    return processes.get(i);
+  }
 }

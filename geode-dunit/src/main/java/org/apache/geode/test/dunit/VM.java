@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import org.apache.geode.internal.process.ProcessUtils;
 import org.apache.geode.test.dunit.standalone.BounceResult;
 import org.apache.geode.test.dunit.standalone.MethExecutorResult;
+import org.apache.geode.test.dunit.standalone.ProcessHolder;
 import org.apache.geode.test.dunit.standalone.RemoteDUnitVMIF;
 import org.apache.geode.test.dunit.standalone.StandAloneDUnitEnv;
 import org.apache.geode.test.dunit.standalone.VersionManager;
@@ -55,6 +56,8 @@ public class VM implements Serializable {
 
   /** The state of this VM */
   private volatile boolean available;
+
+  private transient volatile ProcessHolder processHolder;
 
   /**
    * Returns the {@code VM} identity. For {@link StandAloneDUnitEnv} the number returned is a
@@ -146,15 +149,18 @@ public class VM implements Serializable {
   /**
    * Creates a new {@code VM} that runs on a given host with a given process id.
    */
-  public VM(final Host host, final int id, final RemoteDUnitVMIF client) {
-    this(host, VersionManager.CURRENT_VERSION, id, client);
+  public VM(final Host host, final int id, final RemoteDUnitVMIF client,
+      final ProcessHolder processHolder) {
+    this(host, VersionManager.CURRENT_VERSION, id, client, processHolder);
   }
 
-  public VM(final Host host, final String version, final int id, final RemoteDUnitVMIF client) {
+  public VM(final Host host, final String version, final int id, final RemoteDUnitVMIF client,
+      final ProcessHolder processHolder) {
     this.host = host;
     this.id = id;
     this.version = version;
     this.client = client;
+    this.processHolder = processHolder;
     available = true;
   }
 

@@ -18,7 +18,7 @@ class DUnitHost extends Host {
 
   public DUnitHost(String hostName, ProcessManager processManager) throws RemoteException {
     super(hostName);
-    this.debuggingVM = new VM(this, -1, new RemoteDUnitVM());
+    this.debuggingVM = new VM(this, -1, new RemoteDUnitVM(), null);
     this.processManager = processManager;
   }
 
@@ -26,10 +26,12 @@ class DUnitHost extends Host {
       throws AccessException, RemoteException, NotBoundException, InterruptedException {
     for (int i = 0; i < numVMs; i++) {
       RemoteDUnitVMIF remote = processManager.getStub(i);
-      addVM(i, remote);
+      ProcessHolder processHolder = processManager.getProcessHolder(i);
+      addVM(i, remote, processHolder);
     }
 
-    addLocator(DUnitLauncher.LOCATOR_VM_NUM, processManager.getStub(DUnitLauncher.LOCATOR_VM_NUM));
+    addLocator(DUnitLauncher.LOCATOR_VM_NUM, processManager.getStub(DUnitLauncher.LOCATOR_VM_NUM),
+        processManager.getProcessHolder(DUnitLauncher.LOCATOR_VM_NUM));
 
     addHost(this);
   }
@@ -81,13 +83,13 @@ class DUnitHost extends Host {
         processManager.waitForVMs(DUnitLauncher.STARTUP_TIMEOUT);
 
         for (int i = oldVMCount; i < n; i++) {
-          addVM(i, processManager.getStub(i));
+          addVM(i, processManager.getStub(i), processManager.getProcessHolder(i));
         }
 
         // now create the one we really want
         processManager.launchVM(version, n, false);
         processManager.waitForVMs(DUnitLauncher.STARTUP_TIMEOUT);
-        addVM(n, processManager.getStub(n));
+        addVM(n, processManager.getStub(n), processManager.getProcessHolder(n));
 
       } catch (IOException | InterruptedException | NotBoundException e) {
         throw new RuntimeException("Could not dynamically launch vm + " + n, e);
