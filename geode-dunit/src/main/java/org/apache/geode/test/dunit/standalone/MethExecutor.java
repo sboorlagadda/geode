@@ -28,7 +28,7 @@ import org.apache.geode.SystemFailure;
  * TestTasks.
  *
  */
-public class MethExecutor {
+class MethExecutor {
 
   // @todo lises add static args method
 

@@ -41,7 +41,7 @@ import org.apache.geode.distributed.internal.DistributionConfig;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.test.dunit.VM;
 
-public class ProcessManager {
+class ProcessManager {
   private int namingPort;
   private Map<Integer, ProcessHolder> processes = new HashMap<>();
   private File log4jConfig;
@@ -337,39 +337,5 @@ public class ProcessManager {
       throws AccessException, RemoteException, NotBoundException, InterruptedException {
     waitForVMs(DUnitLauncher.STARTUP_TIMEOUT);
     return (RemoteDUnitVMIF) registry.lookup("vm" + i);
-  }
-
-  private static class VersionedVMNumber {
-    String version;
-    int number;
-
-    VersionedVMNumber(String version, int number) {
-      this.version = version;
-      this.number = number;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      VersionedVMNumber that = (VersionedVMNumber) o;
-
-      if (number != that.number) {
-        return false;
-      }
-      return version.equals(that.version);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = version.hashCode();
-      result = 31 * result + number;
-      return result;
-    }
   }
 }
