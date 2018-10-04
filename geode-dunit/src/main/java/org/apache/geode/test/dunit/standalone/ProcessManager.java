@@ -25,7 +25,6 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -41,7 +40,7 @@ import org.apache.geode.distributed.internal.DistributionConfig;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.test.dunit.VM;
 
-class ProcessManager {
+class ProcessManager implements ChildVMLauncher {
   private int namingPort;
   private Map<Integer, ProcessHolder> processes = new HashMap<>();
   private File log4jConfig;
@@ -61,8 +60,12 @@ class ProcessManager {
     launchVM(VersionManager.CURRENT_VERSION, vmNum, false);
   }
 
+  @Override
   public synchronized void launchVM(String version, int vmNum, boolean bouncedVM)
       throws IOException {
+    if (bouncedVM) {
+      processes.remove(vmNum);
+    }
     if (processes.containsKey(vmNum)) {
       throw new IllegalStateException("VM " + vmNum + " is already running.");
     }
@@ -154,6 +157,7 @@ class ProcessManager {
     final String vmName = "[" + VM.getVMName(version, vmNum) + "] ";
     System.out.println("linking IO streams for " + vmName);
     Thread ioTransport = new Thread() {
+      @Override
       public void run() {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         try {
@@ -315,6 +319,10 @@ class ProcessManager {
     this.notifyAll();
   }
 
+  public synchronized boolean waitForVMs() throws InterruptedException {
+    return waitForVMs(DUnitLauncher.STARTUP_TIMEOUT);
+  }
+
   public synchronized boolean waitForVMs(long timeout) throws InterruptedException {
     long end = System.currentTimeMillis() + timeout;
     while (pendingVMs > 0) {
@@ -328,13 +336,14 @@ class ProcessManager {
     return true;
   }
 
+  @Override
   public RemoteDUnitVMIF getStub(int i)
-      throws AccessException, RemoteException, NotBoundException, InterruptedException {
+      throws RemoteException, NotBoundException, InterruptedException {
     return getStub(VersionManager.CURRENT_VERSION, i);
   }
 
   public RemoteDUnitVMIF getStub(String version, int i)
-      throws AccessException, RemoteException, NotBoundException, InterruptedException {
+      throws RemoteException, NotBoundException, InterruptedException {
     waitForVMs(DUnitLauncher.STARTUP_TIMEOUT);
     return (RemoteDUnitVMIF) registry.lookup("vm" + i);
   }
