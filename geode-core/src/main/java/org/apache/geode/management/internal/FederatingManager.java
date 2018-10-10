@@ -14,6 +14,7 @@
  */
 package org.apache.geode.management.internal;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,6 +151,14 @@ public class FederatingManager extends Manager {
       this.pooledMembershipExecutor.shutdownNow();
 
       for (DistributedMember distributedMember : repo.getMonitoringRegionMap().keySet()) {
+        LogService.getLogger()
+            .info("Sai :: FederationManager.stopManagingActivity - available keyset -"
+                + distributedMember.getId());
+      }
+      for (DistributedMember distributedMember : repo.getMonitoringRegionMap().keySet()) {
+        LogService.getLogger().info(
+            "Sai :: FederationManager.stopManagingActivity - invoking removeMemberArtifacts on "
+                + distributedMember.getId());
         removeMemberArtifacts(distributedMember, false);
       }
 

@@ -90,6 +90,8 @@ public class ManagementFunction implements InternalFunction {
     Object returnObj = null;
 
     try {
+      LogService.getLogger().info("Sai :: ManagementFunction.execute - objectName" + objectName
+          + ", methodName:" + memberName + " - begin");
 
       final int nargs = (args == null) ? 0 : args.length;
 
@@ -116,7 +118,8 @@ public class ManagementFunction implements InternalFunction {
       }
 
       executedSuccessfully = true;
-
+      LogService.getLogger().info("Sai :: ManagementFunction.execute - objectName" + objectName
+          + ", methodName:" + memberName + " - success");
     } catch (InstanceNotFoundException e) {
       if (cache != null && !cache.isClosed()) {
         sendException(e, fc);
@@ -131,6 +134,8 @@ public class ManagementFunction implements InternalFunction {
       sendException(e, fc);
     } finally {
       if (!executedSuccessfully) {
+        LogService.getLogger().info("Sai :: ManagementFunction.execute - objectName" + objectName
+            + ", methodName:" + memberName + " - not success");
         if (cache == null || (cache != null && cache.isClosed())) {
           Exception e =
               new Exception(ManagementStrings.MEMBER_IS_SHUTTING_DOWN.toLocalizedString());
