@@ -157,6 +157,11 @@ public class GfshCommandRule extends DescribedExternalResource {
     assertThat(this.connected).isTrue();
   }
 
+  public void connectToHostAndVerify(String host, int port, PortType type, String... options) throws Exception {
+    connectToHost(host, port, type, options);
+    assertThat(this.connected).isTrue();
+  }
+
   public void secureConnect(int port, PortType type, String username, String password)
       throws Exception {
     connect(port, type, CliStrings.CONNECT__USERNAME, username, CliStrings.CONNECT__PASSWORD,
@@ -171,6 +176,15 @@ public class GfshCommandRule extends DescribedExternalResource {
   }
 
   public void connect(int port, PortType type, String... options) throws Exception {
+    connectToHost("localhost", port, type, options);
+  }
+
+  public void connect(String host, int port, PortType type, String... options) throws Exception {
+    connectToHost(host, port, type, options);
+  }
+
+  private void connectToHost(String host, int port, PortType type, String[] options)
+      throws ClassNotFoundException, IOException, InterruptedException {
     if (gfsh == null) {
       String absolutePath;
       try {
@@ -185,14 +199,14 @@ public class GfshCommandRule extends DescribedExternalResource {
     String endpoint;
     if (type == PortType.locator) {
       // port is the locator port
-      endpoint = "localhost[" + port + "]";
+      endpoint = host + "[" + port + "]";
       connectCommand.addOption(CliStrings.CONNECT__LOCATOR, endpoint);
     } else if (type == PortType.http || type == PortType.https) {
-      endpoint = type.name() + "://localhost:" + port + "/geode-mgmt/v1";
+      endpoint = type.name() + "://" + host + ":" + port + "/geode-mgmt/v1";
       // connectCommand.addOption(CliStrings.CONNECT__USE_HTTP, Boolean.TRUE.toString());
       connectCommand.addOption(CliStrings.CONNECT__URL, endpoint);
     } else {
-      endpoint = "localhost[" + port + "]";
+      endpoint = host + "[" + port + "]";
       connectCommand.addOption(CliStrings.CONNECT__JMX_MANAGER, endpoint);
     }
 

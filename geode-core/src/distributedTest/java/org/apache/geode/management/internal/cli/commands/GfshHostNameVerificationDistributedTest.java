@@ -55,10 +55,7 @@ public class GfshHostNameVerificationDistributedTest {
   public void setupCluster() throws Exception {
     CertificateBuilder locatorCertificate = new CertificateBuilder()
         .commonName("locator")
-        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
-        .sanDnsName(InetAddress.getLocalHost().getHostName())
-        .sanIpAddress(InetAddress.getLocalHost())
-        .sanIpAddress(InetAddress.getByName("0.0.0.0")); // to pass on windows
+        .sanDnsName("locator.sai.com");
 
     CertificateBuilder gfshCertificate = new CertificateBuilder()
         .commonName("gfsh");
@@ -87,6 +84,7 @@ public class GfshHostNameVerificationDistributedTest {
   @Test
   public void gfshConnectsToLocator() throws Exception {
     Properties locatorSSLProps = locatorStore.propertiesWith(LOCATOR);
+    locatorSSLProps.setProperty("bind-address", "locator.sai.com");
 
     Properties gfshSSLProps = gfshStore.propertiesWith(LOCATOR);
 
@@ -95,7 +93,7 @@ public class GfshHostNameVerificationDistributedTest {
 
     // connect gfsh
     File sslConfigFile = gfshSecurityProperties(gfshSSLProps);
-    gfsh.connectAndVerify(locator.getPort(), GfshCommandRule.PortType.locator,
+    gfsh.connectToHostAndVerify("locator.sai.com", locator.getPort(), GfshCommandRule.PortType.locator,
         "security-properties-file", sslConfigFile.getAbsolutePath());
 
     gfsh.executeAndAssertThat("list members").statusIsSuccess();
