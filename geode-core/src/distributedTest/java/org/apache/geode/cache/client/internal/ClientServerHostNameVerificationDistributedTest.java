@@ -14,6 +14,7 @@
  */
 package org.apache.geode.cache.client.internal;
 
+import static org.apache.geode.distributed.ConfigurationProperties.SERIALIZABLE_OBJECT_FILTER;
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -212,6 +213,139 @@ public class ClientServerHostNameVerificationDistributedTest {
         Region<String, String> clientRegion = regionFactory.create("region");
         assertThatExceptionOfType(expectedExceptionOnClient)
             .isThrownBy(() -> clientRegion.put("1", "1"));
+      } else {
+        // test client can read and write to server
+        Region<String, String> clientRegion = regionFactory.create("region");
+        assertThat("servervalue").isEqualTo(clientRegion.get("serverkey"));
+        clientRegion.put("clientkey", "clientvalue");
+
+        // test server can see data written by client
+        server.invoke(ClientServerHostNameVerificationDistributedTest::doServerRegionTest);
+      }
+    } finally {
+      SocketCreatorFactory.close();
+    }
+  }
+
+  @Test
+  public void reproduceP2PSSLValidationBug() throws Exception {
+    CertificateBuilder locatorCertificate = new CertificateBuilder()
+            .commonName("gemfire-ssl")
+            .sanDnsName("ursula")
+            .sanDnsName("locator-server");
+
+    CertificateBuilder server1Certificate = new CertificateBuilder()
+            .commonName("gemfire-ssl")
+            .sanDnsName("locator-server");
+
+    CertificateBuilder server2Certificate = new CertificateBuilder()
+            .commonName("gemfire-ssl")
+            .sanDnsName("server");
+
+    CertificateBuilder clientCertificate = new CertificateBuilder()
+            .commonName("client");
+
+    validateClientConnection2(locatorCertificate, server1Certificate, server2Certificate, clientCertificate, true, true,
+            true,
+            null);
+  }
+  private void validateClientConnection2(CertificateBuilder locatorCertificate,
+                                        CertificateBuilder server1Certificate,
+                                         CertificateBuilder server2Certificate,
+                                         CertificateBuilder clientCertificate,
+                                        boolean enableHostNameVerficiationForLocator, boolean enableHostNameVerificationForServer,
+                                        boolean enableHostNameVerificationForClient,
+                                        Class<? extends Throwable> expectedExceptionOnClient)
+          throws GeneralSecurityException, IOException {
+    CertStores locatorStore = CertStores.locatorStore();
+    locatorStore.withCertificate(locatorCertificate);
+
+    CertStores server1Store = CertStores.serverStore();
+    server1Store.withCertificate(server1Certificate);
+
+    CertStores server2Store = CertStores.serverStore();
+    server2Store.withCertificate(server2Certificate);
+
+    CertStores clientStore = CertStores.clientStore();
+    clientStore.withCertificate(clientCertificate);
+
+    Properties locatorSSLProps = locatorStore
+            .trustSelf()
+            .trust(clientStore.alias(), clientStore.certificate())
+            .trust(server1Store.alias(), server1Store.certificate())
+            .trust(server2Store.alias(), server2Store.certificate())
+            .propertiesWith("web,jmx,locator,server", false, enableHostNameVerficiationForLocator);
+
+    Properties server1SSLProps = server1Store
+            .trustSelf()
+            .trust(locatorStore.alias(), locatorStore.certificate())
+            .trust(clientStore.alias(), clientStore.certificate())
+            .propertiesWith("web,jmx,locator,server", false, enableHostNameVerificationForServer);
+
+    Properties server2SSLProps = server2Store
+            .trustSelf()
+            .trust(locatorStore.alias(), locatorStore.certificate())
+            .trust(clientStore.alias(), clientStore.certificate())
+            .propertiesWith("web,jmx,locator,server", false, enableHostNameVerificationForServer);
+
+    Properties clientSSLProps = clientStore
+            .trust(locatorStore.alias(), locatorStore.certificate())
+            .trust(server1Store.alias(), server1Store.certificate())
+            .propertiesWith("web,jmx,locator,server", false, enableHostNameVerificationForClient);
+
+    // create a cluster
+
+    locatorSSLProps.setProperty("bind-address", "locator-server");
+    MemberVM locator = cluster.startLocatorVM(0, locatorSSLProps);
+
+//    MemberVM server = cluster.startServerVM(1, server1SSLProps, locator.getPort());
+//    MemberVM server2 = cluster.startServerVM(2, server2SSLProps, locator.getPort());
+
+    server1SSLProps.setProperty("bind-address", "locator-server");
+    MemberVM server = cluster.startServerVM(
+            1,
+            cacheRule -> cacheRule
+                    .withConnectionToLocator("locator-server", locator.getPort())
+                    .withProperties(server1SSLProps));
+
+    server2SSLProps.setProperty("bind-address", "server");
+    MemberVM server2 = cluster.startServerVM(
+            2,
+            cacheRule -> cacheRule
+                    .withConnectionToLocator("locator-server", locator.getPort())
+                    .withProperties(server2SSLProps));
+
+    // create region
+    server.invoke(ClientServerHostNameVerificationDistributedTest::createServerRegion);
+    server2.invoke(ClientServerHostNameVerificationDistributedTest::createServerRegion);
+    locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 2);
+
+    // create client and connect
+    final int locatorPort = locator.getPort();
+    final String locatorHost = locator.getVM().getHost().getHostName();
+
+    ClientCacheFactory clientCacheFactory = new ClientCacheFactory(clientSSLProps);
+    clientCacheFactory.setPoolSubscriptionEnabled(true)
+            .addPoolLocator(locatorHost, locatorPort);
+
+    // close clientCache when done to stop retries between closing suspect log buffer and closing
+    // cache
+    try (ClientCache clientCache = clientCacheFactory.create()) {
+
+      ClientRegionFactory<String, String> regionFactory =
+              clientCache.createClientRegionFactory(ClientRegionShortcut.PROXY);
+
+      IgnoredException.addIgnoredException("Connection reset");
+      IgnoredException.addIgnoredException("java.io.IOException");
+      if (expectedExceptionOnClient != null) {
+        IgnoredException.addIgnoredException("javax.net.ssl.SSLHandshakeException");
+        IgnoredException.addIgnoredException("java.net.SocketException");
+        IgnoredException.addIgnoredException("java.security.cert.CertificateException");
+        IgnoredException.addIgnoredException("java.net.ssl.SSLProtocolException");
+
+        Region<String, String> clientRegion = regionFactory.create("region");
+        assertThatExceptionOfType(expectedExceptionOnClient)
+                .isThrownBy(() -> clientRegion.put("1", "1"));
       } else {
         // test client can read and write to server
         Region<String, String> clientRegion = regionFactory.create("region");

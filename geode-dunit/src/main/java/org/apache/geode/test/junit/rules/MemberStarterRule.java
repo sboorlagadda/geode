@@ -242,6 +242,11 @@ public abstract class MemberStarterRule<T> extends SerializableExternalResource 
     return (T) this;
   }
 
+  public T withConnectionToLocator(String locatorHost, int locatorPort) {
+    properties.setProperty(LOCATORS, locatorHost+"["+locatorPort+"]");
+    return (T) this;
+  }
+
   /**
    * be able to start JMX manager and admin rest on default ports
    */
