@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.util.Properties;
 
 import static org.apache.geode.security.SecurableCommunicationChannels.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({GfshTest.class})
 public class GfshSSLValidationDistributedTest {
@@ -102,10 +103,10 @@ public class GfshSSLValidationDistributedTest {
 
   @Test
   public void gfshConnectsToLocator() throws Exception {
-    Properties locatorSSLProps = locatorServerStore.propertiesWith("web,jmx,locator,server", false, true);
-    Properties server1SSLProps = locatorServerStore.propertiesWith("web,jmx,locator,server", false, true);
-    Properties server2SSLProps = server2Store.propertiesWith("web,jmx,locator,server", false, true);
-    Properties gfshSSLProps = gfshStore.propertiesWith("web,jmx,locator,server", false, true);
+    Properties locatorSSLProps = locatorServerStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
+    Properties server1SSLProps = locatorServerStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
+    Properties server2SSLProps = server2Store.propertiesWith("web,jmx,locator,server,cluster", false, true);
+    Properties gfshSSLProps = gfshStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
 
     // create a cluster
     locatorSSLProps.setProperty("bind-address", "locator-server");
@@ -136,10 +137,17 @@ public class GfshSSLValidationDistributedTest {
     gfsh.executeAndAssertThat("create region --name=/test --type=REPLICATE").statusIsSuccess();
     gfsh.executeAndAssertThat("put --region=/test --key='1' --value='one'").statusIsSuccess();
     gfsh.executeAndAssertThat("put --region=/test --key='2' --value='two'").statusIsSuccess();
-    gfsh.executeAndAssertThat("put --region=/test --key='3' --value='three'").statusIsSuccess();
-    gfsh.executeAndAssertThat("put --region=/test --key='4' --value='four'").statusIsSuccess();
-    gfsh.executeAndAssertThat("put --region=/test --key='5' --value='five'").statusIsSuccess();
-    gfsh.executeAndAssertThat("put --region=/test --key='6' --value='six'").statusIsSuccess();
 
+    server.invoke(() -> {
+      Region<Object, Object> region = ClusterStartupRule.getCache().getRegion("/test");
+      region.put("3", "three");
+    });
+
+    server2.invoke(() -> {
+      Region<Object, Object> region = ClusterStartupRule.getCache().getRegion("/test");
+      String value = (String) region.get("3");
+      ClusterStartupRule.getCache().getLogger().info(">>>>>>>> SAI>>>>>>>> Value:"+value);
+      assertThat(value).isEqualTo("three");
+    });
   }
 }
