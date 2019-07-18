@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.distributed.internal.DistributionConfig;
@@ -84,7 +85,11 @@ public class LocatorStarterRule extends MemberStarterRule<LocatorStarterRule> im
   public void startLocator() {
     try {
       // this will start a jmx manager and admin rest service by default
-      locator = (InternalLocator) startLocatorAndDS(memberPort, null, properties);
+      if(properties.containsKey("bind-address")) {
+        locator = (InternalLocator) startLocatorAndDS(memberPort, null, InetAddress.getByName(properties.getProperty("bind-address")), properties);
+      } else {
+        locator = (InternalLocator) startLocatorAndDS(memberPort, null, properties);
+      }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

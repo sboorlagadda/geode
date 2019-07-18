@@ -156,6 +156,11 @@ public class GfshCommandRule extends DescribedExternalResource {
     assertThat(this.connected).isTrue();
   }
 
+  public void connectToHostAndVerify(String host, int port, PortType type, String... options) throws Exception {
+    connectToHost(host, port, type, options);
+    assertThat(this.connected).isTrue();
+  }
+
   public void secureConnect(int port, PortType type, String username, String password)
       throws Exception {
     connect(port, type, CliStrings.CONNECT__USERNAME, username, CliStrings.CONNECT__PASSWORD,
@@ -192,6 +197,55 @@ public class GfshCommandRule extends DescribedExternalResource {
       connectCommand.addOption(CliStrings.CONNECT__URL, endpoint);
     } else {
       endpoint = "localhost[" + port + "]";
+      connectCommand.addOption(CliStrings.CONNECT__JMX_MANAGER, endpoint);
+    }
+
+    // add the extra options
+    if (options != null) {
+      for (int i = 0; i < options.length; i += 2) {
+        connectCommand.addOption(options[i], options[i + 1]);
+      }
+    }
+
+    // when we connect too soon, we would get "Failed to retrieve RMIServer stub:
+    // javax.naming.CommunicationException [Root exception is java.rmi.NoSuchObjectException: no
+    // such object in table]" Exception.
+    // can not use Awaitility here because it starts another thread, but the Gfsh instance is in a
+    // threadLocal variable, See Gfsh.getExistingInstance()
+    CommandResult result = null;
+    for (int i = 0; i < 50; i++) {
+      result = executeCommand(connectCommand.toString());
+      if (!gfsh.outputString.contains("no such object in table")) {
+        break;
+      }
+      Thread.currentThread().sleep(2000);
+    }
+    connected = (result.getStatus() == Result.Status.OK);
+  }
+
+  public void connectToHost(String host, int port, PortType type, String... options) throws Exception {
+    if (gfsh == null) {
+      String absolutePath;
+      try {
+        absolutePath = temporaryFolder.newFolder("gfsh_files").getAbsolutePath();
+      } catch (IOException e) {
+        absolutePath = temporaryFolder.getRoot().getAbsolutePath();
+      }
+
+      this.gfsh = new HeadlessGfsh(getClass().getName(), 30, absolutePath);
+    }
+    final CommandStringBuilder connectCommand = new CommandStringBuilder(CliStrings.CONNECT);
+    String endpoint;
+    if (type == PortType.locator) {
+      // port is the locator port
+      endpoint = host + "[" + port + "]";
+      connectCommand.addOption(CliStrings.CONNECT__LOCATOR, endpoint);
+    } else if (type == PortType.http || type == PortType.https) {
+      endpoint = type.name() + "://" + host + ":" + port + "/geode-mgmt/v1";
+      // connectCommand.addOption(CliStrings.CONNECT__USE_HTTP, Boolean.TRUE.toString());
+      connectCommand.addOption(CliStrings.CONNECT__URL, endpoint);
+    } else {
+      endpoint = host + "[" + port + "]";
       connectCommand.addOption(CliStrings.CONNECT__JMX_MANAGER, endpoint);
     }
 

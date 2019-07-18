@@ -50,16 +50,27 @@ public class GfshSSLValidationDistributedTest {
 
   @Before
   public void setupCluster() throws Exception {
+//    CertificateBuilder locatorServerCertificate = new CertificateBuilder()
+//        .commonName("locator-server")
+//        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
+//        .sanDnsName(InetAddress.getLocalHost().getHostName())
+//            .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
+//            .sanIpAddress(InetAddress.getLocalHost())
+//        .sanIpAddress(InetAddress.getByName("0.0.0.0"));
+
+//    CertificateBuilder locatorServerCertificate = new CertificateBuilder()
+//            .commonName("locator-server")
+//            .sanDnsName("ursula")
+//            .sanDnsName("localhost")
+//            .sanIpAddress(InetAddress.getByName("10.118.33.213"))
+//            .sanDnsName("locator-server");
+
     CertificateBuilder locatorServerCertificate = new CertificateBuilder()
-        .commonName("gemfire-ssl")
-        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
-        .sanDnsName(InetAddress.getLocalHost().getHostName())
-            .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
-            .sanIpAddress(InetAddress.getLocalHost())
-        .sanIpAddress(InetAddress.getByName("0.0.0.0")); // to pass on windows
+            .commonName("locator-server")
+            .sanDnsName("locator-server");
 
     CertificateBuilder server2Certificate = new CertificateBuilder()
-            .commonName("server2")
+            .commonName("server")
             .sanDnsName("server");
 
     CertificateBuilder gfshCertificate = new CertificateBuilder()
@@ -97,13 +108,28 @@ public class GfshSSLValidationDistributedTest {
     Properties gfshSSLProps = gfshStore.propertiesWith("web,jmx,locator,server", false, true);
 
     // create a cluster
-    locator = cluster.startLocatorVM(0, locatorSSLProps);
-    MemberVM server = cluster.startServerVM(1, server1SSLProps, locator.getPort());
-    MemberVM server2 = cluster.startServerVM(2, server2SSLProps, locator.getPort());
+    locatorSSLProps.setProperty("bind-address", "locator-server");
+    locator = cluster.startLocatorVM(0, l -> l
+      .withPort(55221)
+      .withSystemProperty("gemfire.locators", "locator-server[55221]")
+      .withSystemProperty("gpfdist-hostname", "locator-server")
+      .withSystemProperty("gemfire.forceDnsUse", "true")
+      .withProperties(locatorSSLProps)
+    );
+
+    server1SSLProps.setProperty("bind-address", "locator-server");
+    MemberVM server = cluster.startServerVM(1, cacheRule -> cacheRule
+            .withSystemProperty("gemfire.locators", "locator-server[55221]")
+            .withProperties(server1SSLProps));
+
+    server2SSLProps.setProperty("bind-address", "server");
+    MemberVM server2 = cluster.startServerVM(2, cacheRule -> cacheRule
+            .withSystemProperty("gemfire.locators", "locator-server[55221]")
+            .withProperties(server2SSLProps));
 
     // connect gfsh
     File sslConfigFile = gfshSecurityProperties(gfshSSLProps);
-    gfsh.connectAndVerify(locator.getPort(), GfshCommandRule.PortType.locator,
+    gfsh.connectToHostAndVerify("locator-server", locator.getPort(), GfshCommandRule.PortType.locator,
         "security-properties-file", sslConfigFile.getAbsolutePath());
 
     gfsh.executeAndAssertThat("list members").statusIsSuccess();
