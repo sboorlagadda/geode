@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
 
 import org.apache.logging.log4j.Logger;
 
@@ -1837,6 +1838,16 @@ public class Connection implements Runnable {
       if (!clientSocket) {
         engine.setNeedClientAuth(getSSLConfigForComponent(getConduit().config,
             SecurableCommunicationChannel.CLUSTER).isRequireAuth());
+      }
+//      SSLParameters sslParameters = sslSocket.getSSLParameters();
+//      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+//      sslSocket.setSSLParameters(sslParameters);
+      if(clientSocket && getSSLConfigForComponent(getConduit().config,
+              SecurableCommunicationChannel.CLUSTER).doEndpointIdentification()) {
+        System.out.println("&&&&&&&&&&&SAI: client socket for server");
+        SSLParameters sslParameters = engine.getSSLParameters();
+        sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+        engine.setSSLParameters(sslParameters);
       }
 
       int packetBufferSize = engine.getSession().getPacketBufferSize();
