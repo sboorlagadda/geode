@@ -14,6 +14,8 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
+import org.apache.geode.cache.Region;
+import org.apache.geode.cache.client.internal.ClientServerHostNameVerificationDistributedTest;
 import org.apache.geode.cache.ssl.CertStores;
 import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
 import org.apache.geode.test.dunit.IgnoredException;
