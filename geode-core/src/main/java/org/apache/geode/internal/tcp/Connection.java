@@ -1839,9 +1839,6 @@ public class Connection implements Runnable {
         engine.setNeedClientAuth(getSSLConfigForComponent(getConduit().config,
             SecurableCommunicationChannel.CLUSTER).isRequireAuth());
       }
-//      SSLParameters sslParameters = sslSocket.getSSLParameters();
-//      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-//      sslSocket.setSSLParameters(sslParameters);
       if(clientSocket && getSSLConfigForComponent(getConduit().config,
               SecurableCommunicationChannel.CLUSTER).doEndpointIdentification()) {
         System.out.println("&&&&&&&&&&&SAI: client socket for server");

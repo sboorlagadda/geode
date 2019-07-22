@@ -14,12 +14,8 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
-import org.apache.geode.cache.Region;
-import org.apache.geode.cache.client.internal.ClientServerHostNameVerificationDistributedTest;
 import org.apache.geode.cache.ssl.CertStores;
 import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
-import org.apache.geode.test.dunit.IgnoredException;
-import org.apache.geode.test.dunit.VM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.GfshTest;
@@ -35,9 +31,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
-import static org.apache.geode.security.SecurableCommunicationChannels.*;
-import static org.assertj.core.api.Assertions.assertThat;
-
 @Category({GfshTest.class})
 public class GfshSSLValidationDistributedTest {
   private static MemberVM locator;
@@ -48,52 +41,44 @@ public class GfshSSLValidationDistributedTest {
   @Rule
   public GfshCommandRule gfsh = new GfshCommandRule();
 
-  private CertStores locatorServerStore, server2Store;
+  private CertStores locatorStore, serverStore;
   private CertStores gfshStore;
 
   @Before
   public void setupCluster() throws Exception {
-//    CertificateBuilder locatorServerCertificate = new CertificateBuilder()
-//        .commonName("locator-server")
-//        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
-//        .sanDnsName(InetAddress.getLocalHost().getHostName())
-//            .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
-//            .sanIpAddress(InetAddress.getLocalHost())
-//        .sanIpAddress(InetAddress.getByName("0.0.0.0"));
-
-//    CertificateBuilder locatorServerCertificate = new CertificateBuilder()
-//            .commonName("locator-server")
-//            .sanDnsName("ursula")
-//            .sanDnsName("localhost")
-//            .sanIpAddress(InetAddress.getByName("10.118.33.213"))
-//            .sanDnsName("locator-server");
-
     CertificateBuilder locatorServerCertificate = new CertificateBuilder()
-            .commonName("locator-server")
-            .sanDnsName("locator-server");
+        .commonName("locator-server")
+        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+            .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
+            .sanIpAddress(InetAddress.getLocalHost())
+        .sanIpAddress(InetAddress.getByName("0.0.0.0"));
 
-    CertificateBuilder server2Certificate = new CertificateBuilder()
+    CertificateBuilder serverCertificate = new CertificateBuilder()
             .commonName("server")
-            .sanDnsName("server");
+            .sanDnsName(InetAddress.getLocalHost().getHostName())
+            .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
+            .sanIpAddress(InetAddress.getLocalHost());
 
     CertificateBuilder gfshCertificate = new CertificateBuilder()
         .commonName("gfsh");
 
-    locatorServerStore = CertStores.locatorStore();
-    locatorServerStore.withCertificate(locatorServerCertificate);
+    locatorStore = CertStores.locatorStore();
+    locatorStore.withCertificate(locatorServerCertificate);
 
-    server2Store = CertStores.serverStore();
-    server2Store.withCertificate(server2Certificate);
+    serverStore = CertStores.serverStore();
+    serverStore.withCertificate(serverCertificate);
 
     gfshStore = CertStores.clientStore();
     gfshStore.withCertificate(gfshCertificate);
 
-    locatorServerStore.trustSelf();
+    locatorStore.trustSelf()
+                .trust(serverStore.alias(), serverStore.certificate());
 
-    server2Store.trust(locatorServerStore.alias(), locatorServerStore.certificate());
+    serverStore.trust(locatorStore.alias(), locatorStore.certificate());
 
     gfshStore
-        .trust(locatorServerStore.alias(), locatorServerStore.certificate());
+        .trust(locatorStore.alias(), locatorStore.certificate());
   }
 
   private File gfshSecurityProperties(Properties clientSSLProps) throws IOException {
@@ -105,51 +90,31 @@ public class GfshSSLValidationDistributedTest {
 
   @Test
   public void gfshConnectsToLocator() throws Exception {
-    Properties locatorSSLProps = locatorServerStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
-    Properties server1SSLProps = locatorServerStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
-    Properties server2SSLProps = server2Store.propertiesWith("web,jmx,locator,server,cluster", false, true);
+    Properties locatorSSLProps = locatorStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
+    Properties serverSSLProps = serverStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
     Properties gfshSSLProps = gfshStore.propertiesWith("web,jmx,locator,server,cluster", false, true);
 
     // create a cluster
-    locatorSSLProps.setProperty("bind-address", "locator-server");
     locator = cluster.startLocatorVM(0, l -> l
       .withPort(55221)
-      .withSystemProperty("gemfire.locators", "locator-server[55221]")
-      .withSystemProperty("gpfdist-hostname", "locator-server")
+      .withSystemProperty("gemfire.locators", "localhost[55221]")
+      .withSystemProperty("gpfdist-hostname", "localhost")
       .withSystemProperty("gemfire.forceDnsUse", "true")
       .withProperties(locatorSSLProps)
     );
 
-    server1SSLProps.setProperty("bind-address", "locator-server");
     MemberVM server = cluster.startServerVM(1, cacheRule -> cacheRule
-            .withSystemProperty("gemfire.locators", "locator-server[55221]")
-            .withProperties(server1SSLProps));
-
-    server2SSLProps.setProperty("bind-address", "server");
-    MemberVM server2 = cluster.startServerVM(2, cacheRule -> cacheRule
-            .withSystemProperty("gemfire.locators", "locator-server[55221]")
-            .withProperties(server2SSLProps));
+            .withSystemProperty("gemfire.locators", "localhost[55221]")
+            .withProperties(serverSSLProps));
 
     // connect gfsh
     File sslConfigFile = gfshSecurityProperties(gfshSSLProps);
-    gfsh.connectToHostAndVerify("locator-server", locator.getPort(), GfshCommandRule.PortType.locator,
+    gfsh.connectToHostAndVerify("localhost", locator.getPort(), GfshCommandRule.PortType.locator,
         "security-properties-file", sslConfigFile.getAbsolutePath());
 
     gfsh.executeAndAssertThat("list members").statusIsSuccess();
     gfsh.executeAndAssertThat("create region --name=/test --type=REPLICATE").statusIsSuccess();
     gfsh.executeAndAssertThat("put --region=/test --key='1' --value='one'").statusIsSuccess();
     gfsh.executeAndAssertThat("put --region=/test --key='2' --value='two'").statusIsSuccess();
-
-    server.invoke(() -> {
-      Region<Object, Object> region = ClusterStartupRule.getCache().getRegion("/test");
-      region.put("3", "three");
-    });
-
-    server2.invoke(() -> {
-      Region<Object, Object> region = ClusterStartupRule.getCache().getRegion("/test");
-      String value = (String) region.get("3");
-      ClusterStartupRule.getCache().getLogger().info(">>>>>>>> SAI>>>>>>>> Value:"+value);
-      assertThat(value).isEqualTo("three");
-    });
   }
 }

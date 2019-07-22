@@ -15,7 +15,6 @@
 package org.apache.geode.management.internal.cli.commands;
 
 import org.apache.geode.cache.Region;
-import org.apache.geode.security.SecurableCommunicationChannels;
 import org.apache.geode.test.dunit.rules.CleanupDUnitVMsRule;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
