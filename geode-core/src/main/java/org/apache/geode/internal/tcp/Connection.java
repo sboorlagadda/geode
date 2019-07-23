@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
 
 import org.apache.logging.log4j.Logger;
 
@@ -131,6 +132,10 @@ public class Connection implements Runnable {
   private final TCPConduit conduit;
   private NioFilter ioFilter;
 
+  /**
+   * Only print hostname validation disabled log once
+   */
+  private boolean hostnameValidationDisabledLogShown = false;
   /**
    * Set to false once run() is terminating. Using this instead of Thread.isAlive as the reader
    * thread may be a pooled thread.
@@ -1837,6 +1842,22 @@ public class Connection implements Runnable {
       if (!clientSocket) {
         engine.setNeedClientAuth(getSSLConfigForComponent(getConduit().config,
             SecurableCommunicationChannel.CLUSTER).isRequireAuth());
+      }
+
+      if (clientSocket) {
+        if (getSSLConfigForComponent(getConduit().config,
+                SecurableCommunicationChannel.CLUSTER).doEndpointIdentification()) {
+          SSLParameters sslParameters = engine.getSSLParameters();
+          sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+          engine.setSSLParameters(sslParameters);
+        } else {
+          if (!hostnameValidationDisabledLogShown) {
+            logger.info("Your SSL configuration disables hostname validation. "
+                    + "ssl-endpoint-identification-enabled should be set to true when SSL is enabled. "
+                    + "Please refer to the Apache GEODE SSL Documentation for SSL Property: ssl‑endpoint‑identification‑enabled");
+            hostnameValidationDisabledLogShown = true;
+          }
+        }
       }
 
       int packetBufferSize = engine.getSession().getPacketBufferSize();
