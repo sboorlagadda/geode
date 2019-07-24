@@ -15,27 +15,31 @@
 package org.apache.geode.internal.tcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
 
 import java.net.InetAddress;
-import java.security.cert.CertificateException;
 import java.util.Properties;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import org.apache.geode.SystemConnectException;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionFactory;
 import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.ssl.CertStores;
 import org.apache.geode.cache.ssl.TestSSLUtils.CertificateBuilder;
+import org.apache.geode.distributed.internal.tcpserver.LocatorCancelException;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.test.dunit.IgnoredException;
+import org.apache.geode.test.dunit.VM;
 import org.apache.geode.test.dunit.rules.ClusterStartupRule;
 import org.apache.geode.test.dunit.rules.MemberVM;
 import org.apache.geode.test.junit.categories.GfshTest;
+import org.apache.geode.test.junit.rules.Server;
+import org.apache.geode.test.junit.rules.ServerStarterRule;
 
 @Category({GfshTest.class})
 public class P2PHostNameVerificationDistributedTest {
@@ -49,7 +53,119 @@ public class P2PHostNameVerificationDistributedTest {
   private static final String REGION = "test";
 
   @Test
-  public void testLocatorFailsToValidateServerCertificateWithNoSANEntry() throws Exception {
+  public void serverExpectsCertificateSANEntriesWhenHostnameValidationIsEnabled() throws Exception {
+    CertificateBuilder locatorCertificate = new CertificateBuilder()
+        .commonName("locator");
+
+    CertificateBuilder server1Certificate = new CertificateBuilder()
+        .commonName("server1")
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+        .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
+        .sanIpAddress(InetAddress.getLocalHost());
+
+    locatorStore = CertStores.locatorStore();
+    locatorStore.withCertificate(locatorCertificate);
+
+    server1Store = CertStores.serverStore();
+    server1Store.withCertificate(server1Certificate);
+
+    locatorStore
+        .trustSelf()
+        .trust("server1", server1Store.certificate());
+
+    server1Store
+        .trust("locator", locatorStore.certificate());
+
+    Properties locatorSSLProps = locatorStore.propertiesWith("locator,server,cluster", false, false);
+    Properties server1SSLProps = server1Store.propertiesWith("locator,server,cluster", false, true);
+
+    // create a cluster
+    locator = cluster.startLocatorVM(0, locatorSSLProps);
+
+    IgnoredException.addIgnoredException("javax.net.ssl.SSLHandshakeException");
+    IgnoredException.addIgnoredException("java.security.cert.CertificateException");
+
+    final String serverName = "server1";
+    int locatorPort = locator.getPort();
+    VM serverVM = cluster.getVM(4);
+
+    Server server = serverVM.invoke(() -> {
+      ServerStarterRule serverRule = new ServerStarterRule();
+      serverRule.withName(serverName)
+          .withProperties(server1SSLProps)
+          .withConnectionToLocator(locatorPort)
+          .withAutoStart();
+
+      assertThatThrownBy(() -> serverRule.before())
+          .isInstanceOf(SystemConnectException.class)
+          .hasMessage("Problem starting up membership services")
+          .hasCause(new LocatorCancelException("Unable to form SSL connection"))
+          .hasStackTraceContaining("caused by javax.net.ssl.SSLHandshakeException: java.security.cert.CertificateException: No name matching localhost found");
+      return serverRule;
+    });
+    MemberVM serverMember = new MemberVM(server, serverVM);
+    serverMember.stop();
+  }
+
+  @Test
+  public void serverExpectsLocatorHostNameInCertificateSANWhenHostnameValidationIsEnabled() throws Exception {
+    CertificateBuilder locatorCertificate = new CertificateBuilder()
+        .commonName("locator")
+        .sanDnsName("example-locator.com");
+
+    CertificateBuilder server1Certificate = new CertificateBuilder()
+        .commonName("server1")
+        .sanDnsName(InetAddress.getLocalHost().getHostName())
+        .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
+        .sanIpAddress(InetAddress.getLocalHost());
+
+    locatorStore = CertStores.locatorStore();
+    locatorStore.withCertificate(locatorCertificate);
+
+    server1Store = CertStores.serverStore();
+    server1Store.withCertificate(server1Certificate);
+
+    locatorStore
+        .trustSelf()
+        .trust("server1", server1Store.certificate());
+
+    server1Store
+        .trust("locator", locatorStore.certificate());
+
+    Properties locatorSSLProps = locatorStore.propertiesWith("locator,server,cluster", false, false);
+    Properties server1SSLProps = server1Store.propertiesWith("locator,server,cluster", false, true);
+
+    // create a cluster
+    locator = cluster.startLocatorVM(0, locatorSSLProps);
+
+    IgnoredException.addIgnoredException("javax.net.ssl.SSLHandshakeException");
+    IgnoredException.addIgnoredException("java.security.cert.CertificateException");
+
+    final String serverName = "server1";
+    int locatorPort = locator.getPort();
+    VM serverVM = cluster.getVM(4);
+
+    Server server = serverVM.invoke(() -> {
+      ServerStarterRule serverRule = new ServerStarterRule();
+      serverRule.withName(serverName)
+          .withProperties(server1SSLProps)
+          .withConnectionToLocator(locatorPort)
+          .withAutoStart();
+
+      assertThatThrownBy(() -> serverRule.before())
+          .isInstanceOf(SystemConnectException.class)
+          .hasMessage("Problem starting up membership services")
+          .hasCause(new LocatorCancelException("Unable to form SSL connection"))
+          .hasStackTraceContaining("caused by javax.net.ssl.SSLHandshakeException: java.security.cert.CertificateException: No subject alternative DNS name matching localhost found.");
+      return serverRule;
+    });
+
+    MemberVM serverMember = new MemberVM(server, serverVM);
+    serverMember.stop();
+  }
+
+  @Test
+  public void locatorExpectsServerHostNameInCertificateSANWhenHostnameValidationIsEnabled() throws Exception {
     CertificateBuilder locatorCertificate = new CertificateBuilder()
         .commonName("locator")
         .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
@@ -59,7 +175,8 @@ public class P2PHostNameVerificationDistributedTest {
         .sanIpAddress(InetAddress.getByName("0.0.0.0"));
 
     CertificateBuilder server1Certificate = new CertificateBuilder()
-        .commonName("server1");
+        .commonName("server1")
+        .sanDnsName("example-server.com");
 
     locatorStore = CertStores.locatorStore();
     locatorStore.withCertificate(locatorCertificate);
@@ -79,10 +196,12 @@ public class P2PHostNameVerificationDistributedTest {
 
     // create a cluster
     locator = cluster.startLocatorVM(0, locatorSSLProps);
-    
+
     IgnoredException.addIgnoredException("javax.net.ssl.SSLHandshakeException");
     IgnoredException.addIgnoredException("java.security.cert.CertificateException");
+
     MemberVM server1 = cluster.startServerVM(1, server1SSLProps, locator.getPort());
+
   }
 
   @Test
