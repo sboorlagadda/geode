@@ -14,6 +14,9 @@
  */
 package org.apache.geode.cache.client.internal;
 
+import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE;
+import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE_PASSWORD;
+import static org.apache.geode.distributed.ConfigurationProperties.SSL_KEYSTORE_TYPE;
 import static org.apache.geode.security.SecurableCommunicationChannels.ALL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -105,80 +108,6 @@ public class ClientServerHostNameVerificationDistributedTest {
         null);
   }
 
-  @Test
-  public void expectConnectionFailureWhenNoHostNameInLocatorKey() throws Exception {
-
-    CertificateMaterial locatorCertificate = new CertificateBuilder()
-        .commonName("locator")
-        .issuedBy(ca)
-        .generate();
-
-    CertificateMaterial serverCertificate = new CertificateBuilder()
-        .commonName("server")
-        .issuedBy(ca)
-        .generate();
-
-    CertificateMaterial clientCertificate = new CertificateBuilder()
-        .commonName("client")
-        .issuedBy(ca)
-        .generate();
-
-    validateClientConnection(locatorCertificate, serverCertificate, clientCertificate, false, false,
-        true,
-        LocatorCancelException.class);
-  }
-
-  @Test
-  public void expectConnectionFailureWhenWrongHostNameInLocatorKey() throws Exception {
-
-    CertificateMaterial locatorCertificate = new CertificateBuilder()
-        .commonName("locator")
-        .sanDnsName("example.com")
-        .issuedBy(ca)
-        .generate();
-
-    CertificateMaterial serverCertificate = new CertificateBuilder()
-        .commonName("server")
-        .sanDnsName("example.com")
-        .issuedBy(ca)
-        .generate();
-
-    CertificateMaterial clientCertificate = new CertificateBuilder()
-        .commonName("client")
-        .issuedBy(ca)
-        .generate();
-
-    validateClientConnection(locatorCertificate, serverCertificate, clientCertificate, false, false,
-        true,
-        LocatorCancelException.class);
-  }
-
-  @Test
-  public void expectConnectionFailureWhenNoHostNameInServerKey() throws Exception {
-    CertificateMaterial locatorCertificateWithSan = new CertificateBuilder()
-        .commonName("locator")
-        .issuedBy(ca)
-        .sanDnsName(InetAddress.getLoopbackAddress().getHostName())
-        .sanDnsName(InetAddress.getLocalHost().getHostName())
-        .sanDnsName(InetAddress.getLocalHost().getCanonicalHostName())
-        .sanIpAddress(InetAddress.getLocalHost())
-        .generate();
-
-    CertificateMaterial serverCertificateWithNoSan = new CertificateBuilder()
-        .commonName("server")
-        .issuedBy(ca)
-        .generate();
-
-    CertificateMaterial clientCertificate = new CertificateBuilder()
-        .commonName("client")
-        .issuedBy(ca)
-        .generate();
-
-    validateClientConnection(locatorCertificateWithSan, serverCertificateWithNoSan,
-        clientCertificate, false, false, true,
-        NoAvailableServersException.class);
-  }
-
   private void validateClientConnection(CertificateMaterial locatorCertificate,
       CertificateMaterial serverCertificate, CertificateMaterial clientCertificate,
       boolean enableHostNameVerficiationForLocator, boolean enableHostNameVerificationForServer,
@@ -205,17 +134,17 @@ public class ClientServerHostNameVerificationDistributedTest {
 
     Properties clientSSLProps = clientStore
         .propertiesWith(ALL, true, enableHostNameVerificationForClient);
-
+    clientSSLProps.remove(SSL_KEYSTORE);
+    clientSSLProps.remove(SSL_KEYSTORE_TYPE);
+    clientSSLProps.remove(SSL_KEYSTORE_PASSWORD);
+    
     // create a cluster
     MemberVM locator = cluster.startLocatorVM(0, locatorSSLProps);
-    MemberVM locator2 = cluster.startLocatorVM(1, locatorSSLProps, locator.getPort());
     MemberVM server = cluster.startServerVM(2, serverSSLProps, locator.getPort());
-    MemberVM server2 = cluster.startServerVM(3, serverSSLProps, locator.getPort());
 
     // create region
     server.invoke(ClientServerHostNameVerificationDistributedTest::createServerRegion);
-    server2.invoke(ClientServerHostNameVerificationDistributedTest::createServerRegion);
-    locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 2);
+    locator.waitUntilRegionIsReadyOnExactlyThisManyServers("/region", 1);
 
     // create client and connect
     final int locatorPort = locator.getPort();
